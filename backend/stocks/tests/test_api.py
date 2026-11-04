@@ -89,8 +89,9 @@ def test_donnees_de_demo_des_stocks(db):
 
     cream_lot = Lot.objects.get(supplier_lot_number="CB-0412")
     stock = {loc.code: qty for loc, qty in services.stock_by_location(cream_lot)}
-    assert stock == {"MPE-FP-01": Decimal("250"), "NAN-CF-MP": Decimal("150")}
+    # 150 kg envoyés à l'usine NAN, dont 60 kg consommés par la béchamel de démonstration
+    assert stock == {"MPE-FP-01": Decimal("250"), "NAN-CF-MP": Decimal("90")}
     assert Lot.objects.get(supplier_lot_number="VO-26-3321").status == "detruit"
     # Relancer le chargement ne refait pas les mouvements
     call_command("charger_donnees_demo")
-    assert cream_lot.quantity == Decimal("400")
+    assert cream_lot.quantity == Decimal("340")
