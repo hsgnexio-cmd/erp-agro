@@ -3,18 +3,149 @@
   color: #1f2a37;
   background: #f6f7f4;
   --brand: #2f6b3a;
+  --brand-light: #dcefdc;
+  --border: #d9ded6;
+  --muted: #5b6573;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+}
+
+a {
+  color: var(--brand);
+}
+
+h1 small,
+h2 small {
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 0.6em;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  background: var(--brand);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select {
+  padding: 0.45em 0.6em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+/* --- Cadre de l'application --- */
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 16px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.app-header .brand {
+  font-weight: 700;
+}
+
+.app-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.app-header nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.3em 0.7em;
+  border-radius: 6px;
+}
+
+.app-header nav a.active,
+.app-header nav a:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.app-header .user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.link-button {
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.6);
+  padding: 0.3em 0.7em;
+}
+
+.app-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 16px 3rem;
+}
+
+.page-message {
+  text-align: center;
+  margin-top: 4rem;
+}
+
+/* --- Connexion --- */
+
+.login {
+  min-height: 100vh;
   display: grid;
   place-items: center;
+  padding: 16px;
 }
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(360px, 100%);
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.08);
+}
+
+.login-card h1 {
+  color: var(--brand);
+  margin: 0;
+  text-align: center;
+}
+
+.login-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* --- Accueil --- */
 
 .home {
   text-align: center;
-  padding: 16px;
 }
 
 .home h1 {
@@ -24,24 +155,161 @@ body {
 }
 
 .subtitle {
-  color: #5b6573;
+  color: var(--muted);
   margin-top: 0;
+  text-align: center;
 }
 
 .status {
   display: inline-block;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   padding: 0.5em 1em;
   border-radius: 999px;
   background: #e5e7eb;
 }
 
 .status-ok {
-  background: #dcefdc;
+  background: var(--brand-light);
   color: #1e5128;
 }
 
 .status-erreur {
   background: #f9dcdc;
+  color: #8a1c1c;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card:hover {
+  border-color: var(--brand);
+}
+
+.card span {
+  color: var(--muted);
+}
+
+/* --- Listes et fiches --- */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filters input[type='search'] {
+  flex: 1 1 260px;
+}
+
+.count {
+  color: var(--muted);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  background: #eef1ec;
+  font-weight: 600;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+.num {
+  text-align: right;
+}
+
+tr.inactive {
+  color: #9aa1aa;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.details dt {
+  color: var(--muted);
+}
+
+.details dd {
+  margin: 0;
+}
+
+.text-block {
+  white-space: pre-line;
+}
+
+.site {
+  margin-bottom: 2rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  font-size: 0.85em;
+}
+
+.badge-warn {
+  background: #fdf0d5;
+  color: #8a5a00;
+}
+
+.badge-off {
+  background: #e5e7eb;
+}
+
+.error {
   color: #8a1c1c;
 }

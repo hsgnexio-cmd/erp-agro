@@ -1,0 +1,40 @@
+import { Link } from 'react-router'
+import { useAuth } from '../auth/context'
+import { useApi } from '../hooks/useApi'
+
+const SECTIONS = [
+  { to: '/articles', title: 'Articles', text: 'Matières, semi-finis, produits finis, emballages' },
+  { to: '/fournisseurs', title: 'Fournisseurs', text: 'Coordonnées, délais, audits' },
+  { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },
+  { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
+]
+
+export function HomePage() {
+  const { user } = useAuth()
+  const health = useApi<{ status: string }>('/api/health/')
+
+  const apiStatus = health.loading ? 'verification' : health.data ? 'ok' : 'erreur'
+  const statusLabel = {
+    verification: 'Vérification de la connexion au serveur…',
+    ok: 'Serveur et base de données connectés',
+    erreur: 'Serveur injoignable',
+  }[apiStatus]
+
+  return (
+    <section className="home">
+      <h1>ERP Brévanne Traiteur</h1>
+      <p className="subtitle">Bonjour {user?.first_name || user?.username}</p>
+      <p className={`status status-${apiStatus}`} role="status">
+        {statusLabel}
+      </p>
+      <div className="cards">
+        {SECTIONS.map((section) => (
+          <Link key={section.to} to={section.to} className="card">
+            <strong>{section.title}</strong>
+            <span>{section.text}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}

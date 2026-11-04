@@ -9,8 +9,9 @@ Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-ent
 | --- | --- | --- |
 | Base de données | PostgreSQL | 18 |
 | Back-end | Python, Django, Django REST Framework | 3.14, 6.1, 3.18 |
+| Historique et filtres | django-simple-history, django-filter | 3.13, 26.2 |
 | Tâches de fond | Celery (worker + Beat), Redis | 5.6, 8 |
-| Front-end | React, TypeScript, Vite | 19.3, 6.0, 8.3 |
+| Front-end | React, React Router, TypeScript, Vite | 19.3, 8.5, 6.0, 8.3 |
 | Tests | pytest, Vitest | 9.2, 5.1 |
 | Environnement | Docker Compose | — |
 
@@ -104,11 +105,30 @@ docker compose exec backend python manage.py createsuperuser
 Django demande un nom d'utilisateur, un e-mail (facultatif) et un mot de passe (rien ne s'affiche pendant la saisie, c'est normal).
 Ensuite, ouvre http://localhost:8000/admin/ et connecte-toi.
 
-## Rôles
+## Données de démonstration
 
-Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration.
-Pour donner un rôle à quelqu'un : administration → **Utilisateurs** → choisir l'utilisateur → section **Permissions** → **Groupes**.
-Les droits précis de chaque rôle seront ajoutés au fil des phases (par exemple, en phase 4, seul `qualite` pourra libérer ou bloquer un lot).
+Remplir la base avec des données fictives cohérentes avec la fiche entreprise (sites, enseignes, fournisseurs, matières, recettes, nomenclatures). La commande peut être relancée sans créer de doublons :
+
+```powershell
+docker compose exec backend python manage.py charger_donnees_demo
+```
+
+## Rôles et utilisateurs
+
+Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md).
+
+Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Puis, sur sa fiche :
+
+- section **Permissions** → **Groupes** : choisir son rôle ;
+- cocher **Statut équipe** s'il doit pouvoir utiliser l'administration (saisie du référentiel).
+
+## Utiliser l'application
+
+| Adresse | Contenu |
+| --- | --- |
+| http://localhost:5173 | Application React : connexion, puis articles, fournisseurs, clients, sites |
+| http://localhost:8000/admin/ | Administration : saisie et modification du référentiel, historique des modifications |
+| http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 
 ## Tests
 
@@ -136,9 +156,10 @@ Les mêmes tests sont lancés automatiquement par GitHub Actions à chaque push 
 
 ```
 erp-agro/
-├── backend/          # Django : config/ (réglages), comptes/ (utilisateurs, rôles), une app par module
+├── backend/          # Django : config/ (réglages), comptes/ (utilisateurs, rôles, connexion),
+│                     # referentiel/ (articles, nomenclatures…), une app par module
 ├── frontend/         # React + TypeScript (Vite)
-├── docs/             # fiche entreprise, règles métier, décisions
+├── docs/             # fiche entreprise, décisions (decisions.md)
 ├── data/             # scripts de données fictives (à venir)
 ├── bi/               # Power Query, Power BI (à venir)
 ├── docker-compose.yml

@@ -1,0 +1,27 @@
+import { Route, Routes } from 'react-router'
+import { Layout } from './components/Layout'
+import { ArticleDetailPage } from './pages/ArticleDetailPage'
+import { ArticlesPage } from './pages/ArticlesPage'
+import { CustomersPage } from './pages/CustomersPage'
+import { HomePage } from './pages/HomePage'
+import { LoginPage } from './pages/LoginPage'
+import { SitesPage } from './pages/SitesPage'
+import { SuppliersPage } from './pages/SuppliersPage'
+
+/** Les adresses de l'application. Toutes, sauf /connexion, exigent d'être connecté. */
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/connexion" element={<LoginPage />} />
+      <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="articles" element={<ArticlesPage />} />
+        <Route path="articles/:id" element={<ArticleDetailPage />} />
+        <Route path="fournisseurs" element={<SuppliersPage />} />
+        <Route path="clients" element={<CustomersPage />} />
+        <Route path="sites" element={<SitesPage />} />
+        <Route path="*" element={<p>Page introuvable.</p>} />
+      </Route>
+    </Routes>
+  )
+}
