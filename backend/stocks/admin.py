@@ -6,7 +6,7 @@ Ils sont créés uniquement par les opérations de l'ERP (réception…), jamais
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Lot, StockMovement
+from .models import Lot, LotStatusChange, StockMovement
 
 
 class ReadOnlyAdminMixin:
@@ -27,6 +27,13 @@ class StockMovementInline(ReadOnlyAdminMixin, admin.TabularInline):
     readonly_fields = fields
 
 
+class LotStatusChangeInline(ReadOnlyAdminMixin, admin.TabularInline):
+    model = LotStatusChange
+    extra = 0
+    fields = ("changed_at", "from_status", "to_status", "reason", "user")
+    readonly_fields = fields
+
+
 @admin.register(Lot)
 class LotAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
     list_display = (
@@ -40,7 +47,7 @@ class LotAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
     )
     list_filter = ("status", "location__site", "article__article_type")
     search_fields = ("number", "supplier_lot_number", "article__code", "article__name")
-    inlines = [StockMovementInline]
+    inlines = [LotStatusChangeInline, StockMovementInline]
 
 
 @admin.register(StockMovement)

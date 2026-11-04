@@ -12,3 +12,7 @@ class LotStatus(models.TextChoices):
 
 class MovementType(models.TextChoices):
     RECEPTION = "reception", "Réception fournisseur"
+    TRANSFER_OUT = "transfert_sortie", "Transfert (sortie)"
+    TRANSFER_IN = "transfert_entree", "Transfert (entrée)"
+    CORRECTION = "correction", "Correction"
+    DESTRUCTION = "destruction", "Destruction"
