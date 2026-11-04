@@ -1,0 +1,76 @@
+# Lance tout l'ERP en une commande : docker compose up
+# Chaque « service » est un conteneur, c'est-à-dire un mini-ordinateur isolé.
+
+# Réglages communs aux conteneurs Python (Django, Celery, Celery Beat)
+x-backend: &backend
+  build: ./backend
+  # Une seule image partagée par les trois conteneurs Python
+  image: erp-agro-backend
+  env_file: .env
+  volumes:
+    - ./backend:/app
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  # Base de données
+  db:
+    image: postgres:18
+    env_file: .env
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      # Les données sont gardées ici, même quand les conteneurs sont arrêtés
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # File d'attente des tâches de fond
+  redis:
+    image: redis:8
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Back-end Django (API + administration) : http://localhost:8000
+  backend:
+    <<: *backend
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+  # Celery : exécute les tâches de fond
+  worker:
+    <<: *backend
+    command: celery -A config worker --loglevel=info
+
+  # Celery Beat : déclenche les tâches planifiées (alertes de péremption, calculs de nuit)
+  beat:
+    <<: *backend
+    command: celery -A config beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+
+  # Front-end React : http://localhost:5173
+  frontend:
+    build: ./frontend
+    env_file: .env
+    volumes:
+      - ./frontend:/app
+      # Garde les modules Node du conteneur (Linux), sans ceux du PC (Windows)
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
