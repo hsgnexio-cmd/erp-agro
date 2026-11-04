@@ -95,3 +95,30 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Libérer, bloquer, débloquer, détruire un lot | `admin`, `qualite` |
 | Transférer, corriger une réception | `admin`, `magasinier` |
 | Consulter lots, mouvements, état des stocks, FEFO | tous les rôles |
+
+## Phase 4b – Surveillance (températures, inventaires, alertes)
+
+| Décision | Raison |
+| --- | --- |
+| Limites de température : celles de l'emplacement, sinon celles de sa classe | Froid positif 0 à 4 °C, froid négatif ≤ −18 °C ; relevés facultatifs en ambiant. Les limites sont copiées dans chaque relevé pour l'audit. |
+| Un écart bloque tous les lots libérés ou en quarantaine présents dans l'emplacement | Règle 7. Les lots déjà bloqués gardent leur motif d'origine. Une alerte critique est créée à chaque écart. |
+| Relevés de température jamais modifiés ni supprimés | Preuve pour les audits IFS / BRCGS. |
+| Alerte « relevé manquant » après 24 h sans relevé | Seulement pour une chambre froide qui contient du stock. |
+| Vérification quotidienne à 6 h par Celery Beat | Péremption proche (DLC ≤ 3 jours, DDM ≤ 30 jours), DLC dépassée (lot bloqué automatiquement), DDM dépassée (alerte seule), relevés manquants. Commande `verifier_alertes` pour la lancer à la demande. |
+| Pas de doublon d'alerte | Une alerte identique encore ouverte (même type, même lot ou emplacement) n'est pas recréée. Exception : chaque écart de température crée sa propre alerte. |
+| Alerte jamais supprimée : marquée « traitée » avec un commentaire obligatoire | Qui, quand, ce qui a été fait. |
+| Pas d'envoi d'e-mail pour l'instant | Pas de serveur d'envoi ; les alertes sont dans l'application (page Alertes et compteur du menu). |
+| Inventaire = photo du stock à l'ouverture, comptage, puis validation | Numéro `INV-AAAA-NNNNN`. Les écarts deviennent des mouvements « ajustement d'inventaire » (règle 11). |
+| Emplacements gelés pendant l'inventaire | Aucun mouvement (transfert, réception, correction, destruction) sur le périmètre compté avant la validation ou l'annulation, contrôlé dans le modèle `StockMovement`. Deux inventaires ne se chevauchent pas. |
+| Comptage à l'aveugle | La quantité théorique est cachée pendant la saisie ; elle s'affiche à l'étape des écarts, juste avant la validation. |
+| Lot trouvé pendant le comptage | Un lot existant peut être ajouté à la feuille s'il est trouvé à un emplacement où le système ne le situait pas. |
+| Fichiers `stocks/monitoring.py` et `stocks/inventory.py` | Logique métier de la surveillance et des inventaires, séparée de `stocks/services.py` pour rester lisible. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Saisir un relevé de température | `admin`, `qualite`, `magasinier` |
+| Traiter une alerte | `admin`, `qualite`, `magasinier` |
+| Ouvrir, compter, valider, annuler un inventaire | `admin`, `magasinier` |
+| Consulter relevés, inventaires, alertes | tous les rôles |
