@@ -5,7 +5,7 @@ from rest_framework import serializers
 from referentiel.models import Location, Site
 
 from . import services
-from .choices import InventoryStatus
+from .choices import InventoryStatus, UnsoldDestination
 from .models import (
     Alert,
     Inventory,
@@ -158,6 +158,11 @@ class StockMovementSerializer(serializers.ModelSerializer):
 
 class StatusChangeInputSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class UnsoldInputSerializer(serializers.Serializer):
+    destination = serializers.ChoiceField(choices=UnsoldDestination.choices)
+    reason = serializers.CharField(max_length=150)
 
 
 class TransferInputSerializer(serializers.Serializer):

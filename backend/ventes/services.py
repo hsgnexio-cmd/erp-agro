@@ -1,7 +1,8 @@
-"""Déclaration d'expédition (version minimale de la phase 5).
+"""Mouvement d'expédition d'un lot vers un entrepôt client, avec ses contrôles.
 
-La phase 7 ajoutera les commandes EDI, la préparation FEFO et les bons de livraison ;
-elle s'appuiera sur cette fonction, qui garantit déjà la traçabilité aval (règle 1).
+Créée en phase 5 ; depuis la partie 7b, toute expédition passe par un bon de livraison
+(`ventes/shipping.py`), qui appelle cette fonction pour chaque lot préparé. Elle garantit la
+traçabilité aval (règle 1).
 """
 
 from datetime import date
@@ -60,8 +61,14 @@ def record_shipment(
     quantity: Decimal,
     warehouse: CustomerWarehouse,
     user=None,
+    delivery_date: date | None = None,
+    reference: str = "",
 ) -> StockMovement:
-    """Déclare l'expédition d'une quantité d'un lot vers un entrepôt client."""
+    """Déclare l'expédition d'une quantité d'un lot vers un entrepôt client.
+
+    La DLC minimale de l'enseigne est vérifiée à la date de livraison (décision 6 de la
+    phase 7), ou à la date du jour si elle n'est pas connue.
+    """
     today = timezone.localdate()
     # Relit et verrouille le lot : son statut et son stock sont ceux de cet instant
     lot = Lot.objects.select_for_update().get(pk=lot.pk)
@@ -85,7 +92,7 @@ def record_shipment(
                 f"{lot.number} en {location.code}."
             }
         )
-    check_lot_for_customer(lot, warehouse, today)
+    check_lot_for_customer(lot, warehouse, max(delivery_date or today, today))
 
     return StockMovement.objects.create(
         lot=lot,
@@ -94,6 +101,6 @@ def record_shipment(
         location=location,
         user=user if user is not None and user.is_authenticated else None,
         reason=f"Expédition {warehouse.customer.code} – {warehouse.name}",
-        reference=next_document_number(f"EXP-{today.year}", 5),
+        reference=reference or next_document_number(f"EXP-{today.year}", 5),
         customer_warehouse=warehouse,
     )

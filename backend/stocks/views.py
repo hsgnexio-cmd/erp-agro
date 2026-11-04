@@ -34,6 +34,7 @@ from .serializers import (
     StockMovementSerializer,
     TemperatureReadingSerializer,
     TransferInputSerializer,
+    UnsoldInputSerializer,
 )
 
 QUALITY = [Role.ADMIN, Role.QUALITE]
@@ -99,6 +100,14 @@ class LotViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="destroy")
     def destroy_lot(self, request, pk=None):
         return self._change_status(request, LotStatus.DESTROYED)
+
+    @action(detail=True, methods=["post"])
+    def dispose(self, request, pk=None):
+        """Sortie d'un produit fini invendable (bloqué ou périmé) : don, animaux, destruction."""
+        data = UnsoldInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        lot = services.dispose_unsold(self.get_object(), user=request.user, **data.validated_data)
+        return self._detail(lot)
 
     @action(detail=True, methods=["post"])
     def transfer(self, request, pk=None):

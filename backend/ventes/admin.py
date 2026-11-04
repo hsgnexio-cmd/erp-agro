@@ -5,7 +5,16 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from stocks.admin import ReadOnlyAdminMixin
 
-from .models import CustomerOrder, CustomerOrderLine, EdiMessage, SalePrice
+from .models import (
+    CustomerOrder,
+    CustomerOrderLine,
+    EdiMessage,
+    Pallet,
+    PalletLine,
+    SalePrice,
+    Shipment,
+    ShipmentLine,
+)
 
 
 @admin.register(SalePrice)
@@ -42,3 +51,32 @@ class EdiMessageAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("message_id", "customer", "received_at", "status")
     list_filter = ("status", "customer")
     search_fields = ("message_id",)
+
+
+class ShipmentLineInline(ReadOnlyAdminMixin, admin.TabularInline):
+    model = ShipmentLine
+    extra = 0
+    fields = ("order_line", "lot", "location", "quantity", "fefo_justification", "movement")
+    readonly_fields = fields
+
+
+@admin.register(Shipment)
+class ShipmentAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ("number", "order", "status", "prepared_at", "shipped_at", "carrier")
+    list_filter = ("status",)
+    search_fields = ("number", "order__number", "pallets__sscc")
+    inlines = [ShipmentLineInline]
+
+
+class PalletLineInline(ReadOnlyAdminMixin, admin.TabularInline):
+    model = PalletLine
+    extra = 0
+    fields = ("shipment_line", "quantity")
+    readonly_fields = fields
+
+
+@admin.register(Pallet)
+class PalletAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ("sscc", "shipment", "rank")
+    search_fields = ("sscc", "shipment__number")
+    inlines = [PalletLineInline]
