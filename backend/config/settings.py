@@ -139,4 +139,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "stocks.tasks.daily_checks",
         "schedule": crontab(hour=6, minute=0),
     },
+    # Jours de semaine à 9 h 30 (avant l'heure limite de 11 h) : commandes EDI des enseignes
+    "simulation-edi-commandes": {
+        "task": "ventes.tasks.simulate_edi_orders",
+        "schedule": crontab(hour=9, minute=30, day_of_week="mon-fri"),
+    },
 }
