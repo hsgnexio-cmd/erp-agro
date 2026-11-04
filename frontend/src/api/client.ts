@@ -2,16 +2,34 @@
 
 export class ApiError extends Error {
   status: number
+  /** Corps de la réponse d'erreur (ex. { lines: ["MP-LAI-CREME35 : …"] }) */
+  details: unknown
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, details: unknown = null) {
     super(message)
     this.status = status
+    this.details = details
   }
 }
 
 function getCookie(name: string): string | null {
   const match = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`))
   return match ? decodeURIComponent(match.split('=')[1]) : null
+}
+
+/** Rassemble tous les messages d'une erreur de l'API en une liste lisible. */
+export function errorMessages(error: unknown): string[] {
+  if (!(error instanceof ApiError)) {
+    return [error instanceof Error ? error.message : 'Erreur inattendue.']
+  }
+  const messages: string[] = []
+  const collect = (value: unknown) => {
+    if (typeof value === 'string') messages.push(value)
+    else if (Array.isArray(value)) value.forEach(collect)
+    else if (value && typeof value === 'object') Object.values(value).forEach(collect)
+  }
+  collect(error.details)
+  return messages.length > 0 ? messages : [error.message]
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -31,13 +49,15 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
       response.status === 403
         ? 'Accès refusé par le serveur (erreur 403).'
         : `Erreur du serveur (${response.status}).`
+    let details: unknown = null
     try {
-      const body = await response.json()
-      if (typeof body.detail === 'string') message = body.detail
+      details = await response.json()
+      const detail = (details as { detail?: unknown }).detail
+      if (typeof detail === 'string') message = detail
     } catch {
       // réponse sans JSON : on garde le message par défaut
     }
-    throw new ApiError(response.status, message)
+    throw new ApiError(response.status, message, details)
   }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T

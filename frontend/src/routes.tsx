@@ -5,6 +5,11 @@ import { ArticlesPage } from './pages/ArticlesPage'
 import { CustomersPage } from './pages/CustomersPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { LotsPage } from './pages/LotsPage'
+import { PurchaseOrderDetailPage } from './pages/PurchaseOrderDetailPage'
+import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
+import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
+import { ReceptionFormPage } from './pages/ReceptionFormPage'
 import { SitesPage } from './pages/SitesPage'
 import { SuppliersPage } from './pages/SuppliersPage'
 
@@ -20,6 +25,11 @@ export function AppRoutes() {
         <Route path="fournisseurs" element={<SuppliersPage />} />
         <Route path="clients" element={<CustomersPage />} />
         <Route path="sites" element={<SitesPage />} />
+        <Route path="commandes" element={<PurchaseOrdersPage />} />
+        <Route path="commandes/nouvelle" element={<PurchaseOrderFormPage />} />
+        <Route path="commandes/:id" element={<PurchaseOrderDetailPage />} />
+        <Route path="commandes/:id/reception" element={<ReceptionFormPage />} />
+        <Route path="lots" element={<LotsPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>

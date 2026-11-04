@@ -306,10 +306,150 @@ tr.inactive {
   color: #8a5a00;
 }
 
-.badge-off {
+.badge-off,
+.badge-neutral {
   background: #e5e7eb;
+}
+
+.badge-ok {
+  background: var(--brand-light);
+  color: #1e5128;
+}
+
+.badge-info {
+  background: #dbe8f8;
+  color: #1d4f8a;
+}
+
+.badge-danger {
+  background: #f9dcdc;
+  color: #8a1c1c;
 }
 
 .error {
   color: #8a1c1c;
+}
+
+/* --- Formulaires et actions --- */
+
+.page-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.button {
+  display: inline-block;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  text-decoration: none;
+}
+
+button.secondary {
+  background: #fff;
+  color: var(--brand);
+  border: 1px solid var(--brand);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.form label,
+.reception-line label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form label.checkbox,
+.reception-line label.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.hint {
+  color: var(--muted);
+  margin: 0;
+}
+
+input.qty {
+  width: 7em;
+  text-align: right;
+}
+
+.reception-line {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.reception-line legend {
+  font-weight: 600;
+  padding: 0 0.4rem;
+}
+
+.error-box {
+  background: #fdecec;
+  border: 1px solid #f0b4b4;
+  color: #8a1c1c;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.error-box ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.reception {
+  margin-bottom: 1.5rem;
+}
+
+.reception.nok > p {
+  color: #8a1c1c;
+  font-weight: 600;
+}
+
+td.wrap {
+  white-space: normal;
+  min-width: 14rem;
+}
+
+.reason {
+  display: block;
+  color: #8a1c1c;
+  margin-top: 0.25rem;
 }

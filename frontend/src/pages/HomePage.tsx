@@ -7,6 +7,8 @@ const SECTIONS = [
   { to: '/fournisseurs', title: 'Fournisseurs', text: 'Coordonnées, délais, audits' },
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },
   { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
+  { to: '/commandes', title: 'Commandes', text: 'Commandes fournisseurs et réceptions' },
+  { to: '/lots', title: 'Lots', text: 'Lots reçus, quarantaine, lots bloqués' },
 ]
 
 export function HomePage() {
