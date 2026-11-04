@@ -126,7 +126,7 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
@@ -149,6 +149,13 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 - **Températures** : saisie des relevés des chambres froides. Un écart bloque automatiquement les lots présents et crée une alerte.
 - **Inventaires** : ouverture (les emplacements sont gelés), comptage à l'aveugle, affichage des écarts, validation (les écarts deviennent des mouvements de stock).
 - **Alertes** : chaque matin à 6 h, Celery vérifie la péremption proche, les DLC dépassées (lots bloqués) et les relevés manquants. Le compteur rouge du menu indique les alertes à traiter.
+
+### La production
+
+1. **La production** crée un ordre de fabrication (menu **Production** → **Nouvel OF**) : article, quantité, date, ligne compatible (proposée automatiquement) ou usine pour un semi-fini.
+2. Elle **lance** l'OF, puis **déclare** ce qui a été produit : l'écran pré-remplit les lots à consommer dans l'ordre FEFO ; prendre un autre lot demande une justification.
+3. Chaque déclaration crée un lot fabriqué (en quarantaine) relié aux lots consommés. À la **clôture**, l'OF affiche son rendement matière (objectif 96 %).
+4. Le menu **Planning** montre la semaine ligne par ligne : charge en heures, surcharges, et ordre des allergènes à respecter.
 
 ### La traçabilité et le rappel produit
 

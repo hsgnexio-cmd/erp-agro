@@ -114,7 +114,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 3. Achats et réceptions | Commandes fournisseurs, réception, création des lots, contrôles | Terminée |
 | 4. Stocks et lots | Statuts, mouvements, FEFO, DLC, températures, inventaires | Terminée |
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | Terminée |
-| 6. Production | Ordres de fabrication, consommations, rendements | À faire |
+| 6. Production | Ordres de fabrication, consommations, rendements | Terminée |
 | 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | À faire |
 | 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire |
 
