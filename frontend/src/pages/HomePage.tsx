@@ -11,6 +11,9 @@ const SECTIONS = [
   { to: '/lots', title: 'Lots', text: 'Libération, blocage, transferts, historique' },
   { to: '/stocks', title: 'Stocks', text: 'Stock par article et par site, par statut' },
   { to: '/fefo', title: 'FEFO', text: 'Quels lots utiliser en premier ?' },
+  { to: '/temperatures', title: 'Températures', text: 'Relevés des chambres froides' },
+  { to: '/inventaires', title: 'Inventaires', text: 'Comptage, écarts, ajustements' },
+  { to: '/alertes', title: 'Alertes', text: 'Péremption, températures : à traiter' },
 ]
 
 export function HomePage() {

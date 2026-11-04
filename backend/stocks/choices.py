@@ -16,3 +16,23 @@ class MovementType(models.TextChoices):
     TRANSFER_IN = "transfert_entree", "Transfert (entrée)"
     CORRECTION = "correction", "Correction"
     DESTRUCTION = "destruction", "Destruction"
+    INVENTORY = "inventaire", "Ajustement d'inventaire"
+
+
+class InventoryStatus(models.TextChoices):
+    OPEN = "en_cours", "En cours"
+    VALIDATED = "valide", "Validé"
+    CANCELLED = "annule", "Annulé"
+
+
+class AlertType(models.TextChoices):
+    EXPIRY_SOON = "peremption_proche", "Péremption proche"
+    DLC_PASSED = "dlc_depassee", "DLC dépassée"
+    DDM_PASSED = "ddm_depassee", "DDM dépassée"
+    TEMPERATURE = "ecart_temperature", "Écart de température"
+    MISSING_READING = "releve_manquant", "Relevé de température manquant"
+
+
+class AlertLevel(models.TextChoices):
+    WARNING = "attention", "Attention"
+    CRITICAL = "critique", "Critique"

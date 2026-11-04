@@ -484,3 +484,53 @@ button.danger {
 td.negative {
   color: #8a1c1c;
 }
+
+/* --- Alertes --- */
+
+.count-badge {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-left: 0.35em;
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: #d93025;
+  color: #fff;
+  font-size: 0.8em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.alert-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 5px solid #e0a100;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.alert-card.level-critique {
+  border-left-color: #a12626;
+}
+
+.alert-card header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-card header small {
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.alert-card .resolve {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.alert-card .resolve input {
+  flex: 1 1 240px;
+}

@@ -6,6 +6,7 @@ Toutes les valeurs sensibles sont lues dans les variables d'environnement (fichi
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -131,6 +132,11 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
-# Tâches planifiées (Celery Beat). Vide pour l'instant : les alertes de péremption
-# et les calculs de nuit seront ajoutés dans les phases suivantes.
-CELERY_BEAT_SCHEDULE: dict = {}
+# Tâches planifiées (Celery Beat)
+CELERY_BEAT_SCHEDULE = {
+    # Chaque matin à 6 h : péremption proche, DLC dépassées, relevés de température manquants
+    "verifications-stocks-quotidiennes": {
+        "task": "stocks.tasks.daily_checks",
+        "schedule": crontab(hour=6, minute=0),
+    },
+}

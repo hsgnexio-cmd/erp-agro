@@ -6,6 +6,9 @@ from . import views
 router = DefaultRouter()
 router.register("lots", views.LotViewSet)
 router.register("movements", views.StockMovementViewSet)
+router.register("temperatures", views.TemperatureReadingViewSet)
+router.register("inventories", views.InventoryViewSet)
+router.register("alerts", views.AlertViewSet)
 
 urlpatterns = [
     path("fefo/", views.FefoView.as_view(), name="fefo"),
