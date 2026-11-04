@@ -52,3 +52,7 @@ export const LOT_STATUS_LABELS: Record<string, string> = {
   bloque: 'Bloqué',
   detruit: 'Détruit',
 }
+
+/** SSCC lisible : (00) puis extension, préfixe GS1, numéro de série et clé, comme sur l'étiquette. */
+export const formatSscc = (sscc: string) =>
+  `(00) ${sscc.slice(0, 1)} ${sscc.slice(1, 8)} ${sscc.slice(8, 17)} ${sscc.slice(17)}`

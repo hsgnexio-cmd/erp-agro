@@ -9,11 +9,11 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from referentiel.choices import TemperatureClass
+from referentiel.choices import ArticleType, TemperatureClass
 from referentiel.models import Article, Location, Site, Supplier
 from referentiel.services import next_document_number
 
-from .choices import LotStatus, MovementType
+from .choices import LotStatus, MovementType, UnsoldDestination
 from .models import Lot, LotStatusChange, StockMovement
 
 ZERO = Decimal("0")
@@ -145,8 +145,19 @@ TRANSITIONS: dict[str, set[str]] = {
 
 
 @transaction.atomic
-def change_status(lot: Lot, new_status: str, *, user=None, reason: str = "") -> Lot:
-    """Change le statut d'un lot en respectant les règles, et l'inscrit au journal."""
+def change_status(
+    lot: Lot,
+    new_status: str,
+    *,
+    user=None,
+    reason: str = "",
+    exit_movement_type: str = MovementType.DESTRUCTION,
+) -> Lot:
+    """Change le statut d'un lot en respectant les règles, et l'inscrit au journal.
+
+    À la destruction, le stock restant sort par des mouvements de type `exit_movement_type`
+    (destruction, ou don / alimentation animale pour un invendable).
+    """
     lot = _lock(lot)
     old_status = lot.status
     reason = reason.strip()
@@ -172,7 +183,7 @@ def change_status(lot: Lot, new_status: str, *, user=None, reason: str = "") -> 
         for location, quantity in stock_by_location(lot):
             StockMovement.objects.create(
                 lot=lot,
-                movement_type=MovementType.DESTRUCTION,
+                movement_type=exit_movement_type,
                 quantity=-quantity,
                 location=location,
                 user=_user_or_none(user),
@@ -205,6 +216,62 @@ def block_lot(lot: Lot, *, user=None, reason: str) -> Lot:
 
 def destroy_lot(lot: Lot, *, user=None, reason: str) -> Lot:
     return change_status(lot, LotStatus.DESTROYED, user=user, reason=reason)
+
+
+# --- Invendables -------------------------------------------------------------
+
+UNSOLD_MOVEMENT_TYPES = {
+    UnsoldDestination.DONATION: MovementType.DONATION,
+    UnsoldDestination.ANIMAL_FEED: MovementType.ANIMAL_FEED,
+    UnsoldDestination.DESTRUCTION: MovementType.UNSOLD_DESTRUCTION,
+}
+
+
+@transaction.atomic
+def dispose_unsold(lot: Lot, *, destination: str, reason: str, user=None) -> Lot:
+    """Sort un produit fini invendable (bloqué ou périmé) vers sa destination.
+
+    Tout le stock restant sort par un mouvement propre à la destination (don, alimentation
+    animale, destruction) et le lot passe au statut « détruit », définitif.
+    """
+    lot = _lock(lot)
+    reason = reason.strip()
+    if destination not in UNSOLD_MOVEMENT_TYPES:
+        raise ValidationError(
+            {"destination": "Choisis la destination : don, alimentation animale ou destruction."}
+        )
+    if not reason:
+        raise ValidationError({"reason": "Indique le motif de la sortie en invendable."})
+    if len(reason) > 150:
+        raise ValidationError({"reason": "Motif trop long (150 caractères au maximum)."})
+    if lot.article.article_type != ArticleType.FINISHED_PRODUCT:
+        raise ValidationError(
+            f"Le lot {lot.number} n'est pas un produit fini : seuls les produits finis sortent "
+            "en invendable (une matière se détruit depuis sa fiche lot)."
+        )
+    if lot.status == LotStatus.DESTROYED:
+        raise ValidationError(f"Le lot {lot.number} est déjà sorti du stock (détruit).")
+    expired = is_expired(lot)
+    if lot.status != LotStatus.BLOCKED and not expired:
+        raise ValidationError(
+            f"Le lot {lot.number} est {lot.get_status_display().lower()} et encore dans sa date : "
+            "seul un lot bloqué ou périmé sort en invendable."
+        )
+    if not stock_by_location(lot):
+        raise ValidationError(f"Le lot {lot.number} n'a plus de stock.")
+
+    label = UnsoldDestination(destination).label
+    full_reason = f"Invendable – {label} : {reason}"
+    if lot.status != LotStatus.BLOCKED:
+        # Un lot périmé encore libéré ou en quarantaine est d'abord bloqué (journal des statuts)
+        lot = change_status(lot, LotStatus.BLOCKED, user=user, reason=f"Périmé – {full_reason}")
+    return change_status(
+        lot,
+        LotStatus.DESTROYED,
+        user=user,
+        reason=full_reason,
+        exit_movement_type=UNSOLD_MOVEMENT_TYPES[destination],
+    )
 
 
 # --- Mouvements (règle 11) --------------------------------------------------

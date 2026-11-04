@@ -126,7 +126,7 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning, ventes, EDI |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning, ventes, EDI, préparation et expédition, taux de service |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
@@ -167,6 +167,13 @@ Simuler tout de suite les commandes EDI du jour :
 ```powershell
 docker compose exec backend python manage.py simuler_edi
 ```
+
+### La préparation et l'expédition
+
+1. **Le magasinier** ouvre une commande reçue (menu **Ventes**) et clique sur **Préparer**. L'écran propose les lots de la plateforme PFN dans l'ordre FEFO, en écartant ceux dont la DLC est trop courte pour l'enseigne **à la date de livraison demandée** (ex. 70 % de la durée de vie). Prendre un autre lot demande une justification. Ce qui manque est une **rupture** : il n'y a pas de reliquat. La préparation crée un **bon de livraison** `BL-…`, sans encore toucher au stock.
+2. Sur le bon de livraison (menu **Expéditions**), il saisit le **transporteur** et la **température au chargement**, puis clique sur **Expédier** : les mouvements de stock sont créés, la marchandise est répartie sur des **palettes de 720 unités** identifiées par un **SSCC** (étiquettes imprimables). Au-dessus de 4 °C, l'expédition est **refusée**, les lots sont bloqués et une alerte critique est créée.
+3. Le menu **Taux de service** montre, par enseigne, la part livrée complète et à l'heure (expédiée au plus tard la veille de la livraison). Sous l'objectif de 98,5 %, le taux s'affiche en rouge, avec la liste des commandes à expliquer.
+4. **La qualité** sort un produit fini bloqué ou périmé en **invendable** (fiche lot → **Sortir en invendable**) : don à une association, alimentation animale ou destruction.
 
 ### La traçabilité et le rappel produit
 

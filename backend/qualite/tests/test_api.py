@@ -54,9 +54,9 @@ def test_lot_inconnu(api_client_for, db):
     assert "introuvable" in response.json()["lot"][0]
 
 
-@pytest.mark.parametrize(("role", "expected"), [("magasinier", 201), ("commercial", 403)])
-def test_seul_le_magasinier_declare_une_expedition(api_client_for, chain, role, expected):
-    response = api_client_for(role).post(
+def test_l_expedition_directe_n_existe_plus(api_client_for, chain):
+    """Depuis la partie 7b, toute expédition passe par la préparation d'une commande client."""
+    response = api_client_for("magasinier").post(
         "/api/ventes/shipments/",
         {
             "lot": chain["lasagna"].id,
@@ -66,7 +66,7 @@ def test_seul_le_magasinier_declare_une_expedition(api_client_for, chain, role, 
         },
         format="json",
     )
-    assert response.status_code == expected
+    assert response.status_code == 405
 
 
 def test_allergenes_par_l_api(api_client_for, chain, finished_product, cream):

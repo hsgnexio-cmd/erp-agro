@@ -185,3 +185,152 @@ class CustomerOrderLine(models.Model):
         if self.unit_price is None:
             return None
         return (self.quantity * self.unit_price).quantize(Decimal("0.01"))
+
+
+# --- Préparation et expédition (partie 7b) ---------------------------------------------
+
+
+class ShipmentStatus(models.TextChoices):
+    PREPARED = "preparee", "Préparée"
+    SHIPPED = "expediee", "Expédiée"
+    REFUSED = "refusee", "Refusée (température)"
+    CANCELLED = "annulee", "Préparation annulée"
+
+
+# Une commande n'a qu'un seul bon de livraison en cours ou expédié (pas de reliquat)
+OPEN_SHIPMENT_STATUSES = [ShipmentStatus.PREPARED, ShipmentStatus.SHIPPED]
+
+
+class Shipment(models.Model):
+    """Bon de livraison : préparation (lots choisis), puis expédition (mouvements de stock)."""
+
+    number = models.CharField("numéro", max_length=20, unique=True)
+    order = models.ForeignKey(
+        CustomerOrder, on_delete=models.PROTECT, related_name="shipments", verbose_name="commande"
+    )
+    status = models.CharField(
+        "statut", max_length=20, choices=ShipmentStatus.choices, default=ShipmentStatus.PREPARED
+    )
+    prepared_at = models.DateTimeField("préparé le", auto_now_add=True)
+    prepared_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="prepared_shipments",
+        null=True,
+        blank=True,
+        verbose_name="préparé par",
+    )
+    carrier = models.CharField("transporteur", max_length=100, blank=True)
+    loading_temperature = models.DecimalField(
+        "température au chargement (°C)", max_digits=4, decimal_places=1, null=True, blank=True
+    )
+    shipped_at = models.DateTimeField("expédié (ou contrôlé) le", null=True, blank=True)
+    shipped_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="shipped_shipments",
+        null=True,
+        blank=True,
+        verbose_name="expédié (ou contrôlé) par",
+    )
+    refusal_reason = models.TextField("motif du refus ou de l'annulation", blank=True)
+
+    class Meta:
+        ordering = ["-prepared_at", "-id"]
+        verbose_name = "bon de livraison"
+        verbose_name_plural = "bons de livraison"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order"],
+                condition=models.Q(status__in=OPEN_SHIPMENT_STATUSES),
+                name="one_open_shipment_per_order",
+                violation_error_message="Cette commande a déjà un bon de livraison en cours.",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.number} – {self.order.number}"
+
+
+class ShipmentLine(models.Model):
+    """Lot préparé pour une ligne de commande."""
+
+    shipment = models.ForeignKey(
+        Shipment, on_delete=models.PROTECT, related_name="lines", verbose_name="bon de livraison"
+    )
+    order_line = models.ForeignKey(
+        CustomerOrderLine,
+        on_delete=models.PROTECT,
+        related_name="shipment_lines",
+        verbose_name="ligne de commande",
+    )
+    lot = models.ForeignKey(
+        "stocks.Lot", on_delete=models.PROTECT, related_name="shipment_lines", verbose_name="lot"
+    )
+    location = models.ForeignKey(
+        "referentiel.Location",
+        on_delete=models.PROTECT,
+        related_name="shipment_lines",
+        verbose_name="emplacement",
+    )
+    quantity = models.DecimalField("quantité", max_digits=12, decimal_places=3)
+    fefo_justification = models.CharField("justification hors FEFO", max_length=200, blank=True)
+    movement = models.OneToOneField(
+        "stocks.StockMovement",
+        on_delete=models.PROTECT,
+        related_name="shipment_line",
+        null=True,
+        blank=True,
+        verbose_name="mouvement d'expédition",
+    )
+
+    class Meta:
+        ordering = ["shipment", "id"]
+        verbose_name = "ligne préparée"
+        verbose_name_plural = "lignes préparées"
+
+    def __str__(self) -> str:
+        return f"{self.lot.number} × {self.quantity}"
+
+
+class Pallet(models.Model):
+    """Palette expédiée, identifiée par son SSCC (norme GS1, 18 chiffres)."""
+
+    shipment = models.ForeignKey(
+        Shipment, on_delete=models.PROTECT, related_name="pallets", verbose_name="bon de livraison"
+    )
+    sscc = models.CharField("SSCC", max_length=18, unique=True)
+    rank = models.PositiveSmallIntegerField("rang")
+
+    class Meta:
+        ordering = ["shipment", "rank"]
+        verbose_name = "palette"
+        verbose_name_plural = "palettes"
+
+    def __str__(self) -> str:
+        return self.sscc
+
+    @property
+    def total_quantity(self) -> Decimal:
+        return sum((line.quantity for line in self.lines.all()), Decimal("0"))
+
+
+class PalletLine(models.Model):
+    pallet = models.ForeignKey(
+        Pallet, on_delete=models.PROTECT, related_name="lines", verbose_name="palette"
+    )
+    shipment_line = models.ForeignKey(
+        ShipmentLine,
+        on_delete=models.PROTECT,
+        related_name="pallet_lines",
+        verbose_name="ligne préparée",
+    )
+    quantity = models.DecimalField("quantité", max_digits=12, decimal_places=3)
+
+    class Meta:
+        ordering = ["pallet", "id"]
+        verbose_name = "contenu de palette"
+        verbose_name_plural = "contenus de palettes"
+
+    def __str__(self) -> str:
+        return f"{self.pallet.sscc} : {self.shipment_line.lot.number} × {self.quantity}"

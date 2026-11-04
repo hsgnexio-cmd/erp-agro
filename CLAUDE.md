@@ -43,7 +43,7 @@ erp-agro/
 ├── README.md
 ├── docker-compose.yml
 ├── .env.example
-├── docs/            # fiche entreprise, règles métier, décisions, guides
+├── docs/            # fiche-entreprise.md, decisions.md, prochaine-etape.md
 ├── backend/         # projet Django, une app par module
 │   ├── referentiel/
 │   ├── achats/
@@ -94,16 +94,34 @@ Ces règles doivent être appliquées **dans le back-end** (modèles et services
 - Chaque nouvelle règle métier = au moins un test.
 - Petits commits, messages clairs en français : `stocks: ajout du calcul FEFO`.
 
+Conventions adoptées en cours de route (détail et raisons dans `docs/decisions.md`) :
+
+- **Aucune voie de contournement** : les modèles du référentiel héritent de `ValidatedModel` (validation complète à chaque enregistrement) ; les opérations passent par des fonctions métier qui relisent et verrouillent le lot (`select_for_update`).
+- **Logique métier** : `services.py`, ou un module dédié quand il devient long (`stocks/monitoring.py`, `stocks/inventory.py`, `production/orders.py`, `production/planning.py`, `ventes/orders.py`, `ventes/edi.py`, `ventes/shipping.py`).
+- **Enregistrements jamais modifiés ni supprimés** : mouvements de stock, journal des statuts de lot, relevés de température, rappels ; une alerte se marque « traitée ». Les documents d'opération (commandes, réceptions, lots, OF, inventaires) sont en lecture seule dans l'administration.
+- **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `BL-` (et `EXP-` pour les expéditions de la phase 5) ; série `SSCC` pour les palettes.
+- **Droits** : `comptes.permissions.WriteRolesPermission` + attribut `write_roles` de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
+- **API** : les décimaux sont renvoyés en texte ; une `ValidationError` Django devient une réponse 400 lisible (`config/exceptions.py`).
+- **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui.
+- **Front-end** : hook `useApi`, droits dans `auth/roles.ts`, tests avec `mockApi` / `renderApp` (`src/test/utils.tsx`).
+
 ## 7. Façon de travailler
 
-1. Lire `CLAUDE.md` et les documents de `docs/` concernés par la tâche.
-2. Présenter un plan court, attendre la validation.
+1. Lire `CLAUDE.md`, **`docs/prochaine-etape.md`** (où reprendre) et les documents de `docs/` concernés par la tâche.
+2. Présenter un plan court, avec les décisions métier à valider, et attendre la validation.
 3. Développer par petites étapes, en lançant les tests.
-4. Vérifier que tout fonctionne (tests verts, application qui démarre).
+4. Vérifier que tout fonctionne (tests verts, application qui démarre, écrans vérifiés dans le navigateur).
 5. Faire un commit Git, puis résumer en français ce qui a été fait.
-6. Mettre à jour la documentation (`docs/`, `README.md`) si quelque chose a changé.
+6. Mettre à jour la documentation (`docs/decisions.md`, `README.md`, statut des phases ci-dessous).
 
 Ne jamais : supprimer des données ou des fichiers sans demander, modifier une règle métier sans validation, ajouter une dépendance lourde sans expliquer pourquoi.
+
+### Organisation Git et vérifications
+
+- Une branche par phase ou partie de phase (`phase-7b-expedition`…), petits commits, envoi sur GitHub, puis **Nicolas** crée et fusionne la pull request (rappeler de cliquer deux fois sur « Create pull request »). Ensuite : mettre `main` à jour en local et supprimer la branche fusionnée.
+- Une phase trop grosse se découpe en deux parties (4a/4b, 7a/7b), chacune avec sa pull request.
+- Tests : `docker compose exec backend pytest` (≈ 5 min) et `docker compose exec frontend npm test` ; lint `ruff` et `npm run lint` ; GitHub Actions relance tout à chaque envoi.
+- Vérification dans le navigateur : Nicolas est souvent connecté avec son propre compte ; ne jamais le déconnecter ni agir avec son compte. Pour agir, utiliser le compte de test `test-verif` (le réactiver avec un mot de passe aléatoire, puis le désactiver ; il ne peut pas être supprimé car il a fait des mouvements de stock).
 
 ## 8. Phases du projet
 
@@ -115,11 +133,21 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 4. Stocks et lots | Statuts, mouvements, FEFO, DLC, températures, inventaires | Terminée |
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | Terminée |
 | 6. Production | Ordres de fabrication, consommations, rendements | Terminée |
-| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | En cours (7a terminée : tarifs, commandes, EDI simulé ; reste 7b : préparation FEFO, SSCC, expédition, taux de service, invendables) |
-| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire |
+| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | Terminée (7a : tarifs, commandes, EDI simulé ; 7b : préparation FEFO, SSCC, expédition, taux de service, invendables) |
+| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire (plan dans `docs/prochaine-etape.md`) |
 
 Mettre à jour la colonne Statut à la fin de chaque phase.
 
 ## 9. Rôles utilisateurs
 
 `admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`. Chaque rôle n'accède qu'aux écrans et actions de son métier ; seul le rôle `qualite` peut libérer ou bloquer un lot.
+
+Précisions décidées en cours de route : le rôle `admin` peut tout faire, y compris libérer ou bloquer ; l'ERP bloque aussi **automatiquement** un lot (contrôle à réception non conforme, écart de température, DLC dépassée, rappel produit). Tous les rôles consultent tout ; `direction` ne modifie rien.
+
+| Rôle | Actions principales |
+| --- | --- |
+| `acheteur` | Commandes fournisseurs, tarifs d'achat, fournisseurs |
+| `magasinier` | Réceptions, transferts, corrections, inventaires, relevés de température, alertes, préparation et expédition |
+| `production` | Ordres de fabrication et déclarations, articles, recettes, nomenclatures, lignes |
+| `qualite` | Statuts des lots, invendables, allergènes, rappels, relevés de température, alertes, articles et nomenclatures |
+| `commercial` | Commandes clients, tarifs de vente, EDI, enseignes et entrepôts |

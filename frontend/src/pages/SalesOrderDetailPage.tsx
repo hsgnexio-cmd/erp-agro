@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { apiPost, errorMessages } from '../api/client'
 import type { CustomerOrderDetail } from '../api/sales'
 import { useAuth } from '../auth/context'
-import { SALES_ROLES, hasRole } from '../auth/roles'
+import { SALES_ROLES, WAREHOUSE_ROLES, hasRole } from '../auth/roles'
 import { ErrorList } from '../components/ErrorList'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatDate, formatDateTime, formatDecimal, formatMoney } from '../format'
@@ -42,12 +42,31 @@ export function SalesOrderDetailPage() {
         </h1>
         <StatusBadge status={o.status} label={o.status_label} />
       </div>
-      {hasRole(user, SALES_ROLES) && o.status === 'recue' && (
+      {o.status === 'recue' && (
         <div className="actions">
-          <button type="button" className="danger" onClick={() => void cancel()}>
-            Annuler la commande
-          </button>
+          {hasRole(user, WAREHOUSE_ROLES) && (
+            <Link to={`/ventes/${o.id}/preparation`} className="button">
+              Préparer
+            </Link>
+          )}
+          {hasRole(user, SALES_ROLES) && (
+            <button type="button" className="danger" onClick={() => void cancel()}>
+              Annuler la commande
+            </button>
+          )}
         </div>
+      )}
+      {o.shipments.length > 0 && (
+        <p>
+          Bons de livraison :{' '}
+          {o.shipments.map((shipment, index) => (
+            <span key={shipment.id}>
+              {index > 0 && ' · '}
+              <Link to={`/expeditions/${shipment.id}`}>{shipment.number}</Link>{' '}
+              <StatusBadge status={shipment.status} label={shipment.status_label} />
+            </span>
+          ))}
+        </p>
       )}
       <ErrorList messages={errors} />
 
@@ -88,6 +107,7 @@ export function SalesOrderDetailPage() {
               <th>Produit</th>
               <th>Désignation</th>
               <th className="num">Quantité</th>
+              {o.status === 'expediee' && <th className="num">Livré</th>}
               <th className="num">Prix HT</th>
               <th className="num">Montant HT</th>
             </tr>
@@ -98,6 +118,17 @@ export function SalesOrderDetailPage() {
                 <td>{line.article_code}</td>
                 <td>{line.article_name}</td>
                 <td className="num">{formatDecimal(line.quantity)} u</td>
+                {o.status === 'expediee' && (
+                  <td className="num">
+                    {formatDecimal(line.shipped_quantity)} u
+                    {Number(line.shipped_quantity) < Number(line.quantity) && (
+                      <>
+                        {' '}
+                        <span className="badge badge-danger">rupture</span>
+                      </>
+                    )}
+                  </td>
+                )}
                 <td className="num">
                   {line.to_be_priced ? (
                     <span className="badge badge-warn">à valoriser</span>
@@ -111,7 +142,12 @@ export function SalesOrderDetailPage() {
           </tbody>
         </table>
       </div>
-      <p className="hint">La préparation FEFO et l'expédition arrivent avec la partie 7b.</p>
+      {o.status === 'recue' && (
+        <p className="hint">
+          Préparation en deux temps : « Préparer » choisit les lots (FEFO, DLC minimale de
+          l'enseigne), puis le bon de livraison permet d'expédier (transporteur, température).
+        </p>
+      )}
     </section>
   )
 }

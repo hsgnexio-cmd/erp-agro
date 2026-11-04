@@ -7,6 +7,7 @@ from referentiel.demo_data import load_demo_data as load_referential
 from stocks.demo_data import load_demo_data as load_stocks
 from stocks.demo_monitoring import load_demo_data as load_monitoring
 from ventes.demo_data import load_demo_data as load_sales
+from ventes.demo_shipping import load_demo_data as load_shipping
 
 
 class Command(BaseCommand):
@@ -21,6 +22,7 @@ class Command(BaseCommand):
             ("Traçabilité", load_traceability),
             ("Production", load_production),
             ("Ventes", load_sales),
+            ("Expéditions", load_shipping),
         ):
             counts = loader()
             self.stdout.write(self.style.SUCCESS(f"{title} :"))

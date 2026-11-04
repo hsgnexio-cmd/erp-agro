@@ -1,5 +1,8 @@
-"""API des ventes : /api/ventes/… (tarifs, commandes clients, EDI, expéditions)."""
+"""API des ventes : /api/ventes/… (tarifs, commandes clients, EDI, préparation, expéditions)."""
 
+from datetime import timedelta
+
+from django.db.models import Prefetch
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import mixins, status, viewsets
@@ -12,23 +15,28 @@ from rest_framework.views import APIView
 from comptes.permissions import WriteRolesPermission
 from comptes.roles import Role
 from referentiel.models import Customer
-from stocks.choices import MovementType
-from stocks.models import StockMovement
 
-from . import edi, orders, services
-from .models import CustomerOrder, EdiMessage, SalePrice
+from . import edi, orders, shipping
+from .models import CustomerOrder, CustomerOrderLine, EdiMessage, SalePrice, Shipment
 from .serializers import (
+    CancelPreparationInputSerializer,
     CustomerOrderDetailSerializer,
     CustomerOrderInputSerializer,
     CustomerOrderSerializer,
     EdiMessageSerializer,
+    PrepareInputSerializer,
     SalePriceSerializer,
-    ShipmentInputSerializer,
+    ShipInputSerializer,
+    ShipmentDetailSerializer,
     ShipmentSerializer,
 )
 
 SALES = [Role.ADMIN, Role.COMMERCIAL]
 WAREHOUSE = [Role.ADMIN, Role.MAGASINIER]
+
+
+def _dec(value) -> str | None:
+    return None if value is None else str(value)
 
 
 class SalePriceViewSet(viewsets.ModelViewSet):
@@ -41,15 +49,37 @@ class SalePriceViewSet(viewsets.ModelViewSet):
     search_fields = ["article__code", "article__name"]
 
 
+SHIPMENT_QUERYSET = Shipment.objects.select_related(
+    "order__customer", "order__warehouse", "prepared_by", "shipped_by"
+).prefetch_related(
+    "lines__lot__article",
+    "lines__location",
+    "pallets__lines__shipment_line__lot__article",
+    "order__lines__article",
+)
+
+
 class CustomerOrderViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     queryset = CustomerOrder.objects.select_related(
         "customer", "warehouse", "edi_message", "created_by"
-    ).prefetch_related("lines__article")
+    ).prefetch_related(
+        Prefetch(
+            "lines",
+            queryset=CustomerOrderLine.objects.select_related("article", "order").prefetch_related(
+                "shipment_lines__shipment"
+            ),
+        ),
+        "shipments",
+    )
     permission_classes = [WriteRolesPermission]
-    write_roles = SALES
     filterset_fields = ["status", "customer", "customer__code", "source", "requested_delivery_date"]
     search_fields = ["number", "customer_reference", "customer__name"]
     ordering_fields = ["received_at", "requested_delivery_date"]
+
+    @property
+    def write_roles(self):
+        # Le commercial saisit et annule les commandes ; le magasinier les prépare
+        return WAREHOUSE if self.action == "prepare" else SALES
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -71,6 +101,67 @@ class CustomerOrderViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSe
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         return self._detail(orders.cancel_order(self.get_object()))
+
+    @action(detail=True, url_path="picking-proposal")
+    def picking_proposal(self, request, pk=None):
+        """Lots proposés en FEFO pour chaque ligne, hors lots trop courts pour l'enseigne."""
+        order = self.get_object()
+        rows = []
+        for row in shipping.picking_proposal(order):
+            line = row["order_line"]
+            rows.append(
+                {
+                    "order_line": line.id,
+                    "article": line.article_id,
+                    "article_code": line.article.code,
+                    "article_name": line.article.name,
+                    "unit": line.article.unit,
+                    "ordered": str(line.quantity),
+                    "min_expiry_date": row["min_expiry_date"],
+                    "missing": str(row["missing"]),
+                    "lots": [
+                        {
+                            "lot": item.lot.id,
+                            "lot_number": item.lot.number,
+                            "expiry_date": item.lot.expiry_date,
+                            "location": item.location.id,
+                            "location_code": item.location.code,
+                            "available": str(item.available),
+                            "suggested": str(item.suggested),
+                        }
+                        for item in row["lots"]
+                    ],
+                    "too_short": [
+                        {
+                            "lot_number": item.lot.number,
+                            "expiry_date": item.lot.expiry_date,
+                            "location_code": item.location.code,
+                            "available": str(item.available),
+                        }
+                        for item in row["too_short"]
+                    ],
+                }
+            )
+        return Response(
+            {
+                "order": order.id,
+                "requested_delivery_date": order.requested_delivery_date,
+                "min_remaining_shelf_life_pct": str(order.customer.min_remaining_shelf_life_pct),
+                "lines": rows,
+            }
+        )
+
+    @action(detail=True, methods=["post"])
+    def prepare(self, request, pk=None):
+        data = PrepareInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        shipment = shipping.prepare_order(
+            self.get_object(), lines=data.validated_data["lines"], user=request.user
+        )
+        return Response(
+            ShipmentDetailSerializer(SHIPMENT_QUERYSET.get(pk=shipment.pk)).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class OrderableArticlesView(APIView):
@@ -123,22 +214,103 @@ class EdiMessageViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(EdiMessageSerializer(message).data, status=201)
 
 
-# --- Expéditions (minimales, phase 5 ; la préparation viendra en 7b) -------------------
+class ShipmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Bons de livraison. Ils naissent de la préparation d'une commande client."""
 
-
-class ShipmentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
-    queryset = StockMovement.objects.filter(movement_type=MovementType.SHIPMENT).select_related(
-        "lot__article", "customer_warehouse__customer"
-    )
+    queryset = SHIPMENT_QUERYSET
     permission_classes = [WriteRolesPermission]
     write_roles = WAREHOUSE
-    filterset_fields = ["lot", "customer_warehouse", "customer_warehouse__customer__code"]
+    filterset_fields = ["status", "order", "order__customer__code"]
+    search_fields = ["number", "order__number", "pallets__sscc"]
+    ordering_fields = ["prepared_at", "shipped_at"]
 
     def get_serializer_class(self):
-        return ShipmentInputSerializer if self.action == "create" else ShipmentSerializer
+        return ShipmentSerializer if self.action == "list" else ShipmentDetailSerializer
 
-    def create(self, request, *args, **kwargs):
-        data = ShipmentInputSerializer(data=request.data)
+    def _detail(self, shipment) -> Response:
+        return Response(ShipmentDetailSerializer(self.get_queryset().get(pk=shipment.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def ship(self, request, pk=None):
+        data = ShipInputSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        movement = services.record_shipment(user=request.user, **data.validated_data)
-        return Response(ShipmentSerializer(movement).data, status=status.HTTP_201_CREATED)
+        shipment = shipping.ship_order(
+            self.get_object(),
+            carrier=data.validated_data["carrier"],
+            temperature=data.validated_data["temperature"],
+            user=request.user,
+        )
+        return self._detail(shipment)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        data = CancelPreparationInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        shipment = shipping.cancel_preparation(
+            self.get_object(), reason=data.validated_data["reason"], user=request.user
+        )
+        return self._detail(shipment)
+
+
+class ServiceRateView(APIView):
+    """Taux de service par enseigne, sur les livraisons d'une période (par défaut : de J-29 à
+    J+7, car les commandes livrées demain sont souvent déjà expédiées)."""
+
+    permission_classes = [WriteRolesPermission]
+
+    def get(self, request: Request) -> Response:
+        today = timezone.localdate()
+        end = parse_date(request.query_params.get("end", "")) or today + timedelta(days=7)
+        start = parse_date(request.query_params.get("start", "")) or today - timedelta(days=29)
+        if start > end:
+            raise ValidationError({"start": ["La date de début est après la date de fin."]})
+        customer = None
+        if request.query_params.get("customer"):
+            customer = Customer.objects.filter(pk=request.query_params["customer"]).first()
+            if customer is None:
+                raise ValidationError({"customer": ["Enseigne introuvable."]})
+        report = shipping.service_rate(start=start, end=end, customer=customer)
+
+        def row(data: dict) -> dict:
+            return {
+                "ordered": str(data["ordered"]),
+                "on_time": str(data["on_time"]),
+                "late": str(data["late"]),
+                "missing": str(data["missing"]),
+                "orders": data["orders"],
+                "perfect_orders": data["perfect_orders"],
+                "pending_orders": data["pending_orders"],
+                "rate": _dec(data["rate"]),
+                "below_target": data["below_target"],
+            }
+
+        return Response(
+            {
+                "start": report["start"],
+                "end": report["end"],
+                "target": str(report["target"]),
+                "customers": [
+                    {
+                        "customer": data["customer"].id,
+                        "customer_code": data["customer"].code,
+                        "customer_name": data["customer"].name,
+                        **row(data),
+                    }
+                    for data in report["customers"]
+                ],
+                "total": row(report["total"]),
+                "issues": [
+                    {
+                        "order": issue["order"].id,
+                        "order_number": issue["order"].number,
+                        "customer_code": issue["order"].customer.code,
+                        "requested_delivery_date": issue["order"].requested_delivery_date,
+                        "problem": issue["problem"],
+                        "ordered": str(issue["ordered"]),
+                        "delivered": str(issue["delivered"]),
+                        "shipped_at": issue["shipped_at"],
+                    }
+                    for issue in report["issues"]
+                ],
+            }
+        )

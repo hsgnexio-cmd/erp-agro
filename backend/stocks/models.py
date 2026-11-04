@@ -106,7 +106,7 @@ class StockMovement(models.Model):
     lot = models.ForeignKey(
         Lot, on_delete=models.PROTECT, related_name="movements", verbose_name="lot"
     )
-    movement_type = models.CharField("type", max_length=20, choices=MovementType.choices)
+    movement_type = models.CharField("type", max_length=30, choices=MovementType.choices)
     quantity = models.DecimalField(
         "quantité",
         max_digits=14,

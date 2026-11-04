@@ -20,6 +20,18 @@ class MovementType(models.TextChoices):
     PRODUCTION = "fabrication", "Entrée de fabrication"
     CONSUMPTION = "consommation", "Consommation en fabrication"
     SHIPMENT = "expedition", "Expédition client"
+    # Sorties d'invendables (produits finis bloqués ou périmés)
+    DONATION = "don", "Don à une association (invendable)"
+    ANIMAL_FEED = "alimentation_animale", "Alimentation animale (invendable)"
+    UNSOLD_DESTRUCTION = "destruction_invendable", "Destruction (invendable)"
+
+
+class UnsoldDestination(models.TextChoices):
+    """Destination d'un invendable : chacune a son type de mouvement de sortie."""
+
+    DONATION = "don", "Don à une association"
+    ANIMAL_FEED = "alimentation_animale", "Alimentation animale"
+    DESTRUCTION = "destruction", "Destruction"
 
 
 class InventoryStatus(models.TextChoices):
@@ -35,6 +47,7 @@ class AlertType(models.TextChoices):
     TEMPERATURE = "ecart_temperature", "Écart de température"
     MISSING_READING = "releve_manquant", "Relevé de température manquant"
     LOW_YIELD = "rendement_faible", "Rendement matière faible"
+    SHIPPING_TEMPERATURE = "temperature_expedition", "Température à l'expédition"
 
 
 class AlertLevel(models.TextChoices):
