@@ -15,6 +15,11 @@ import { StockPage } from './pages/StockPage'
 import { RecallDetailPage, RecallsPage } from './pages/RecallsPage'
 import { RecallSimulationPage } from './pages/RecallSimulationPage'
 import { TraceabilityPage } from './pages/TraceabilityPage'
+import { DeclarationPage } from './pages/DeclarationPage'
+import { PlanningPage } from './pages/PlanningPage'
+import { ProductionOrderDetailPage } from './pages/ProductionOrderDetailPage'
+import { ProductionOrderFormPage } from './pages/ProductionOrderFormPage'
+import { ProductionOrdersPage } from './pages/ProductionOrdersPage'
 import { PurchaseOrderDetailPage } from './pages/PurchaseOrderDetailPage'
 import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
@@ -51,6 +56,11 @@ export function AppRoutes() {
         <Route path="rappels" element={<RecallsPage />} />
         <Route path="rappels/simulation" element={<RecallSimulationPage />} />
         <Route path="rappels/:id" element={<RecallDetailPage />} />
+        <Route path="production" element={<ProductionOrdersPage />} />
+        <Route path="production/nouveau" element={<ProductionOrderFormPage />} />
+        <Route path="production/:id" element={<ProductionOrderDetailPage />} />
+        <Route path="production/:id/declaration" element={<DeclarationPage />} />
+        <Route path="planning" element={<PlanningPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>

@@ -596,3 +596,35 @@ ul.allergens {
   margin: 0;
   padding-left: 1.1rem;
 }
+
+/* --- Planning de production --- */
+
+table.planning th,
+table.planning td {
+  white-space: normal;
+  vertical-align: top;
+  min-width: 9rem;
+}
+
+.planning-cell.has-warning {
+  background: #fff7e6;
+}
+
+.planning-order {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  margin-bottom: 0.3rem;
+  background: #fff;
+}
+
+.planning-load {
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.planning-warning {
+  margin-top: 0.3rem;
+  font-size: 0.8em;
+  color: #8a5a00;
+}
