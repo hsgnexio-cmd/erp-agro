@@ -22,12 +22,12 @@ Ce document garde la trace des choix faits et de leurs raisons, phase par phase.
 | Codes entrepôts clients `ENS1-E01` et emplacements `NAN-CF-MP` | Le code commence toujours par l'enseigne ou le site : lisible et vérifié. |
 | Type de date (DLC/DDM) porté par la catégorie de matière | Règle 3 : `SEC` et `SUR` en DDM, le frais en DLC. Semi-finis et produits finis toujours en DLC. |
 | Allergènes saisis seulement sur les matières premières | Règle 8 : ceux des recettes seront calculés à partir des nomenclatures (phase 5). Seuls `qualite` et `admin` les modifient. |
-| Une nomenclature par article (pas de versions pour l'instant) | Suffisant pour démarrer ; l'historique garde les anciennes valeurs. Les versions datées pourront venir en phase 6. |
+| Une nomenclature par article (pas de versions pour l'instant) | Suffisant pour démarrer ; l'historique garde les anciennes valeurs. Les versions datées n'ont pas été faites en phase 6 : voir « Points en suspens ». |
 | Taux de perte sur chaque ligne de nomenclature | Exemple de la fiche : bœuf haché −25 % à la cuisson. Quantité brute = nette / (1 − perte). |
 | Toutes les règles vérifiées à chaque enregistrement (`ValidatedModel`) | Aucune voie de contournement : API, administration ou script passent par les mêmes contrôles. |
 | Historique avec django-simple-history | Règle 12 (audit IFS / BRCGS) : qui, quand, avant/après, pour chaque table du référentiel. |
 | Pas de suppression par l'API ; suppression dans l'administration réservée au rôle `admin` | On désactive (« actif ») plutôt que de supprimer. Une donnée utilisée ailleurs est protégée par la base. |
-| Saisie dans l'administration Django, écrans React en lecture | Garde la phase à une taille raisonnable ; les formulaires React viendront plus tard. |
+| Saisie dans l'administration Django, écrans React en lecture | Garde la phase à une taille raisonnable. Les opérations quotidiennes (commandes, réceptions, lots, OF, inventaires, ventes) ont ensuite eu leurs écrans React ; le référentiel se saisit toujours dans l'administration. |
 | Lignes de production (L1–L9) reportées en phase 6, prix d'achat en phase 3 | Hors du périmètre du référentiel tel que défini dans CLAUDE.md. |
 
 ### Droits de modification
@@ -196,3 +196,42 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | --- | --- |
 | Saisir, annuler une commande ; saisir les tarifs de vente ; simuler ou déposer un message EDI | `admin`, `commercial` |
 | Consulter commandes, tarifs, messages EDI | tous les rôles |
+
+## Conventions techniques transverses
+
+Règles de fonctionnement prises en cours de route, valables pour tous les modules.
+
+| Convention | Où | Raison |
+| --- | --- | --- |
+| `ValidatedModel` : validation complète (`full_clean`) à chaque enregistrement | `referentiel/models.py` | Les règles s'appliquent quel que soit le chemin (API, administration, script, données de démo). |
+| Les opérations relisent et verrouillent le lot (`select_for_update`) | `stocks/services.py`, `production/services.py`, `ventes/services.py` | Statut et stock lus à l'instant de l'opération ; deux personnes ne modifient pas le même lot en même temps. |
+| Enregistrements jamais modifiés ni supprimés | `StockMovement`, `LotStatusChange`, `TemperatureReading`, `ProductRecall`, `Alert` (marquée traitée) | Preuves pour les audits IFS / BRCGS (règles 11 et 12). |
+| Documents d'opération en lecture seule dans l'administration | `ReadOnlyAdminMixin` (`stocks/admin.py`) | Commandes, réceptions, lots, OF, inventaires, rappels, commandes clients naissent des opérations de l'application, qui appliquent les règles. |
+| Numérotation par compteur en base | `referentiel.services.next_document_number`, modèle `DocumentSequence` | Sans doublon même en accès simultané ; numéro attribué après validation. |
+| Droits par rôle | `comptes.permissions.WriteRolesPermission` + `write_roles` sur chaque vue ; `sync_group_permissions` après chaque `migrate` | Lecture pour tous, écriture selon le métier ; mêmes droits dans l'administration. |
+| Décimaux renvoyés en texte par l'API (`"4.2000"`) | toutes les API | Aucune perte de précision ; le front-end formate en français (`formatDecimal`, `formatMoney`). |
+| Erreurs métier → réponse 400 lisible | `config/exceptions.py` ; côté React `errorMessages` + `ErrorList` | Les messages des règles s'affichent tels quels à l'utilisateur. |
+| Connexion par session Django + jeton CSRF | `comptes/views.py`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Sécurité standard ; l'origine du front-end (`localhost:5173`) doit être déclarée de confiance. |
+| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
+| Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
+| Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. |
+| Front-end | hook `useApi` (rechargement par paramètre `?v=`), `auth/roles.ts`, `StatusBadge` | Même façon de faire sur tous les écrans. |
+
+## Points en suspens
+
+À traiter dans les prochaines étapes ou dans une phase complémentaire.
+
+| Sujet | Où en est-on | Quand |
+| --- | --- | --- |
+| **Partie 7b** : préparation FEFO, palettes SSCC, expédition, taux de service, invendables | Plan prêt dans `docs/prochaine-etape.md` ; branche `phase-7b-expedition` créée | Prochaine session |
+| **Phase 8** : pilotage, indicateurs, Power BI, Power Query | À faire | Après la 7b |
+| Planification avancée : prévisions à 8 semaines, plan figé à J-2, promotions (×3), calcul des besoins (MRP) | Hors périmètre des phases 6 et 7a | Phase complémentaire possible |
+| Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
+| « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
+| Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |
+| Réservation de stock (OF, préparation) | Pas de réservation ; contrôle du stock au moment de l'opération | Si besoin |
+| Formulaires React du référentiel | Saisie dans l'administration Django | Si besoin |
+| Jours ouvrés et jours fériés | L'heure limite et le planning ne tiennent pas compte des week-ends | Si besoin |
+| Durée de la suite de tests back-end (≈ 5 min en local) | Due surtout aux tests qui rechargent toutes les données de démo | À optimiser (données de démo partagées entre tests) |
+| Expéditions de démonstration de la phase 5 | Non rattachées à des commandes clients : elles ne compteront pas dans le taux de service | À garder en tête en 7b et en phase 8 |
+| Base locale de Nicolas modifiée par les vérifications | Commande CA-2026-00011 et lot de crème bloqué (5,2 °C), lot de lait libéré et transféré, message EDI `ENS4-…-ERR`, compte `test-verif` désactivé | Repartir d'une base neuve si besoin (procédure dans `docs/prochaine-etape.md`) |
