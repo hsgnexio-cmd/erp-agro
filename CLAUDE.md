@@ -115,7 +115,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 4. Stocks et lots | Statuts, mouvements, FEFO, DLC, températures, inventaires | Terminée |
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | Terminée |
 | 6. Production | Ordres de fabrication, consommations, rendements | Terminée |
-| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | À faire |
+| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | En cours (7a terminée : tarifs, commandes, EDI simulé ; reste 7b : préparation FEFO, SSCC, expédition, taux de service, invendables) |
 | 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire |
 
 Mettre à jour la colonne Statut à la fin de chaque phase.
