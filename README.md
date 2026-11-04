@@ -126,7 +126,7 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
@@ -137,6 +137,12 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 1. **L'acheteur** crée une commande (menu **Commandes** → **Nouvelle commande**) : il choisit un fournisseur audité, l'application propose ses articles avec le prix en vigueur. La commande est enregistrée en **brouillon**, puis **envoyée**.
 2. **Le magasinier** ouvre la commande et clique sur **Réceptionner** : il saisit pour chaque ligne la quantité, le lot fournisseur, la DLC/DDM et la température.
 3. L'application contrôle tout automatiquement et crée un **lot** par ligne : en **quarantaine** s'il est conforme, **bloqué** sinon (avec le motif). Chaque lot a son mouvement d'entrée en stock.
+
+### La vie d'un lot
+
+1. **La qualité** ouvre le lot (menu **Lots** → numéro du lot) et le **libère**, le **bloque** (motif obligatoire), le **débloque** ou le **détruit**.
+2. **Le magasinier** le **transfère** : de la quarantaine vers la chambre froide, ou de l'entrepôt vers une usine. Seuls les emplacements à la bonne température sont proposés.
+3. Le menu **Stocks** montre le stock par article et par site (libéré, quarantaine, bloqué) ; le menu **FEFO** indique quels lots utiliser en premier pour un besoin donné.
 
 ## Tests
 
