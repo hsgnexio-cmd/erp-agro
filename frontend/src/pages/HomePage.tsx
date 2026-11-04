@@ -8,6 +8,8 @@ const SECTIONS = [
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },
   { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
   { to: '/commandes', title: 'Commandes', text: 'Commandes fournisseurs et réceptions' },
+  { to: '/production', title: 'Production', text: 'Ordres de fabrication, déclarations, rendements' },
+  { to: '/planning', title: 'Planning', text: 'Charge des lignes, ordre des allergènes' },
   { to: '/lots', title: 'Lots', text: 'Libération, blocage, transferts, historique' },
   { to: '/stocks', title: 'Stocks', text: 'Stock par article et par site, par statut' },
   { to: '/fefo', title: 'FEFO', text: 'Quels lots utiliser en premier ?' },

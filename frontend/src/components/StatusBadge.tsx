@@ -10,6 +10,10 @@ const TONES: Record<string, string> = {
   libere: 'ok',
   bloque: 'danger',
   detruit: 'off',
+  planifie: 'neutral',
+  lance: 'info',
+  termine: 'ok',
+  annule: 'off',
 }
 
 export function StatusBadge({ status, label }: { status: string; label: string }) {

@@ -147,7 +147,13 @@ def test_scenario_de_reference_creme_contaminee(db):
     assert duration < 2, f"Rappel trop lent : {duration:.2f} s"
 
     recall = services.launch_recall(cream, reason="Listeria signalée par le fournisseur")
-    assert recall.blocked_lots.count() == 4  # crème, béchamel, 2 lots de lasagnes
+    # Crème, béchamel de la phase 5, 2 lots de lasagnes, et les 2 béchamels des OF de
+    # démonstration (phase 6) qui ont consommé ce lot de crème en FEFO
+    blocked = {lot.article.code for lot in recall.blocked_lots.all()}
+    assert blocked == {
+        "MP-LAI-CREME35", "SF-BECHAMEL", "PF-PAT-LASBOL-BRE-300", "PF-PAT-LASBOL-ENS1-300",
+    }  # fmt: skip
+    assert recall.blocked_lots.filter(article__code="SF-BECHAMEL").count() == 3
     assert ProductRecall.objects.count() == 1
 
 

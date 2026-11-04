@@ -294,3 +294,30 @@ def next_document_number(key: str, width: int) -> str:
     sequence.last_value += 1
     sequence.save(update_fields=["last_value"])
     return f"{key}-{sequence.last_value:0{width}d}"
+
+
+# --- Lignes de production -------------------------------------------------------
+
+
+def validate_production_line(line) -> None:
+    if line.site_id and line.site.site_type != SiteType.FACTORY:
+        raise ValidationError({"site": "Une ligne de production appartient à une usine."})
+    if not isinstance(line.formats, list) or not all(
+        isinstance(size, int) and size > 0 for size in line.formats
+    ):
+        raise ValidationError({"formats": "Indique une liste de formats en grammes, ex. [300]."})
+
+
+def line_accepts(line, article) -> str | None:
+    """Renvoie la raison du refus si la ligne ne peut pas fabriquer l'article, sinon None."""
+    if article.article_type != ArticleType.FINISHED_PRODUCT:
+        return "seuls les produits finis passent sur une ligne de conditionnement"
+    if not line.active:
+        return f"la ligne {line.code} est inactive"
+    family = article.recipe.family
+    if not line.families.filter(pk=family.pk).exists():
+        return f"la ligne {line.code} ne fabrique pas la famille {family.code}"
+    if line.formats and article.format_size not in line.formats:
+        formats = ", ".join(f"{size} g" for size in line.formats)
+        return f"la ligne {line.code} n'accepte que le(s) format(s) {formats}"
+    return None

@@ -116,7 +116,7 @@ def record_production(
             quantity=-data["quantity"],
             location=data["location"],
             user=_user(user),
-            reason=f"Consommé pour {article.code}",
+            reason=data.get("reason") or f"Consommé pour {article.code}",
             reference=number,
             produced_lot=produced,
         )

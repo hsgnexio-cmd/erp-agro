@@ -149,3 +149,28 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Lancer un rappel | `admin`, `qualite` |
 | Déclarer une fabrication (API) | `admin`, `production` |
 | Déclarer une expédition (API) | `admin`, `magasinier` |
+
+## Phase 6 – Production
+
+| Décision | Raison |
+| --- | --- |
+| 9 lignes de production dans le référentiel (L1 à L9) | Usine, familles et formats acceptés, cadence horaire (fiche entreprise). Saisie : `admin`, `production`. |
+| Un produit fini ne passe que sur une ligne compatible | La ligne doit accepter la famille de la recette et le format (ex. lasagnes 1 kg : L3 uniquement). Un semi-fini se prépare en cuisine, sans ligne. |
+| Statuts d'OF : planifié → lancé → terminé (ou annulé) | Modifiable seulement planifié ; annulable tant qu'aucune production n'est déclarée. Numéro `OF-AAAA-NNNNN`. |
+| Plusieurs déclarations par OF, clôture manuelle | Une déclaration par équipe ; on produit rarement exactement la quantité prévue. |
+| Proposition FEFO pré-remplie à la déclaration | Règle 4. Un lot hors FEFO est accepté avec une **justification obligatoire**, enregistrée sur la déclaration et sur le mouvement de consommation. |
+| Pas de réservation de stock au lancement | Plus simple ; le contrôle de stock à la déclaration empêche deux OF de consommer la même quantité. |
+| Rendement matière = théorique ÷ réel, sur les composants en kg et en litres | Théorique = besoins de la nomenclature, pertes comprises, pour la quantité produite. Les emballages (unités) sont suivis à part. Sous **96 %** (fiche entreprise), l'OF est signalé et une alerte « rendement faible » est créée à la clôture. |
+| Lot fabriqué : semi-fini en chambre froide semi-finis de l'usine, produit fini en `PFN-QUAR` | En quarantaine jusqu'à la libération par la qualité (règle 6). |
+| Toute nouvelle fabrication passe par un OF | L'API de déclaration directe de la phase 5 est remplacée. Les fabrications de démonstration de la phase 5 restent dans l'historique. |
+| Planning de la semaine par ligne | Charge = quantité ÷ cadence ; capacité 15 h / jour (2 équipes de 7 h 30) ; avertissement en cas de surcharge. |
+| Ordre « sans allergène → avec allergènes » : avertissement, pas blocage | Signalé quand un OF suit, sur la même ligne le même jour, un OF contenant un allergène qu'il n'a pas : nettoyage renforcé requis. Le responsable de production garde la main. |
+| Hors périmètre | Prévisions à 8 semaines, plan hebdomadaire figé à J-2, calcul des besoins d'achat (MRP) : possible phase complémentaire. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Créer, modifier, lancer, déclarer, clôturer, annuler un OF | `admin`, `production` |
+| Libérer les lots fabriqués | `admin`, `qualite` |
+| Consulter OF, planning, rendements | tous les rôles |

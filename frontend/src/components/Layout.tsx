@@ -10,6 +10,8 @@ const LINKS = [
   { to: '/clients', label: 'Clients' },
   { to: '/sites', label: 'Sites' },
   { to: '/commandes', label: 'Commandes' },
+  { to: '/production', label: 'Production' },
+  { to: '/planning', label: 'Planning' },
   { to: '/lots', label: 'Lots' },
   { to: '/stocks', label: 'Stocks' },
   { to: '/fefo', label: 'FEFO' },

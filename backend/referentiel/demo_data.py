@@ -20,6 +20,7 @@ from .models import (
     Location,
     MaterialCategory,
     ProductFamily,
+    ProductionLine,
     Recipe,
     Site,
     Supplier,
@@ -46,13 +47,28 @@ LOCATIONS = [
     ("MPE", "MPE-QUAR-AMB", "Zone de quarantaine réception (ambiant)", AMB, "10", "25"),
     ("NAN", "NAN-CF-MP", "Chambre froide matières atelier", FP, "0", "4"),
     ("NAN", "NAN-CF-SF", "Chambre froide semi-finis", FP, "0", "4"),
+    ("NAN", "NAN-AMB-MP", "Magasin matières ambiant atelier", AMB, "10", "25"),
     ("REN", "REN-CF-MP", "Chambre froide matières atelier", FP, "0", "4"),
     ("REN", "REN-CF-SF", "Chambre froide semi-finis", FP, "0", "4"),
+    ("REN", "REN-AMB-MP", "Magasin matières ambiant atelier", AMB, "10", "25"),
     ("PFN", "PFN-FRAIS-A", "Stock produits finis – allée A", FP, "0", "4"),
     ("PFN", "PFN-FRAIS-B", "Stock produits finis – allée B", FP, "0", "4"),
     ("PFN", "PFN-QUAR", "Quarantaine produits finis", FP, "0", "4"),
     ("PFN", "PFN-QUAI", "Quai d'expédition", FP, "0", "4"),
     ("PFN", "PFN-RETOUR", "Zone retours et invendables", FP, "0", "4"),
+]
+
+# Lignes de production : (code, nom, usine, familles, formats acceptés, cadence / heure)
+PRODUCTION_LINES = [
+    ("L1", "Lasagnes et pâtes 300 g – ligne 1", "NAN", ["PAT"], [300], 2400),
+    ("L2", "Lasagnes et pâtes 300 g – ligne 2", "NAN", ["PAT"], [300], 2400),
+    ("L3", "Formats familiaux 1 kg", "NAN", ["PAT", "GRA", "SAU"], [1000], 900),
+    ("L4", "Gratins et hachis", "NAN", ["GRA"], [300], 2000),
+    ("L5", "Plats en sauce", "NAN", ["SAU"], [300], 1800),
+    ("L6", "Salades composées – ligne 6", "REN", ["SAL"], [], 2200),
+    ("L7", "Salades composées – ligne 7", "REN", ["SAL"], [], 2200),
+    ("L8", "Taboulés", "REN", ["TAB"], [], 2000),
+    ("L9", "Entrées et râpés", "REN", ["ENT"], [], 1600),
 ]
 
 # (code, nom, usine, DLC moyenne en jours)
@@ -430,6 +446,18 @@ def load_demo_data() -> dict[str, int]:
         )
         family_shelf_life[code] = shelf_life
 
+    for code, name, site_code, family_codes, formats, capacity in PRODUCTION_LINES:
+        line, _ = ProductionLine.objects.update_or_create(
+            code=code,
+            defaults={
+                "name": name,
+                "site": sites[site_code],
+                "formats": formats,
+                "capacity_per_hour": capacity,
+            },
+        )
+        line.families.set([families[family] for family in family_codes])
+
     categories = {}
     for code, name, temp_class, date_type, min_pct in CATEGORIES:
         categories[code], _ = MaterialCategory.objects.update_or_create(
@@ -555,6 +583,7 @@ def load_demo_data() -> dict[str, int]:
 
     return {
         "sites": len(sites),
+        "lignes de production": len(PRODUCTION_LINES),
         "emplacements": Location.objects.count(),
         "enseignes": len(customers),
         "entrepôts clients": CustomerWarehouse.objects.count(),

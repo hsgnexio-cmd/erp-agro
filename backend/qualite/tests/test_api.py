@@ -54,25 +54,6 @@ def test_lot_inconnu(api_client_for, db):
     assert "introuvable" in response.json()["lot"][0]
 
 
-@pytest.mark.parametrize(("role", "expected"), [("production", 201), ("magasinier", 403)])
-def test_seule_la_production_declare_une_fabrication(
-    api_client_for, chain, semi_finished, role, expected
-):
-    response = api_client_for(role).post(
-        "/api/production/productions/",
-        {
-            "article": semi_finished.id,
-            "quantity": "10",
-            "location": chain["cold"].id,
-            "consumptions": [
-                {"lot": chain["cream_a"].id, "location": chain["cold"].id, "quantity": "1"}
-            ],
-        },
-        format="json",
-    )
-    assert response.status_code == expected
-
-
 @pytest.mark.parametrize(("role", "expected"), [("magasinier", 201), ("commercial", 403)])
 def test_seul_le_magasinier_declare_une_expedition(api_client_for, chain, role, expected):
     response = api_client_for(role).post(

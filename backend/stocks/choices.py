@@ -34,6 +34,7 @@ class AlertType(models.TextChoices):
     DDM_PASSED = "ddm_depassee", "DDM dépassée"
     TEMPERATURE = "ecart_temperature", "Écart de température"
     MISSING_READING = "releve_manquant", "Relevé de température manquant"
+    LOW_YIELD = "rendement_faible", "Rendement matière faible"
 
 
 class AlertLevel(models.TextChoices):

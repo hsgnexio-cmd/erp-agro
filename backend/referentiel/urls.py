@@ -16,5 +16,6 @@ router.register("boms", views.BillOfMaterialsViewSet)
 router.register("bom-lines", views.BOMLineViewSet)
 router.register("suppliers", views.SupplierViewSet)
 router.register("supplier-articles", views.SupplierArticleViewSet)
+router.register("production-lines", views.ProductionLineViewSet)
 
 urlpatterns = router.urls
