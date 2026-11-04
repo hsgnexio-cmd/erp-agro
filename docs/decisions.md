@@ -122,3 +122,30 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Traiter une alerte | `admin`, `qualite`, `magasinier` |
 | Ouvrir, compter, valider, annuler un inventaire | `admin`, `magasinier` |
 | Consulter relevés, inventaires, alertes | tous les rôles |
+
+## Phase 5 – Traçabilité, rappel produit, allergènes
+
+| Décision | Raison |
+| --- | --- |
+| Fabrication et expédition **minimales** dès la phase 5 (option A) | Sans elles, rien à tracer. `production.services.record_production` et `ventes.services.record_shipment` seront reprises par les phases 6 (ordres de fabrication, rendements) et 7 (commandes EDI, préparation FEFO). |
+| La traçabilité est portée par les **mouvements de stock** eux-mêmes | Une consommation pointe vers le lot fabriqué (`produced_lot`), une expédition vers l'entrepôt client (`customer_warehouse`). Une seule source de vérité : stock et traçabilité ne peuvent pas se contredire. |
+| Lot fabriqué : numéro `LF-AAMMJJ-NNNN`, DLC calculée, démarre en quarantaine | Règles 2, 3 et 6. Libération par la qualité comme un lot reçu. |
+| On ne consomme et n'expédie qu'un lot libéré et non périmé | Règle 6. Le lot est relu et verrouillé au moment de l'opération. |
+| On ne consomme que des composants de la nomenclature de l'article fabriqué | Évite les erreurs de saisie qui fausseraient la traçabilité. |
+| Expédition : produit MDD uniquement chez son enseigne ; DLC minimale de l'enseigne respectée | Règles 10 et 5, appliquées dès maintenant (peu coûteuses). |
+| Traçabilité amont et aval à tous les niveaux, emballages compris | Règle 1. Arbres consultables à l'écran Traçabilité. |
+| Rappel en deux temps : simulation (tous les rôles), puis lancement (`qualite`, `admin`) | Le lancement bloque d'un coup tous les lots concernés ayant du stock, avec le motif « Rappel RAP-… ». |
+| Photo complète du rappel enregistrée au lancement (`snapshot`) | Preuve pour les autorités et les audits : lots, stocks, livraisons au moment du rappel. Un rappel ne se modifie ni ne se supprime. |
+| Liste des clients à prévenir en CSV (séparateur « ; », UTF-8) | S'ouvre directement dans Excel. Pas d'envoi d'e-mail pour l'instant. |
+| Calcul de l'impact d'un rappel niveau par niveau, en requêtes groupées | Objectif de la fiche entreprise : rappel complet en 5 minutes maximum. Mesuré : quelques dizaines de millisecondes sur les données de démonstration ; un test échoue au-delà de 2 secondes. |
+| Allergènes des semi-finis et produits finis **calculés à chaque consultation** | Règle 8. Toujours à jour : un allergène ajouté sur une matière se répercute immédiatement sur toutes les recettes. L'origine de chaque allergène est affichée. |
+| Scénario de référence (crème contaminée) en test automatisé | `qualite/tests/test_tracabilite_et_rappel.py::test_scenario_de_reference_creme_contaminee`, sur les données de démonstration. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Consulter la traçabilité, simuler un rappel, voir les allergènes | tous les rôles |
+| Lancer un rappel | `admin`, `qualite` |
+| Déclarer une fabrication (API) | `admin`, `production` |
+| Déclarer une expédition (API) | `admin`, `magasinier` |
