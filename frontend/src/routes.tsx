@@ -25,6 +25,9 @@ import { SalePricesPage } from './pages/SalePricesPage'
 import { SalesOrderDetailPage } from './pages/SalesOrderDetailPage'
 import { SalesOrderFormPage } from './pages/SalesOrderFormPage'
 import { SalesOrdersPage } from './pages/SalesOrdersPage'
+import { PreparationPage } from './pages/PreparationPage'
+import { ServiceRatePage } from './pages/ServiceRatePage'
+import { ShipmentDetailPage, ShipmentsPage } from './pages/ShipmentsPage'
 import { PurchaseOrderDetailPage } from './pages/PurchaseOrderDetailPage'
 import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
@@ -69,6 +72,10 @@ export function AppRoutes() {
         <Route path="ventes" element={<SalesOrdersPage />} />
         <Route path="ventes/nouvelle" element={<SalesOrderFormPage />} />
         <Route path="ventes/:id" element={<SalesOrderDetailPage />} />
+        <Route path="ventes/:id/preparation" element={<PreparationPage />} />
+        <Route path="expeditions" element={<ShipmentsPage />} />
+        <Route path="expeditions/:id" element={<ShipmentDetailPage />} />
+        <Route path="taux-de-service" element={<ServiceRatePage />} />
         <Route path="edi" element={<EdiPage />} />
         <Route path="tarifs-vente" element={<SalePricesPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />

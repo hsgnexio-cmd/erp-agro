@@ -253,14 +253,15 @@ class ShipmentViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ServiceRateView(APIView):
-    """Taux de service par enseigne sur une période (par défaut : les 30 derniers jours)."""
+    """Taux de service par enseigne, sur les livraisons d'une période (par défaut : de J-29 à
+    J+7, car les commandes livrées demain sont souvent déjà expédiées)."""
 
     permission_classes = [WriteRolesPermission]
 
     def get(self, request: Request) -> Response:
         today = timezone.localdate()
-        end = parse_date(request.query_params.get("end", "")) or today
-        start = parse_date(request.query_params.get("start", "")) or end - timedelta(days=29)
+        end = parse_date(request.query_params.get("end", "")) or today + timedelta(days=7)
+        start = parse_date(request.query_params.get("start", "")) or today - timedelta(days=29)
         if start > end:
             raise ValidationError({"start": ["La date de début est après la date de fin."]})
         customer = None

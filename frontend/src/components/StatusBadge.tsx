@@ -20,6 +20,8 @@ const TONES: Record<string, string> = {
   recu: 'neutral',
   integre: 'ok',
   rejete: 'danger',
+  preparee: 'warn',
+  refusee: 'danger',
 }
 
 export function StatusBadge({ status, label }: { status: string; label: string }) {

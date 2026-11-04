@@ -15,6 +15,8 @@ const LINKS = [
   { to: '/lots', label: 'Lots' },
   { to: '/ventes', label: 'Ventes' },
   { to: '/edi', label: 'EDI' },
+  { to: '/expeditions', label: 'Expéditions' },
+  { to: '/taux-de-service', label: 'Taux de service' },
   { to: '/stocks', label: 'Stocks' },
   { to: '/fefo', label: 'FEFO' },
   { to: '/temperatures', label: 'Températures' },

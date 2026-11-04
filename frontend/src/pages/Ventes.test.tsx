@@ -37,6 +37,7 @@ const ORDER: CustomerOrderDetail = {
       unit_price: '2.1500',
       amount: '1032.00',
       to_be_priced: false,
+      shipped_quantity: null,
     },
     {
       id: 2,
@@ -47,10 +48,12 @@ const ORDER: CustomerOrderDetail = {
       unit_price: null,
       amount: null,
       to_be_priced: true,
+      shipped_quantity: null,
     },
   ],
   edi_message_id: 'ENS2-20261104-001',
   created_by_name: null,
+  shipments: [],
 }
 
 const REJECTED: EdiMessage = {

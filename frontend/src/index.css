@@ -645,3 +645,58 @@ ul.errors {
   padding-left: 1.1rem;
   color: #8a1c1c;
 }
+
+/* --- Expéditions : étiquettes palettes (SSCC) --- */
+
+.pallet-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.pallet-label {
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9em;
+}
+
+.pallet-label header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #222;
+  padding-bottom: 0.4rem;
+}
+
+.pallet-label table {
+  width: 100%;
+  font-size: 0.9em;
+}
+
+.pallet-label .sscc {
+  margin: 0.6rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid #222;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1.05em;
+}
+
+/* Impression : seulement les étiquettes, une par page */
+@media print {
+  .app-header,
+  .no-print {
+    display: none !important;
+  }
+
+  .pallet-labels {
+    display: block;
+  }
+
+  .pallet-label {
+    break-after: page;
+    border-width: 3px;
+    font-size: 12pt;
+  }
+}

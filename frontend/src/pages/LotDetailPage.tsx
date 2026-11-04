@@ -21,6 +21,8 @@ export function LotDetailPage() {
   const locations = useApi<Paginated<Location>>('/api/referentiel/locations/?active=true')
 
   const [reason, setReason] = useState('')
+  const [destination, setDestination] = useState('')
+  const [unsoldReason, setUnsoldReason] = useState('')
   const [fromLocation, setFromLocation] = useState('')
   const [toLocation, setToLocation] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -52,6 +54,13 @@ export function LotDetailPage() {
     void run(action, { reason }, success)
   }
 
+  function handleDispose(event: FormEvent) {
+    event.preventDefault()
+    if (!window.confirm('Sortir tout le stock de ce lot en invendable ? Le lot sera détruit.')) return
+    // Une fois le lot détruit, ce formulaire disparaît de la fiche
+    void run('dispose', { destination, reason: unsoldReason }, 'Invendable sorti du stock.')
+  }
+
   function handleTransfer(event: FormEvent) {
     event.preventDefault()
     const from = fromLocation || String(l.stock_by_location[0]?.location ?? '')
@@ -64,6 +73,13 @@ export function LotDetailPage() {
 
   const isQuality = hasRole(user, QUALITY_ROLES)
   const isWarehouse = hasRole(user, WAREHOUSE_ROLES)
+  // Invendable : produit fini bloqué ou périmé, avec du stock
+  const canDispose =
+    isQuality &&
+    l.article_type === 'PF' &&
+    l.status !== 'detruit' &&
+    (l.status === 'bloque' || l.is_expired) &&
+    l.stock_by_location.length > 0
   // Chaîne du froid : seuls les emplacements à la bonne température sont proposés
   const destinations =
     locations.data?.results.filter(
@@ -196,6 +212,45 @@ export function LotDetailPage() {
             )}
           </div>
         </div>
+      )}
+
+      {canDispose && (
+        <form className="panel" onSubmit={handleDispose}>
+          <h2>Sortir en invendable</h2>
+          <p className="hint">
+            Tout le stock restant sort du stock vers la destination choisie et le lot passe au
+            statut « détruit » (définitif).
+          </p>
+          <div className="form-grid">
+            <label className="stacked">
+              Destination
+              <select
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                required
+              >
+                <option value="">— Choisir —</option>
+                <option value="don">Don à une association</option>
+                <option value="alimentation_animale">Alimentation animale</option>
+                <option value="destruction">Destruction</option>
+              </select>
+            </label>
+            <label className="stacked">
+              Motif
+              <input
+                value={unsoldReason}
+                maxLength={150}
+                onChange={(e) => setUnsoldReason(e.target.value)}
+                required
+              />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="danger">
+              Sortir en invendable
+            </button>
+          </div>
+        </form>
       )}
 
       {isWarehouse && l.status !== 'detruit' && l.stock_by_location.length > 0 && (
