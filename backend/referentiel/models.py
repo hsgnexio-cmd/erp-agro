@@ -114,6 +114,14 @@ class MaterialCategory(ValidatedModel):
         max_length=10,
         choices=[(DateType.DLC, DateType.DLC.label), (DateType.DDM, DateType.DDM.label)],
     )
+    # Contrôle à réception : part minimale de la durée de vie qui doit rester
+    min_remaining_shelf_life_pct = models.DecimalField(
+        "DLC restante minimale à réception (%)",
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("50"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -436,6 +444,15 @@ class SupplierArticle(ValidatedModel):
     )
     supplier_reference = models.CharField("référence fournisseur", max_length=50, blank=True)
     is_main_supplier = models.BooleanField("fournisseur principal", default=False)
+    min_order_quantity = models.DecimalField(
+        "quantité minimale de commande",
+        max_digits=12,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.001"))],
+        help_text="Dans l'unité de stock de l'article. Vide = pas de minimum.",
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -455,3 +472,20 @@ class SupplierArticle(ValidatedModel):
 
     def clean(self) -> None:
         services.validate_supplier_article(self)
+
+
+# --- Numérotation automatique -------------------------------------------------
+
+
+class DocumentSequence(models.Model):
+    """Dernier numéro attribué pour un préfixe (ex. « CA-2026 » → CA-2026-00042)."""
+
+    key = models.CharField("préfixe", max_length=30, unique=True)
+    last_value = models.PositiveIntegerField("dernier numéro", default=0)
+
+    class Meta:
+        verbose_name = "compteur de numérotation"
+        verbose_name_plural = "compteurs de numérotation"
+
+    def __str__(self) -> str:
+        return f"{self.key} : {self.last_value}"

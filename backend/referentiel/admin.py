@@ -63,7 +63,13 @@ class ProductFamilyAdmin(SimpleHistoryAdmin):
 
 @admin.register(MaterialCategory)
 class MaterialCategoryAdmin(SimpleHistoryAdmin):
-    list_display = ("code", "name", "temperature_class", "date_type")
+    list_display = (
+        "code",
+        "name",
+        "temperature_class",
+        "date_type",
+        "min_remaining_shelf_life_pct",
+    )
 
 
 @admin.register(Allergen)

@@ -63,7 +63,14 @@ class ProductFamilySerializer(serializers.ModelSerializer):
 class MaterialCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialCategory
-        fields = ["id", "code", "name", "temperature_class", "date_type"]
+        fields = [
+            "id",
+            "code",
+            "name",
+            "temperature_class",
+            "date_type",
+            "min_remaining_shelf_life_pct",
+        ]
 
 
 class AllergenSerializer(serializers.ModelSerializer):
@@ -257,4 +264,5 @@ class SupplierArticleSerializer(serializers.ModelSerializer):
             "article_name",
             "supplier_reference",
             "is_main_supplier",
+            "min_order_quantity",
         ]
