@@ -126,7 +126,7 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning, ventes, EDI |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
@@ -156,6 +156,17 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 2. Elle **lance** l'OF, puis **déclare** ce qui a été produit : l'écran pré-remplit les lots à consommer dans l'ordre FEFO ; prendre un autre lot demande une justification.
 3. Chaque déclaration crée un lot fabriqué (en quarantaine) relié aux lots consommés. À la **clôture**, l'OF affiche son rendement matière (objectif 96 %).
 4. Le menu **Planning** montre la semaine ligne par ligne : charge en heures, surcharges, et ordre des allergènes à respecter.
+
+### Les ventes
+
+- Chaque jour de semaine à 9 h 30, Celery simule les **commandes EDI** des 6 enseignes (menu **EDI**) : chaque message devient une commande client, ou est rejeté avec ses motifs (heure limite 11 h, produit MDD d'une autre enseigne, article inconnu…).
+- Menu **Ventes** : les commandes clients, la saisie manuelle d'une commande et les tarifs de vente.
+
+Simuler tout de suite les commandes EDI du jour :
+
+```powershell
+docker compose exec backend python manage.py simuler_edi
+```
 
 ### La traçabilité et le rappel produit
 

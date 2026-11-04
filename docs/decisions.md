@@ -174,3 +174,25 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Créer, modifier, lancer, déclarer, clôturer, annuler un OF | `admin`, `production` |
 | Libérer les lots fabriqués | `admin`, `qualite` |
 | Consulter OF, planning, rendements | tous les rôles |
+
+## Phase 7a – Commandes clients et EDI
+
+| Décision | Raison |
+| --- | --- |
+| Phase 7 découpée en 7a (commandes, EDI, tarifs) et 7b (préparation, SSCC, expédition, taux de service, invendables) | Deux pull requests plus faciles à relire et à tester. |
+| Tarifs de vente datés par enseigne et par produit fini | Comme les tarifs d'achat ; deux tarifs ne se chevauchent pas ; pas de tarif MDD pour une autre enseigne. Serviront au chiffre d'affaires et à la démarque (phase 8). |
+| Heure limite 11 h | Commande reçue avant 11 h : livrable dès J+1 ; après : J+2 au plus tôt. Une date plus proche est refusée (règle de la fiche entreprise). |
+| Produits commandables | Produit fini actif ; MDD uniquement par son enseigne (règle 10) ; marque Brévanne uniquement par une enseigne qui la vend. |
+| Ligne sans tarif : acceptée, signalée « à valoriser » | On ne refuse pas une commande client à cause d'un oubli interne. |
+| Commande : numéro `CC-AAAA-NNNNN`, statuts reçue → en préparation → expédiée (ou annulée) | Annulable seulement à l'état « reçue ». La préparation et l'expédition arrivent en 7b. |
+| EDI simulé : message JSON inspiré d'EDIFACT ORDERS | Chaque message est gardé tel quel (audit) puis intégré (commande créée) ou rejeté avec tous les motifs. Un message déjà intégré renvoyé est ignoré comme doublon. |
+| Simulation Celery chaque jour de semaine à 9 h 30 | Avant l'heure limite. Une commande par enseigne, assortiment habituel, quantités par colis de 12 ; environ 1 message sur 10 contient une erreur volontaire. Commande `simuler_edi` et bouton « Simuler les commandes du jour ». |
+| Saisie manuelle d'une commande | Pour une commande reçue par téléphone ; mêmes contrôles que l'EDI. |
+| Hors périmètre | Promotions (annoncées 6 à 8 semaines avant, jusqu'à ×3) : avec la planification avancée. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Saisir, annuler une commande ; saisir les tarifs de vente ; simuler ou déposer un message EDI | `admin`, `commercial` |
+| Consulter commandes, tarifs, messages EDI | tous les rôles |

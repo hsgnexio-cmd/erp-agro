@@ -20,6 +20,11 @@ import { PlanningPage } from './pages/PlanningPage'
 import { ProductionOrderDetailPage } from './pages/ProductionOrderDetailPage'
 import { ProductionOrderFormPage } from './pages/ProductionOrderFormPage'
 import { ProductionOrdersPage } from './pages/ProductionOrdersPage'
+import { EdiPage } from './pages/EdiPage'
+import { SalePricesPage } from './pages/SalePricesPage'
+import { SalesOrderDetailPage } from './pages/SalesOrderDetailPage'
+import { SalesOrderFormPage } from './pages/SalesOrderFormPage'
+import { SalesOrdersPage } from './pages/SalesOrdersPage'
 import { PurchaseOrderDetailPage } from './pages/PurchaseOrderDetailPage'
 import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
@@ -61,6 +66,11 @@ export function AppRoutes() {
         <Route path="production/:id" element={<ProductionOrderDetailPage />} />
         <Route path="production/:id/declaration" element={<DeclarationPage />} />
         <Route path="planning" element={<PlanningPage />} />
+        <Route path="ventes" element={<SalesOrdersPage />} />
+        <Route path="ventes/nouvelle" element={<SalesOrderFormPage />} />
+        <Route path="ventes/:id" element={<SalesOrderDetailPage />} />
+        <Route path="edi" element={<EdiPage />} />
+        <Route path="tarifs-vente" element={<SalePricesPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>
