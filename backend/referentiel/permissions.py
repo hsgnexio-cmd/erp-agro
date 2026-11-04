@@ -29,6 +29,7 @@ WRITE_ROLES: dict[str, list[Role]] = {
     "customer": SALES,
     "customerwarehouse": SALES,
     "documentsequence": [],  # numérotation automatique, jamais modifiée à la main
+    "productionline": [Role.ADMIN, Role.PRODUCTION],
 }
 
 # Règle 8 : les allergènes d'une matière sont validés par la qualité

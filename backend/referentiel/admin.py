@@ -20,6 +20,7 @@ from .models import (
     Location,
     MaterialCategory,
     ProductFamily,
+    ProductionLine,
     Recipe,
     Site,
     Supplier,
@@ -194,3 +195,10 @@ class SupplierAdmin(SimpleHistoryAdmin):
     search_fields = ("code", "name")
     filter_horizontal = ("categories",)
     inlines = [SupplierArticleInline]
+
+
+@admin.register(ProductionLine)
+class ProductionLineAdmin(SimpleHistoryAdmin):
+    list_display = ("code", "name", "site", "capacity_per_hour", "formats", "active")
+    list_filter = ("site", "active")
+    filter_horizontal = ("families",)

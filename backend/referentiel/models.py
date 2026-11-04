@@ -489,3 +489,44 @@ class DocumentSequence(models.Model):
 
     def __str__(self) -> str:
         return f"{self.key} : {self.last_value}"
+
+
+# --- Lignes de production -------------------------------------------------------
+
+
+class ProductionLine(ValidatedModel):
+    """Ligne de conditionnement d'une usine (L1 à L9 dans la fiche entreprise)."""
+
+    code = models.CharField(
+        "code",
+        max_length=5,
+        unique=True,
+        validators=[RegexValidator(r"^L\d+$", "Le code ligne suit le format L1, L2…")],
+    )
+    name = models.CharField("nom", max_length=100)
+    site = models.ForeignKey(
+        Site, on_delete=models.PROTECT, related_name="production_lines", verbose_name="usine"
+    )
+    families = models.ManyToManyField(
+        ProductFamily, related_name="production_lines", verbose_name="familles acceptées"
+    )
+    formats = models.JSONField(
+        "formats acceptés (g)",
+        default=list,
+        blank=True,
+        help_text="Liste des formats en grammes, ex. [300]. Vide = tous les formats.",
+    )
+    capacity_per_hour = models.PositiveIntegerField("cadence (unités / heure)")
+    active = models.BooleanField("active", default=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["code"]
+        verbose_name = "ligne de production"
+        verbose_name_plural = "lignes de production"
+
+    def __str__(self) -> str:
+        return f"{self.code} – {self.name}"
+
+    def clean(self) -> None:
+        services.validate_production_line(self)

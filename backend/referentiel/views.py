@@ -2,7 +2,7 @@
 
 from rest_framework import viewsets
 
-from . import serializers
+from . import serializers, services
 from .models import (
     Allergen,
     Article,
@@ -13,6 +13,7 @@ from .models import (
     Location,
     MaterialCategory,
     ProductFamily,
+    ProductionLine,
     Recipe,
     Site,
     Supplier,
@@ -128,3 +129,22 @@ class SupplierArticleViewSet(ReferentielViewSet):
     serializer_class = serializers.SupplierArticleSerializer
     filterset_fields = ["supplier", "article", "is_main_supplier"]
     search_fields = ["article__code", "article__name", "supplier_reference"]
+
+
+class ProductionLineViewSet(ReferentielViewSet):
+    """Lignes de production. ?article=12 ne garde que les lignes qui acceptent cet article."""
+
+    queryset = ProductionLine.objects.select_related("site").prefetch_related("families")
+    serializer_class = serializers.ProductionLineSerializer
+    filterset_fields = ["site", "site__code", "active"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        article_id = self.request.query_params.get("article")
+        if article_id:
+            article = Article.objects.filter(pk=article_id).first()
+            if article is None or article.article_type != "PF":
+                return queryset.none()
+            ids = [line.pk for line in queryset if services.line_accepts(line, article) is None]
+            queryset = queryset.filter(pk__in=ids)
+        return queryset

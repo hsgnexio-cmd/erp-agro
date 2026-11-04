@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from achats.demo_data import load_demo_data as load_purchasing
+from production.demo_data import load_demo_data as load_production
 from qualite.demo_tracabilite import load_demo_data as load_traceability
 from referentiel.demo_data import load_demo_data as load_referential
 from stocks.demo_data import load_demo_data as load_stocks
@@ -17,6 +18,7 @@ class Command(BaseCommand):
             ("Stocks", load_stocks),
             ("Surveillance", load_monitoring),
             ("Traçabilité", load_traceability),
+            ("Production", load_production),
         ):
             counts = loader()
             self.stdout.write(self.style.SUCCESS(f"{title} :"))

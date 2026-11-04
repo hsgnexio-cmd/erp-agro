@@ -14,6 +14,7 @@ from .models import (
     Location,
     MaterialCategory,
     ProductFamily,
+    ProductionLine,
     Recipe,
     Site,
     Supplier,
@@ -265,4 +266,26 @@ class SupplierArticleSerializer(serializers.ModelSerializer):
             "supplier_reference",
             "is_main_supplier",
             "min_order_quantity",
+        ]
+
+
+class ProductionLineSerializer(serializers.ModelSerializer):
+    site_code = serializers.CharField(source="site.code", read_only=True)
+    family_codes = serializers.SlugRelatedField(
+        source="families", many=True, read_only=True, slug_field="code"
+    )
+
+    class Meta:
+        model = ProductionLine
+        fields = [
+            "id",
+            "code",
+            "name",
+            "site",
+            "site_code",
+            "families",
+            "family_codes",
+            "formats",
+            "capacity_per_hour",
+            "active",
         ]
