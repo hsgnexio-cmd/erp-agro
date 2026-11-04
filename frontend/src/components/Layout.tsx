@@ -1,0 +1,48 @@
+import { NavLink, Navigate, Outlet } from 'react-router'
+import { useAuth } from '../auth/context'
+import { ROLE_LABELS } from '../format'
+
+const LINKS = [
+  { to: '/', label: 'Accueil', end: true },
+  { to: '/articles', label: 'Articles' },
+  { to: '/fournisseurs', label: 'Fournisseurs' },
+  { to: '/clients', label: 'Clients' },
+  { to: '/sites', label: 'Sites' },
+]
+
+/** Cadre commun des pages : en-tête, menu, utilisateur connecté. */
+export function Layout() {
+  const { status, user, logout } = useAuth()
+
+  if (status === 'chargement') return <p className="page-message">Chargement…</p>
+  if (status === 'deconnecte' || !user) return <Navigate to="/connexion" replace />
+
+  const roles = user.roles.map((role) => ROLE_LABELS[role] ?? role).join(', ')
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <span className="brand">ERP Brévanne Traiteur</span>
+        <nav aria-label="Menu principal">
+          {LINKS.map((link) => (
+            <NavLink key={link.to} to={link.to} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="user">
+          <span>
+            {user.first_name || user.username}
+            {roles && <small> · {roles}</small>}
+          </span>
+          <button type="button" className="link-button" onClick={() => void logout()}>
+            Se déconnecter
+          </button>
+        </div>
+      </header>
+      <main className="app-main">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
