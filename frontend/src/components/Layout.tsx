@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Outlet } from 'react-router'
 import { useAuth } from '../auth/context'
 import { ROLE_LABELS } from '../format'
+import { AlertBadge } from './AlertBadge'
 
 const LINKS = [
   { to: '/', label: 'Accueil', end: true },
@@ -12,6 +13,9 @@ const LINKS = [
   { to: '/lots', label: 'Lots' },
   { to: '/stocks', label: 'Stocks' },
   { to: '/fefo', label: 'FEFO' },
+  { to: '/temperatures', label: 'Températures' },
+  { to: '/inventaires', label: 'Inventaires' },
+  { to: '/alertes', label: 'Alertes' },
 ]
 
 /** Cadre commun des pages : en-tête, menu, utilisateur connecté. */
@@ -31,6 +35,7 @@ export function Layout() {
           {LINKS.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}>
               {link.label}
+              {link.to === '/alertes' && <AlertBadge />}
             </NavLink>
           ))}
         </nav>

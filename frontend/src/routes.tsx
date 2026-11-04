@@ -1,9 +1,12 @@
 import { Route, Routes } from 'react-router'
 import { Layout } from './components/Layout'
+import { AlertsPage } from './pages/AlertsPage'
 import { ArticleDetailPage } from './pages/ArticleDetailPage'
 import { ArticlesPage } from './pages/ArticlesPage'
 import { CustomersPage } from './pages/CustomersPage'
 import { HomePage } from './pages/HomePage'
+import { InventoriesPage } from './pages/InventoriesPage'
+import { InventoryDetailPage } from './pages/InventoryDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { FefoPage } from './pages/FefoPage'
 import { LotDetailPage } from './pages/LotDetailPage'
@@ -15,6 +18,7 @@ import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
 import { ReceptionFormPage } from './pages/ReceptionFormPage'
 import { SitesPage } from './pages/SitesPage'
 import { SuppliersPage } from './pages/SuppliersPage'
+import { TemperaturesPage } from './pages/TemperaturesPage'
 
 /** Les adresses de l'application. Toutes, sauf /connexion, exigent d'être connecté. */
 export function AppRoutes() {
@@ -36,6 +40,10 @@ export function AppRoutes() {
         <Route path="lots/:id" element={<LotDetailPage />} />
         <Route path="stocks" element={<StockPage />} />
         <Route path="fefo" element={<FefoPage />} />
+        <Route path="temperatures" element={<TemperaturesPage />} />
+        <Route path="inventaires" element={<InventoriesPage />} />
+        <Route path="inventaires/:id" element={<InventoryDetailPage />} />
+        <Route path="alertes" element={<AlertsPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>
