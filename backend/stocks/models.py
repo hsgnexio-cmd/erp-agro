@@ -10,7 +10,14 @@ from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from referentiel.choices import DateType
-from referentiel.models import Article, Location, Site, Supplier, ValidatedModel
+from referentiel.models import (
+    Article,
+    CustomerWarehouse,
+    Location,
+    Site,
+    Supplier,
+    ValidatedModel,
+)
 
 from .choices import AlertLevel, AlertType, InventoryStatus, LotStatus, MovementType
 
@@ -32,6 +39,8 @@ class Lot(ValidatedModel):
     )
     supplier_lot_number = models.CharField("lot fournisseur", max_length=50, blank=True)
     reception_date = models.DateField("date de réception", null=True, blank=True)
+    # Règle 2 : date de fabrication pour un semi-fini ou un produit fini
+    production_date = models.DateField("date de fabrication", null=True, blank=True)
     # Règle 3 : DLC pour le frais, DDM pour le sec (copié de l'article à la création)
     date_type = models.CharField("type de date", max_length=10, choices=DateType.choices)
     expiry_date = models.DateField("DLC / DDM", null=True, blank=True)
@@ -126,6 +135,24 @@ class StockMovement(models.Model):
         blank=True,
         verbose_name="mouvement corrigé",
     )
+    # Règle 1 : une consommation est reliée au lot fabriqué (traçabilité amont / aval)
+    produced_lot = models.ForeignKey(
+        Lot,
+        on_delete=models.PROTECT,
+        related_name="consumptions",
+        null=True,
+        blank=True,
+        verbose_name="lot fabriqué",
+    )
+    # Règle 1 : une expédition est reliée à l'entrepôt client livré
+    customer_warehouse = models.ForeignKey(
+        CustomerWarehouse,
+        on_delete=models.PROTECT,
+        related_name="shipments",
+        null=True,
+        blank=True,
+        verbose_name="entrepôt client",
+    )
 
     objects = StockMovementQuerySet.as_manager()
 
@@ -145,6 +172,10 @@ class StockMovement(models.Model):
             )
         if self.quantity == 0:
             raise ValidationError({"quantity": "Un mouvement ne peut pas être de quantité nulle."})
+        if self.movement_type == MovementType.CONSUMPTION and not self.produced_lot_id:
+            raise ValidationError("Une consommation doit indiquer le lot fabriqué.")
+        if self.movement_type == MovementType.SHIPMENT and not self.customer_warehouse_id:
+            raise ValidationError("Une expédition doit indiquer l'entrepôt client livré.")
         # Inventaire : un emplacement en cours de comptage est gelé
         if self.movement_type != MovementType.INVENTORY:
             inventory = Inventory.open_on(self.location)

@@ -50,6 +50,7 @@ class LotSerializer(serializers.ModelSerializer):
             "supplier_code",
             "supplier_lot_number",
             "reception_date",
+            "production_date",
             "date_type",
             "expiry_date",
             "is_expired",
@@ -121,6 +122,12 @@ class StockMovementSerializer(serializers.ModelSerializer):
     movement_type_label = serializers.CharField(source="get_movement_type_display", read_only=True)
     location_code = serializers.CharField(source="location.code", read_only=True)
     user_name = serializers.CharField(source="user.username", read_only=True, default=None)
+    produced_lot_number = serializers.CharField(
+        source="produced_lot.number", read_only=True, default=None
+    )
+    customer_code = serializers.CharField(
+        source="customer_warehouse.customer.code", read_only=True, default=None
+    )
 
     class Meta:
         model = StockMovement
@@ -140,6 +147,9 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "reason",
             "reference",
             "corrected_movement",
+            "produced_lot",
+            "produced_lot_number",
+            "customer_code",
         ]
 
 
