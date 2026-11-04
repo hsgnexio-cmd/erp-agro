@@ -1,0 +1,33 @@
+# Configuration sensible (mots de passe, clés) : ne jamais envoyer sur GitHub
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+backend/staticfiles/
+backend/media/
+
+# Celery Beat
+celerybeat-schedule*
+
+# Node / front-end
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# Éditeurs et systèmes
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Fichiers temporaires Excel / Power BI
+~$*
+data/exports/

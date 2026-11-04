@@ -1,0 +1,20 @@
+# Force les fins de ligne LF (format Linux) pour tous les fichiers texte,
+# même quand on travaille sous Windows : les conteneurs Docker sont sous Linux.
+* text=auto eol=lf
+
+# Scripts Windows : ils doivent garder les fins de ligne CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Fichiers binaires : Git ne doit jamais les modifier.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.xlsm binary
+*.pbix binary
+*.pbit binary
