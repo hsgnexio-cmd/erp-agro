@@ -128,21 +128,23 @@ def test_scenario_de_reference_creme_contaminee(db):
         if item.lot.article.article_type == "PF"
     }
     assert finished == {
-        "PF-PAT-LASBOL-BRE-300": Decimal("150"),  # 1000 fabriqués − 850 livrés
-        "PF-PAT-LASBOL-ENS1-300": Decimal("200"),  # 500 fabriqués − 300 livrés
+        "PF-PAT-LASBOL-BRE-300": Decimal("54"),  # 1000 fabriqués − 850 − 96 livrés (7b)
+        "PF-PAT-LASBOL-ENS1-300": Decimal("80"),  # 500 fabriqués − 300 − 120 livrés (7b)
     }
     # Le gratin dauphinois est fait avec l'autre lot de crème : il n'est pas concerné
     assert "PF-GRA-GRADAU-BRE-1000" not in finished
 
     delivered = {
-        (d["warehouse"].customer.code, d["lot"].article.code): d["quantity"]
-        for d in impact.deliveries
+        (d["warehouse"].code, d["lot"].article.code): d["quantity"] for d in impact.deliveries
     }
     assert delivered == {
-        ("ENS1", "PF-PAT-LASBOL-BRE-300"): Decimal("400"),
-        ("ENS1", "PF-PAT-LASBOL-ENS1-300"): Decimal("300"),
-        ("ENS2", "PF-PAT-LASBOL-BRE-300"): Decimal("300"),
-        ("ENS3", "PF-PAT-LASBOL-BRE-300"): Decimal("150"),
+        ("ENS1-E01", "PF-PAT-LASBOL-BRE-300"): Decimal("400"),
+        ("ENS1-E02", "PF-PAT-LASBOL-ENS1-300"): Decimal("300"),
+        ("ENS2-E03", "PF-PAT-LASBOL-BRE-300"): Decimal("300"),
+        ("ENS3-E02", "PF-PAT-LASBOL-BRE-300"): Decimal("150"),
+        # Livraisons de la démonstration de la partie 7b (préparation et expédition)
+        ("ENS1-E01", "PF-PAT-LASBOL-ENS1-300"): Decimal("120"),
+        ("ENS2-E01", "PF-PAT-LASBOL-BRE-300"): Decimal("96"),
     }
     assert duration < 2, f"Rappel trop lent : {duration:.2f} s"
 

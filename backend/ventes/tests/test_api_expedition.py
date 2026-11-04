@@ -158,3 +158,29 @@ def test_annuler_une_preparation_par_l_api(api_client_for, make_order, finished_
     )
     assert response.status_code == 200
     assert response.json()["status"] == "annulee"
+
+
+def test_donnees_de_demo_des_expeditions(db):
+    from django.core.management import call_command
+
+    from stocks.models import Alert, Lot
+    from ventes import shipping
+    from ventes.models import Shipment
+
+    call_command("charger_donnees_demo")
+    statuses = sorted(Shipment.objects.values_list("status", flat=True))
+    assert statuses == ["expediee", "expediee", "expediee", "refusee"]
+    assert Alert.objects.filter(alert_type="temperature_expedition").count() == 1
+    gratin = Lot.objects.get(article__code="PF-GRA-GRADAU-BRE-1000")
+    assert gratin.status == "detruit"
+    assert gratin.movements.filter(movement_type="destruction_invendable").exists()
+
+    today = timezone.localdate()
+    report = shipping.service_rate(start=today, end=today + timedelta(days=1))
+    problems = {issue["order"].customer.code: issue["problem"] for issue in report["issues"]}
+    assert problems["ENS2"] == "incomplète (rupture)"
+    assert problems["ENS3"] == "en retard"
+    assert "ENS1" not in problems or problems["ENS1"] != "en retard"
+
+    call_command("charger_donnees_demo")
+    assert Shipment.objects.count() == 4
