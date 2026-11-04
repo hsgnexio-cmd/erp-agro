@@ -73,7 +73,8 @@ export function LotDetailPage() {
   return (
     <section>
       <p>
-        <Link to="/lots">← Retour aux lots</Link>
+        <Link to="/lots">← Retour aux lots</Link> ·{' '}
+        <Link to={`/tracabilite?lot=${l.number}`}>Voir la traçabilité de ce lot</Link>
       </p>
       <div className="page-title">
         <h1>
@@ -101,6 +102,12 @@ export function LotDetailPage() {
         <dd>
           {l.supplier_code ?? '—'} · lot {l.supplier_lot_number || '—'}
         </dd>
+        {l.production_date && (
+          <>
+            <dt>Fabrication</dt>
+            <dd>{formatDate(l.production_date)}</dd>
+          </>
+        )}
         <dt>Réception</dt>
         <dd>
           {formatDate(l.reception_date)}
@@ -294,7 +301,16 @@ export function LotDetailPage() {
                     {formatDecimal(m.quantity)} {m.unit}
                   </td>
                   <td className="wrap">{m.reason}</td>
-                  <td>{m.reference || '—'}</td>
+                  <td>
+                    {m.reference || '—'}
+                    {m.produced_lot_number && (
+                      <small>
+                        {' '}
+                        → <Link to={`/lots/${m.produced_lot}`}>{m.produced_lot_number}</Link>
+                      </small>
+                    )}
+                    {m.customer_code && <small> → {m.customer_code}</small>}
+                  </td>
                   <td>{m.user_name ?? 'ERP'}</td>
                 </tr>
               ))}

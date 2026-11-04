@@ -17,6 +17,9 @@ class MovementType(models.TextChoices):
     CORRECTION = "correction", "Correction"
     DESTRUCTION = "destruction", "Destruction"
     INVENTORY = "inventaire", "Ajustement d'inventaire"
+    PRODUCTION = "fabrication", "Entrée de fabrication"
+    CONSUMPTION = "consommation", "Consommation en fabrication"
+    SHIPMENT = "expedition", "Expédition client"
 
 
 class InventoryStatus(models.TextChoices):

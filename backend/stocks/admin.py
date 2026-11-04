@@ -30,6 +30,7 @@ class ReadOnlyAdminMixin:
 
 class StockMovementInline(ReadOnlyAdminMixin, admin.TabularInline):
     model = StockMovement
+    fk_name = "lot"  # le lot du mouvement (et non le lot fabriqué d'une consommation)
     extra = 0
     fields = ("created_at", "movement_type", "quantity", "location", "user", "reason", "reference")
     readonly_fields = fields

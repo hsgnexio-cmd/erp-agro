@@ -222,6 +222,7 @@ export interface Lot {
   supplier_code: string | null
   supplier_lot_number: string
   reception_date: string | null
+  production_date?: string | null
   date_type: string
   expiry_date: string | null
   is_expired: boolean
@@ -276,6 +277,9 @@ export interface StockMovement {
   reason: string
   reference: string
   corrected_movement: number | null
+  produced_lot?: number | null
+  produced_lot_number?: string | null
+  customer_code?: string | null
 }
 
 export interface FefoLine {

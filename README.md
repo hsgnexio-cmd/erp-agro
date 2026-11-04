@@ -126,7 +126,7 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
@@ -149,6 +149,13 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 - **Températures** : saisie des relevés des chambres froides. Un écart bloque automatiquement les lots présents et crée une alerte.
 - **Inventaires** : ouverture (les emplacements sont gelés), comptage à l'aveugle, affichage des écarts, validation (les écarts deviennent des mouvements de stock).
 - **Alertes** : chaque matin à 6 h, Celery vérifie la péremption proche, les DLC dépassées (lots bloqués) et les relevés manquants. Le compteur rouge du menu indique les alertes à traiter.
+
+### La traçabilité et le rappel produit
+
+- **Traçabilité** : saisir un numéro de lot pour voir son **amont** (de quoi il est fait, à tous les niveaux) et son **aval** (ce qui a été fabriqué avec, jusqu'aux entrepôts clients livrés).
+- **Simuler un rappel** depuis cet écran : lots concernés, stocks restants, enseignes livrées avec les quantités. Rien n'est modifié.
+- **Lancer le rappel** (rôle qualité) : tous les lots concernés ayant du stock sont bloqués ; la liste des clients à prévenir se télécharge pour Excel (menu **Rappels**).
+- Sur la fiche d'un produit fini ou d'un semi-fini, les **allergènes** sont calculés à partir de la nomenclature, avec leur origine.
 
 Lancer la vérification des alertes tout de suite, sans attendre 6 h :
 

@@ -534,3 +534,65 @@ td.negative {
 .alert-card .resolve input {
   flex: 1 1 240px;
 }
+
+/* --- Traçabilité et rappels --- */
+
+.trace-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.trace-tree,
+.trace-tree ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.trace-tree {
+  padding-left: 0;
+}
+
+.trace-tree ul {
+  border-left: 2px solid var(--border);
+  margin-left: 0.4rem;
+}
+
+.trace-node {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  padding: 0.35rem 0;
+}
+
+.trace-node small {
+  color: var(--muted);
+}
+
+.trace-qty {
+  font-weight: 600;
+}
+
+.trace-shipments li {
+  padding: 0.15rem 0;
+}
+
+.cards.summary {
+  margin-top: 1rem;
+}
+
+.cards.summary .card strong {
+  font-size: 1.8rem;
+  color: var(--brand);
+}
+
+.danger-zone {
+  border-color: #e3a3a3;
+}
+
+ul.allergens {
+  margin: 0;
+  padding-left: 1.1rem;
+}
