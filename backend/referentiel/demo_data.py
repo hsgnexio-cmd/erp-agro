@@ -63,13 +63,14 @@ FAMILIES = [
     ("ENT", "Entrées et snacking", "REN", 8),
 ]
 
+# (code, nom, conservation, type de date, DLC restante minimale à réception en %)
 CATEGORIES = [
-    ("VIA", "Viandes et volailles", FP, DateType.DLC),
-    ("LAI", "Produits laitiers et œufs", FP, DateType.DLC),
-    ("LEG", "Légumes frais", FP, DateType.DLC),
-    ("SUR", "Légumes surgelés", FN, DateType.DDM),
-    ("SEC", "Produits secs", AMB, DateType.DDM),
-    ("MER", "Produits de la mer", FP, DateType.DLC),
+    ("VIA", "Viandes et volailles", FP, DateType.DLC, "60"),
+    ("LAI", "Produits laitiers et œufs", FP, DateType.DLC, "60"),
+    ("LEG", "Légumes frais", FP, DateType.DLC, "50"),
+    ("SUR", "Légumes surgelés", FN, DateType.DDM, "50"),
+    ("SEC", "Produits secs", AMB, DateType.DDM, "50"),
+    ("MER", "Produits de la mer", FP, DateType.DLC, "60"),
 ]
 
 # (code, nom, type, marque Brévanne, MDD, DLC mini %, nombre d'entrepôts)
@@ -428,10 +429,15 @@ def load_demo_data() -> dict[str, int]:
         family_shelf_life[code] = shelf_life
 
     categories = {}
-    for code, name, temp_class, date_type in CATEGORIES:
+    for code, name, temp_class, date_type, min_pct in CATEGORIES:
         categories[code], _ = MaterialCategory.objects.update_or_create(
             code=code,
-            defaults={"name": name, "temperature_class": temp_class, "date_type": date_type},
+            defaults={
+                "name": name,
+                "temperature_class": temp_class,
+                "date_type": date_type,
+                "min_remaining_shelf_life_pct": Decimal(min_pct),
+            },
         )
 
     customers = {}
@@ -496,7 +502,9 @@ def load_demo_data() -> dict[str, int]:
             code=code,
             defaults={"name": name, "article_type": ArticleType.PACKAGING, "unit": Unit.UNIT},
         )
-        _link_supplier(suppliers[supplier], articles[code])
+        # Emballages : minimums de commande élevés, surtout les étiquettes MDD
+        minimum = "5000" if code.startswith("EM-ETIQ-ENS") else "1000"
+        _link_supplier(suppliers[supplier], articles[code], Decimal(minimum))
 
     for code, name, shelf_life, base_quantity, lines in SEMI_FINISHED:
         articles[code], _ = Article.objects.update_or_create(
@@ -557,9 +565,13 @@ def load_demo_data() -> dict[str, int]:
     }
 
 
-def _link_supplier(supplier: Supplier, article: Article) -> None:
+def _link_supplier(
+    supplier: Supplier, article: Article, min_order_quantity: Decimal | None = None
+) -> None:
     SupplierArticle.objects.update_or_create(
-        supplier=supplier, article=article, defaults={"is_main_supplier": True}
+        supplier=supplier,
+        article=article,
+        defaults={"is_main_supplier": True, "min_order_quantity": min_order_quantity},
     )
 
 

@@ -117,3 +117,119 @@ export interface Location {
   max_temperature: string | null
   active: boolean
 }
+
+// --- Achats -----------------------------------------------------------------
+
+export type PurchaseOrderStatus =
+  | 'brouillon'
+  | 'envoyee'
+  | 'partiellement_recue'
+  | 'soldee'
+  | 'annulee'
+
+export interface PurchaseOrderLine {
+  id: number
+  article: number
+  article_code: string
+  article_name: string
+  article_date_type: string
+  article_temperature_class: string
+  quantity: string
+  unit: string
+  unit_price: string
+  amount: string
+  received_quantity: string
+}
+
+export interface PurchaseOrder {
+  id: number
+  number: string
+  supplier: number
+  supplier_code: string
+  supplier_name: string
+  delivery_site: number
+  delivery_site_code: string
+  order_date: string
+  expected_delivery_date: string
+  status: PurchaseOrderStatus
+  status_label: string
+  comment: string
+  created_by_name: string | null
+  created_at: string
+  sent_at: string | null
+  total_amount: string
+  lines: PurchaseOrderLine[]
+  reception_ids: number[]
+}
+
+export interface CatalogItem {
+  article: number
+  article_code: string
+  article_name: string
+  unit: string
+  min_order_quantity: string | null
+  unit_price: string | null
+}
+
+export interface ReceptionLine {
+  id: number
+  order_line: number
+  article_code: string
+  article_name: string
+  unit: string
+  quantity: string
+  supplier_lot_number: string
+  expiry_date: string | null
+  temperature: string | null
+  appearance_ok: boolean
+  is_compliant: boolean
+  non_compliance_reasons: string
+  lot: number | null
+  lot_number: string | null
+  lot_status: string | null
+}
+
+export interface Reception {
+  id: number
+  number: string
+  order: number
+  order_number: string
+  supplier_name: string
+  received_at: string
+  received_by_name: string | null
+  delivery_note_number: string
+  documents_ok: boolean
+  location: number
+  location_code: string
+  comment: string
+  is_compliant: boolean
+  lines: ReceptionLine[]
+}
+
+// --- Stocks -----------------------------------------------------------------
+
+export type LotStatus = 'libere' | 'bloque' | 'quarantaine' | 'detruit'
+
+export interface Lot {
+  id: number
+  number: string
+  article: number
+  article_code: string
+  article_name: string
+  article_type: ArticleType
+  unit: string
+  supplier_code: string | null
+  supplier_lot_number: string
+  reception_date: string | null
+  date_type: string
+  expiry_date: string | null
+  initial_quantity: string
+  quantity: string
+  location_code: string
+  site_code: string
+  status: LotStatus
+  status_label: string
+  block_reason: string
+  reception_number: string | null
+  created_at: string
+}

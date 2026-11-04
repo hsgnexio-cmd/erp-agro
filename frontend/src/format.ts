@@ -28,3 +28,27 @@ export function formatDate(value: string | null): string {
 }
 
 export const yesNo = (value: boolean) => (value ? 'Oui' : 'Non')
+
+export function formatDateTime(value: string | null): string {
+  if (!value) return '—'
+  return new Date(value).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+export function formatMoney(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—'
+  return Number(value).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+}
+
+/** Date du jour au format AAAA-MM-JJ (pour les champs de date) */
+export function todayIso(): string {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
+export const LOT_STATUS_LABELS: Record<string, string> = {
+  quarantaine: 'Quarantaine',
+  libere: 'Libéré',
+  bloque: 'Bloqué',
+  detruit: 'Détruit',
+}

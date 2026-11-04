@@ -8,6 +8,8 @@ const LINKS = [
   { to: '/fournisseurs', label: 'Fournisseurs' },
   { to: '/clients', label: 'Clients' },
   { to: '/sites', label: 'Sites' },
+  { to: '/commandes', label: 'Commandes' },
+  { to: '/lots', label: 'Lots' },
 ]
 
 /** Cadre commun des pages : en-tête, menu, utilisateur connecté. */

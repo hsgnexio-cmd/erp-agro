@@ -107,7 +107,7 @@ Ensuite, ouvre http://localhost:8000/admin/ et connecte-toi.
 
 ## Données de démonstration
 
-Remplir la base avec des données fictives cohérentes avec la fiche entreprise (sites, enseignes, fournisseurs, matières, recettes, nomenclatures). La commande peut être relancée sans créer de doublons :
+Remplir la base avec des données fictives cohérentes avec la fiche entreprise (sites, enseignes, fournisseurs, matières, recettes, nomenclatures, tarifs, commandes, réceptions et lots). La commande peut être relancée sans créer de doublons :
 
 ```powershell
 docker compose exec backend python manage.py charger_donnees_demo
@@ -126,9 +126,17 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : connexion, puis articles, fournisseurs, clients, sites |
-| http://localhost:8000/admin/ | Administration : saisie et modification du référentiel, historique des modifications |
+| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots |
+| http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
+| http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
+| http://localhost:8000/api/stocks/ | API des stocks : lots et mouvements |
+
+### Le parcours d'achat
+
+1. **L'acheteur** crée une commande (menu **Commandes** → **Nouvelle commande**) : il choisit un fournisseur audité, l'application propose ses articles avec le prix en vigueur. La commande est enregistrée en **brouillon**, puis **envoyée**.
+2. **Le magasinier** ouvre la commande et clique sur **Réceptionner** : il saisit pour chaque ligne la quantité, le lot fournisseur, la DLC/DDM et la température.
+3. L'application contrôle tout automatiquement et crée un **lot** par ligne : en **quarantaine** s'il est conforme, **bloqué** sinon (avec le motif). Chaque lot a son mouvement d'entrée en stock.
 
 ## Tests
 

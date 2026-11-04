@@ -111,7 +111,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | --- | --- | --- |
 | 1. Fondations | Structure, Docker Compose, PostgreSQL, Django, React, comptes et rôles, tests, GitHub Actions | Terminée |
 | 2. Référentiel | Articles, nomenclatures, fournisseurs, clients, sites, emplacements | Terminée |
-| 3. Achats et réceptions | Commandes fournisseurs, réception, création des lots, contrôles | À faire |
+| 3. Achats et réceptions | Commandes fournisseurs, réception, création des lots, contrôles | Terminée |
 | 4. Stocks et lots | Statuts, mouvements, FEFO, DLC, températures, inventaires | À faire |
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | À faire |
 | 6. Production | Ordres de fabrication, consommations, rendements | À faire |

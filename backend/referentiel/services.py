@@ -8,7 +8,9 @@ une donnée qui enfreint une règle est refusée, quel que soit le chemin
 import re
 from decimal import Decimal
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from .choices import ArticleType, DateType, SiteType, TemperatureClass, Unit
 
@@ -276,3 +278,19 @@ def validate_supplier_article(link) -> None:
                     "un fournisseur principal."
                 }
             )
+
+
+# --- Numérotation -----------------------------------------------------------
+
+
+@transaction.atomic
+def next_document_number(key: str, width: int) -> str:
+    """Attribue le numéro suivant pour un préfixe, sans doublon même en cas d'accès simultanés.
+
+    Exemple : next_document_number("CA-2026", 5) → "CA-2026-00001", puis "CA-2026-00002"…
+    """
+    sequence_model = apps.get_model("referentiel", "DocumentSequence")
+    sequence, _ = sequence_model.objects.select_for_update().get_or_create(key=key)
+    sequence.last_value += 1
+    sequence.save(update_fields=["last_value"])
+    return f"{key}-{sequence.last_value:0{width}d}"
