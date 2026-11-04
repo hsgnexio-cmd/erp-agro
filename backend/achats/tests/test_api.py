@@ -141,4 +141,4 @@ def test_annuler_par_l_api(api_client_for, make_order, cream_at_supplier, cream)
 def test_les_lots_ne_se_creent_pas_par_l_api(api_client_for):
     """Un lot naît uniquement d'une opération (réception…), jamais d'une saisie directe."""
     response = api_client_for("admin").post("/api/stocks/lots/", {}, format="json")
-    assert response.status_code == 403
+    assert response.status_code == 405  # opération inexistante

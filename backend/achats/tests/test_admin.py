@@ -32,6 +32,8 @@ def test_les_ecrans_s_affichent(admin_client_with_data):
 
 def test_les_donnees_de_demo_des_achats(admin_client_with_data):
     assert PurchaseOrder.objects.count() == 10
-    assert Lot.objects.filter(status="bloque").count() == 2
+    # Œufs bloqués (DLC trop courte) ; bœuf reçu à 6,5 °C puis détruit (stocks/demo_data.py)
+    assert Lot.objects.filter(status="bloque").count() == 1
+    assert Lot.objects.filter(status="detruit").count() == 1
     # Plusieurs lots de crème pour le futur scénario de rappel produit (phase 5)
     assert Lot.objects.filter(article__code="MP-LAI-CREME35").count() == 2

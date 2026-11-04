@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from referentiel.choices import TemperatureClass
-from stocks.services import receive_lot
+from stocks.services import check_location_compatible, receive_lot
 
 from .choices import PurchaseOrderStatus
 
@@ -254,7 +254,7 @@ def check_reception_controls(
     return reasons
 
 
-def _check_line_data(order, data: dict) -> list[str]:
+def _check_line_data(order, data: dict, location) -> list[str]:
     """Vérifie une ligne saisie avant de créer le lot. Renvoie les erreurs."""
     order_line = data["order_line"]
     article = order_line.article
@@ -275,6 +275,11 @@ def _check_line_data(order, data: dict) -> list[str]:
         errors.append(f"la {article.date_type} est obligatoire")
     if article.storage_temperature_class in MAX_TEMPERATURE and data.get("temperature") is None:
         errors.append("la température est obligatoire pour un produit frais ou surgelé")
+    # Chaîne du froid : l'emplacement de dépôt doit être à la bonne température
+    try:
+        check_location_compatible(article, location)
+    except ValidationError as exc:
+        errors.extend(exc.message_dict["location"])
     return [f"{article.code} : {message}" for message in errors]
 
 
@@ -317,7 +322,7 @@ def create_reception(
 
     errors = []
     for data in lines:
-        line_errors = _check_line_data(order, data)
+        line_errors = _check_line_data(order, data, location)
         if line_errors:
             errors.extend(line_errors)
             continue

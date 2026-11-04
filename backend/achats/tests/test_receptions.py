@@ -217,3 +217,14 @@ def test_l_emplacement_doit_etre_sur_le_site_de_livraison(order, cream, factory_
             ],
         )
     assert "MPE" in exc.value.message_dict["location"][0]
+
+
+def test_l_emplacement_de_depot_doit_etre_a_la_bonne_temperature(
+    make_order, receive, quarantine_zones, cream_at_supplier, cream
+):
+    """Chaîne du froid : de la crème ne se dépose pas en zone ambiante."""
+    order = make_order((cream, "100"))
+    with pytest.raises(ValidationError) as exc:
+        receive(order, location=quarantine_zones[TemperatureClass.AMBIENT])
+    assert "« Froid positif (0 à 4 °C) »" in exc.value.message_dict["lines"][0]
+    assert Lot.objects.count() == 0
