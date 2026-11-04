@@ -8,3 +8,4 @@ export function hasRole(user: User | null, roles: string[]): boolean {
 
 export const PURCHASING_ROLES = ['admin', 'acheteur']
 export const WAREHOUSE_ROLES = ['admin', 'magasinier']
+export const QUALITY_ROLES = ['admin', 'qualite']

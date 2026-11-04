@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import type { Lot, Paginated } from '../api/types'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatDate, formatDecimal } from '../format'
@@ -14,7 +15,8 @@ const STATUSES = [
 
 export function LotsPage() {
   const [status, setStatus] = useState('')
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const params = new URLSearchParams()
   if (status) params.set('status', status)
   if (search) params.set('search', search)
@@ -60,7 +62,9 @@ export function LotsPage() {
               <tbody>
                 {data.results.map((lot) => (
                   <tr key={lot.id}>
-                    <td>{lot.number}</td>
+                    <td>
+                      <Link to={`/lots/${lot.id}`}>{lot.number}</Link>
+                    </td>
                     <td>
                       {lot.article_code}
                       <br />

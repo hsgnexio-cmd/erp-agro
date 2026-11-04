@@ -10,6 +10,8 @@ const LINKS = [
   { to: '/sites', label: 'Sites' },
   { to: '/commandes', label: 'Commandes' },
   { to: '/lots', label: 'Lots' },
+  { to: '/stocks', label: 'Stocks' },
+  { to: '/fefo', label: 'FEFO' },
 ]
 
 /** Cadre commun des pages : en-tête, menu, utilisateur connecté. */
