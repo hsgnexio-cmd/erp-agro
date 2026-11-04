@@ -12,6 +12,9 @@ import { FefoPage } from './pages/FefoPage'
 import { LotDetailPage } from './pages/LotDetailPage'
 import { LotsPage } from './pages/LotsPage'
 import { StockPage } from './pages/StockPage'
+import { RecallDetailPage, RecallsPage } from './pages/RecallsPage'
+import { RecallSimulationPage } from './pages/RecallSimulationPage'
+import { TraceabilityPage } from './pages/TraceabilityPage'
 import { PurchaseOrderDetailPage } from './pages/PurchaseOrderDetailPage'
 import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage'
@@ -44,6 +47,10 @@ export function AppRoutes() {
         <Route path="inventaires" element={<InventoriesPage />} />
         <Route path="inventaires/:id" element={<InventoryDetailPage />} />
         <Route path="alertes" element={<AlertsPage />} />
+        <Route path="tracabilite" element={<TraceabilityPage />} />
+        <Route path="rappels" element={<RecallsPage />} />
+        <Route path="rappels/simulation" element={<RecallSimulationPage />} />
+        <Route path="rappels/:id" element={<RecallDetailPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>

@@ -16,6 +16,8 @@ const LINKS = [
   { to: '/temperatures', label: 'Températures' },
   { to: '/inventaires', label: 'Inventaires' },
   { to: '/alertes', label: 'Alertes' },
+  { to: '/tracabilite', label: 'Traçabilité' },
+  { to: '/rappels', label: 'Rappels' },
 ]
 
 /** Cadre commun des pages : en-tête, menu, utilisateur connecté. */

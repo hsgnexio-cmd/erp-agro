@@ -14,6 +14,8 @@ const SECTIONS = [
   { to: '/temperatures', title: 'Températures', text: 'Relevés des chambres froides' },
   { to: '/inventaires', title: 'Inventaires', text: 'Comptage, écarts, ajustements' },
   { to: '/alertes', title: 'Alertes', text: 'Péremption, températures : à traiter' },
+  { to: '/tracabilite', title: 'Traçabilité', text: 'Amont et aval d’un lot, jusqu’aux clients' },
+  { to: '/rappels', title: 'Rappels', text: 'Rappels produit et clients à prévenir' },
 ]
 
 export function HomePage() {

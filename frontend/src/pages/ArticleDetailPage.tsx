@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import type { ComputedAllergen } from '../api/quality'
 import type { Article, Bom, Paginated } from '../api/types'
 import { TEMPERATURE_LABELS, formatDecimal } from '../format'
 import { useApi } from '../hooks/useApi'
@@ -8,6 +9,10 @@ export function ArticleDetailPage() {
   const article = useApi<Article>(`/api/referentiel/articles/${id}/`)
   const boms = useApi<Paginated<Bom>>(
     article.data?.has_bom ? `/api/referentiel/boms/?article=${id}` : null,
+  )
+  // Règle 8 : allergènes des semi-finis et produits finis, calculés depuis la nomenclature
+  const allergens = useApi<ComputedAllergen[]>(
+    article.data?.has_bom ? `/api/qualite/allergens/?article=${id}` : null,
   )
 
   if (article.error) return <p className="error">{article.error}</p>
@@ -54,9 +59,24 @@ export function ArticleDetailPage() {
         <dd>{TEMPERATURE_LABELS[a.storage_temperature_class] ?? a.storage_temperature_class}</dd>
         <dt>Allergènes</dt>
         <dd>
-          {isRawMaterial
-            ? a.allergen_names.join(', ') || 'Aucun'
-            : 'Calculés à partir de la nomenclature (phase 5)'}
+          {isRawMaterial ? (
+            a.allergen_names.join(', ') || 'Aucun'
+          ) : !a.has_bom ? (
+            'Sans objet'
+          ) : allergens.data === undefined ? (
+            'Calcul…'
+          ) : allergens.data.length === 0 ? (
+            'Aucun (calculé à partir de la nomenclature)'
+          ) : (
+            <ul className="allergens">
+              {allergens.data.map((row) => (
+                <li key={row.code}>
+                  <strong>{row.name}</strong>{' '}
+                  <small>via {row.sources.map((path) => path.join(' → ')).join(' ; ')}</small>
+                </li>
+              ))}
+            </ul>
+          )}
         </dd>
       </dl>
 
