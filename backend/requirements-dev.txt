@@ -1,0 +1,5 @@
+# Outils de développement et de tests (en plus des dépendances principales).
+-r requirements.txt
+pytest==9.2.0
+pytest-django==4.14.0
+ruff==0.17.3
