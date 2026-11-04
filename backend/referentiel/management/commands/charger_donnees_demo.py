@@ -3,18 +3,18 @@ from django.core.management.base import BaseCommand
 from achats.demo_data import load_demo_data as load_purchasing
 from referentiel.demo_data import load_demo_data as load_referential
 from stocks.demo_data import load_demo_data as load_stocks
+from stocks.demo_monitoring import load_demo_data as load_monitoring
 
 
 class Command(BaseCommand):
-    help = (
-        "Charge les données fictives de démonstration (référentiel, achats, stocks), sans doublons."
-    )
+    help = "Charge toutes les données fictives de démonstration, sans doublons."
 
     def handle(self, *args, **options) -> None:
         for title, loader in (
             ("Référentiel", load_referential),
             ("Achats", load_purchasing),
             ("Stocks", load_stocks),
+            ("Surveillance", load_monitoring),
         ):
             counts = loader()
             self.stdout.write(self.style.SUCCESS(f"{title} :"))

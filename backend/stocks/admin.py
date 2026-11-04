@@ -6,7 +6,15 @@ Ils sont créés uniquement par les opérations de l'ERP (réception…), jamais
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Lot, LotStatusChange, StockMovement
+from .models import (
+    Alert,
+    Inventory,
+    InventoryLine,
+    Lot,
+    LotStatusChange,
+    StockMovement,
+    TemperatureReading,
+)
 
 
 class ReadOnlyAdminMixin:
@@ -63,3 +71,29 @@ class StockMovementAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     )
     list_filter = ("movement_type", "location__site")
     search_fields = ("lot__number", "reference")
+
+
+@admin.register(TemperatureReading)
+class TemperatureReadingAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ("measured_at", "location", "temperature", "is_compliant", "user")
+    list_filter = ("is_compliant", "location__site", "location")
+
+
+class InventoryLineInline(ReadOnlyAdminMixin, admin.TabularInline):
+    model = InventoryLine
+    extra = 0
+    fields = ("location", "lot", "expected_quantity", "counted_quantity", "added_during_count")
+    readonly_fields = fields
+
+
+@admin.register(Inventory)
+class InventoryAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
+    list_display = ("number", "site", "location", "status", "opened_at", "closed_at")
+    list_filter = ("status", "site")
+    inlines = [InventoryLineInline]
+
+
+@admin.register(Alert)
+class AlertAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
+    list_display = ("created_at", "alert_type", "level", "message", "resolved_at")
+    list_filter = ("alert_type", "level", ("resolved_at", admin.EmptyFieldListFilter))

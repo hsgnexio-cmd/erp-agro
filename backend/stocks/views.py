@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from django.db.models import DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils.dateparse import parse_date
-from rest_framework import viewsets
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
@@ -14,17 +14,25 @@ from rest_framework.views import APIView
 
 from comptes.permissions import WriteRolesPermission
 from comptes.roles import Role
-from referentiel.models import Article, Site
+from referentiel.models import Article, Location, Site
 
-from . import services
+from . import inventory as inventory_services
+from . import monitoring, services
 from .choices import LotStatus
-from .models import Lot, StockMovement
+from .models import Alert, Inventory, Lot, StockMovement, TemperatureReading
 from .serializers import (
+    AlertSerializer,
     CorrectionInputSerializer,
+    CountInputSerializer,
+    FoundLotInputSerializer,
+    InventoryDetailSerializer,
+    InventorySerializer,
     LotDetailSerializer,
     LotSerializer,
+    OpenInventoryInputSerializer,
     StatusChangeInputSerializer,
     StockMovementSerializer,
+    TemperatureReadingSerializer,
     TransferInputSerializer,
 )
 
@@ -192,3 +200,154 @@ class StockSummaryView(APIView):
             for key in ("released", "quarantine", "blocked", "total"):
                 row[key] = str(row[key])
         return Response(rows)
+
+
+# --- Surveillance : températures, inventaires, alertes -------------------------
+
+MONITORING = [Role.ADMIN, Role.QUALITE, Role.MAGASINIER]
+
+
+class TemperatureReadingViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = TemperatureReading.objects.select_related("location__site", "user")
+    serializer_class = TemperatureReadingSerializer
+    permission_classes = [WriteRolesPermission]
+    write_roles = MONITORING
+    filterset_fields = ["location", "location__site__code", "is_compliant"]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        result = monitoring.record_temperature(
+            data["location"],
+            data["temperature"],
+            user=request.user,
+            measured_at=data.get("measured_at"),
+            comment=data.get("comment", ""),
+        )
+        body = TemperatureReadingSerializer(result.reading).data
+        body["blocked_lots"] = [lot.number for lot in result.blocked_lots]
+        body["alert"] = result.alert.message if result.alert else None
+        return Response(body, status=201)
+
+    @action(detail=False)
+    def latest(self, request):
+        """Dernier relevé de chaque chambre froide (froid positif et négatif)."""
+        locations = (
+            Location.objects.filter(active=True, temperature_class__in=monitoring.COLD_CLASSES)
+            .select_related("site")
+            .order_by("code")
+        )
+        rows = []
+        for location in locations:
+            last = location.temperature_readings.first()
+            minimum, maximum = monitoring.temperature_limits(location)
+            rows.append(
+                {
+                    "location": location.id,
+                    "location_code": location.code,
+                    "location_name": location.name,
+                    "site_code": location.site.code,
+                    "min_allowed": None if minimum is None else str(minimum),
+                    "max_allowed": None if maximum is None else str(maximum),
+                    "last_reading": TemperatureReadingSerializer(last).data if last else None,
+                }
+            )
+        return Response(rows)
+
+
+class InventoryViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = Inventory.objects.select_related("site", "location", "opened_by", "closed_by")
+    permission_classes = [WriteRolesPermission]
+    write_roles = WAREHOUSE
+    filterset_fields = ["status", "site"]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return OpenInventoryInputSerializer
+        return InventorySerializer if self.action == "list" else InventoryDetailSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["show_differences"] = self.request.query_params.get("show_differences") == "1"
+        return context
+
+    def _detail(self, inventory, status_code=200):
+        inventory = self.get_queryset().get(pk=inventory.pk)
+        serializer = InventoryDetailSerializer(inventory, context={"show_differences": False})
+        return Response(serializer.data, status=status_code)
+
+    def create(self, request, *args, **kwargs):
+        data = OpenInventoryInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        inventory = inventory_services.open_inventory(user=request.user, **data.validated_data)
+        return self._detail(inventory, status_code=201)
+
+    @action(detail=True, methods=["post"])
+    def count(self, request, pk=None):
+        """Enregistre les quantités comptées : {"lines": [{"id": 1, "counted_quantity": "12"}]}."""
+        data = CountInputSerializer(data=request.data.get("lines", []), many=True)
+        data.is_valid(raise_exception=True)
+        inventory = self.get_object()
+        inventory_services.record_counts(
+            inventory, {row["id"]: row["counted_quantity"] for row in data.validated_data}
+        )
+        return self._detail(inventory)
+
+    @action(detail=True, methods=["post"], url_path="add-lot")
+    def add_lot(self, request, pk=None):
+        data = FoundLotInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        try:
+            lot = Lot.objects.get(number=data.validated_data["lot_number"].strip().upper())
+        except Lot.DoesNotExist as exc:
+            raise ValidationError({"lot_number": "Lot introuvable."}) from exc
+        inventory = self.get_object()
+        inventory_services.add_found_lot(
+            inventory,
+            lot=lot,
+            location=data.validated_data["location"],
+            counted_quantity=data.validated_data["counted_quantity"],
+        )
+        return self._detail(inventory)
+
+    @action(detail=True, methods=["post"])
+    def validate(self, request, pk=None):
+        inventory = self.get_object()
+        inventory_services.validate_inventory(inventory, user=request.user)
+        return self._detail(inventory)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        inventory = self.get_object()
+        inventory_services.cancel_inventory(inventory, user=request.user)
+        return self._detail(inventory)
+
+
+class AlertViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Alert.objects.select_related("lot", "location", "resolved_by")
+    serializer_class = AlertSerializer
+    permission_classes = [WriteRolesPermission]
+    write_roles = MONITORING
+    filterset_fields = ["alert_type", "level", "lot", "location"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        state = self.request.query_params.get("state")
+        if state == "open":
+            queryset = queryset.filter(resolved_at__isnull=True)
+        elif state == "resolved":
+            queryset = queryset.filter(resolved_at__isnull=False)
+        return queryset
+
+    @action(detail=False, url_path="open-count")
+    def open_count(self, request):
+        """Nombre d'alertes ouvertes, pour le compteur du menu."""
+        return Response({"count": Alert.objects.filter(resolved_at__isnull=True).count()})
+
+    @action(detail=True, methods=["post"])
+    def resolve(self, request, pk=None):
+        alert = monitoring.resolve_alert(
+            self.get_object(), user=request.user, comment=request.data.get("comment", "")
+        )
+        return Response(AlertSerializer(alert).data)
