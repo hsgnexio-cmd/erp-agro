@@ -97,9 +97,9 @@ Ces règles doivent être appliquées **dans le back-end** (modèles et services
 Conventions adoptées en cours de route (détail et raisons dans `docs/decisions.md`) :
 
 - **Aucune voie de contournement** : les modèles du référentiel héritent de `ValidatedModel` (validation complète à chaque enregistrement) ; les opérations passent par des fonctions métier qui relisent et verrouillent le lot (`select_for_update`).
-- **Logique métier** : `services.py`, ou un module dédié quand il devient long (`stocks/monitoring.py`, `stocks/inventory.py`, `production/orders.py`, `production/planning.py`, `ventes/orders.py`, `ventes/edi.py`).
+- **Logique métier** : `services.py`, ou un module dédié quand il devient long (`stocks/monitoring.py`, `stocks/inventory.py`, `production/orders.py`, `production/planning.py`, `ventes/orders.py`, `ventes/edi.py`, `ventes/shipping.py`).
 - **Enregistrements jamais modifiés ni supprimés** : mouvements de stock, journal des statuts de lot, relevés de température, rappels ; une alerte se marque « traitée ». Les documents d'opération (commandes, réceptions, lots, OF, inventaires) sont en lecture seule dans l'administration.
-- **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `EXP-`.
+- **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `BL-` (et `EXP-` pour les expéditions de la phase 5) ; série `SSCC` pour les palettes.
 - **Droits** : `comptes.permissions.WriteRolesPermission` + attribut `write_roles` de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
 - **API** : les décimaux sont renvoyés en texte ; une `ValidationError` Django devient une réponse 400 lisible (`config/exceptions.py`).
 - **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui.
@@ -133,8 +133,8 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 4. Stocks et lots | Statuts, mouvements, FEFO, DLC, températures, inventaires | Terminée |
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | Terminée |
 | 6. Production | Ordres de fabrication, consommations, rendements | Terminée |
-| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | En cours (7a terminée : tarifs, commandes, EDI simulé ; reste 7b : préparation FEFO, SSCC, expédition, taux de service, invendables — plan dans `docs/prochaine-etape.md`) |
-| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire |
+| 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | Terminée (7a : tarifs, commandes, EDI simulé ; 7b : préparation FEFO, SSCC, expédition, taux de service, invendables) |
+| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire (plan dans `docs/prochaine-etape.md`) |
 
 Mettre à jour la colonne Statut à la fin de chaque phase.
 
@@ -147,7 +147,7 @@ Précisions décidées en cours de route : le rôle `admin` peut tout faire, y c
 | Rôle | Actions principales |
 | --- | --- |
 | `acheteur` | Commandes fournisseurs, tarifs d'achat, fournisseurs |
-| `magasinier` | Réceptions, transferts, corrections, inventaires, relevés de température, alertes, (7b) préparation et expédition |
+| `magasinier` | Réceptions, transferts, corrections, inventaires, relevés de température, alertes, préparation et expédition |
 | `production` | Ordres de fabrication et déclarations, articles, recettes, nomenclatures, lignes |
-| `qualite` | Statuts des lots, allergènes, rappels, relevés de température, alertes, articles et nomenclatures |
+| `qualite` | Statuts des lots, invendables, allergènes, rappels, relevés de température, alertes, articles et nomenclatures |
 | `commercial` | Commandes clients, tarifs de vente, EDI, enseignes et entrepôts |
