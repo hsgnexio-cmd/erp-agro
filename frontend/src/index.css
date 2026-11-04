@@ -453,3 +453,34 @@ td.wrap {
   color: #8a1c1c;
   margin-top: 0.25rem;
 }
+
+/* --- Fiche lot --- */
+
+.panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.25rem 1rem 1rem;
+  margin: 1rem 0;
+}
+
+label.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+textarea {
+  font: inherit;
+  padding: 0.45em 0.6em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+button.danger {
+  background: #a12626;
+}
+
+td.negative {
+  color: #8a1c1c;
+}

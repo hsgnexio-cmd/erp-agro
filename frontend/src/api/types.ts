@@ -217,12 +217,14 @@ export interface Lot {
   article_code: string
   article_name: string
   article_type: ArticleType
+  article_temperature_class: string
   unit: string
   supplier_code: string | null
   supplier_lot_number: string
   reception_date: string | null
   date_type: string
   expiry_date: string | null
+  is_expired: boolean
   initial_quantity: string
   quantity: string
   location_code: string
@@ -232,4 +234,78 @@ export interface Lot {
   block_reason: string
   reception_number: string | null
   created_at: string
+}
+
+export interface LotStock {
+  location: number
+  location_code: string
+  location_name: string
+  site_code: string
+  quantity: string
+}
+
+export interface LotStatusChange {
+  id: number
+  from_status: LotStatus
+  from_status_label: string
+  to_status: LotStatus
+  to_status_label: string
+  reason: string
+  user_name: string | null
+  changed_at: string
+}
+
+export interface LotDetail extends Lot {
+  stock_by_location: LotStock[]
+  status_changes: LotStatusChange[]
+}
+
+export interface StockMovement {
+  id: number
+  lot: number
+  lot_number: string
+  article_code: string
+  movement_type: string
+  movement_type_label: string
+  quantity: string
+  unit: string
+  location: number
+  location_code: string
+  created_at: string
+  user_name: string | null
+  reason: string
+  reference: string
+  corrected_movement: number | null
+}
+
+export interface FefoLine {
+  lot: number
+  lot_number: string
+  expiry_date: string | null
+  date_type: string
+  location_code: string
+  available: string
+  take: string
+}
+
+export interface FefoPlan {
+  article_code: string
+  unit: string
+  site_code: string
+  requested: string
+  covered: string
+  missing: string
+  lines: FefoLine[]
+}
+
+export interface StockSummaryRow {
+  article: number
+  article_code: string
+  article_name: string
+  unit: string
+  site_code: string
+  released: string
+  quarantine: string
+  blocked: string
+  total: string
 }

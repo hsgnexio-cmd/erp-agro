@@ -28,6 +28,20 @@ def quarantine(warehouse):
 
 
 @pytest.fixture
+def quarantine_zones(warehouse, quarantine):
+    """Une zone de quarantaine par classe de température."""
+    zones = {TemperatureClass.CHILLED: quarantine}
+    for temperature_class, code in (
+        (TemperatureClass.FROZEN, "MPE-QUAR-FN"),
+        (TemperatureClass.AMBIENT, "MPE-QUAR-AMB"),
+    ):
+        zones[temperature_class] = Location.objects.create(
+            site=warehouse, code=code, name="Quarantaine", temperature_class=temperature_class
+        )
+    return zones
+
+
+@pytest.fixture
 def supplier(db):
     return Supplier.objects.create(
         code="FOU-004",
@@ -105,7 +119,7 @@ def make_order(warehouse, supplier):
 
 
 @pytest.fixture
-def receive(quarantine):
+def receive(quarantine_zones):
     """Réceptionne une ligne de commande : receive(order, quantity="100", temperature="3")."""
 
     def _receive(order, *, article_code=None, documents_ok=True, **line):
@@ -121,12 +135,13 @@ def receive(quarantine):
             "temperature": line.pop("temperature", Decimal("3")),
             "appearance_ok": line.pop("appearance_ok", True),
         }
+        location = line.pop("location", None)
         data.update(line)
         if data["temperature"] is not None:
             data["temperature"] = Decimal(data["temperature"])
         return services.create_reception(
             order=order,
-            location=quarantine,
+            location=location or quarantine_zones[order_line.article.storage_temperature_class],
             delivery_note_number="BL-001",
             documents_ok=documents_ok,
             lines=[data],

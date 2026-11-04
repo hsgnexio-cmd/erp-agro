@@ -162,7 +162,10 @@ describe('Réception', () => {
       '/api/auth/me/': { body: STOREKEEPER },
       '/api/achats/orders/7/': { body: ORDER },
       '/api/referentiel/locations/': {
-        body: paginated([{ id: 5, code: 'MPE-QUAR', name: 'Quarantaine' }]),
+        body: paginated([
+          { id: 6, code: 'MPE-QUAR-AMB', name: 'Quarantaine', temperature_class: 'ambiant' },
+          { id: 5, code: 'MPE-QUAR', name: 'Quarantaine', temperature_class: 'froid_positif' },
+        ]),
       },
       '/api/achats/receptions/': { status: 201, body: BLOCKED_RECEPTION },
     })
@@ -170,7 +173,11 @@ describe('Réception', () => {
     const user = userEvent.setup()
 
     await user.type(await screen.findByLabelText('N° de bon de livraison'), 'BL-118')
-    await screen.findByRole('option', { name: 'MPE-QUAR – Quarantaine' })
+    // La crème est en froid positif : la quarantaine froide est proposée par défaut
+    expect(await screen.findByRole('option', { name: 'MPE-QUAR – Quarantaine' })).toHaveProperty(
+      'selected',
+      true,
+    )
     const line = screen.getByRole('group', { name: /MP-LAI-CREME35/ })
     await user.type(within(line).getByLabelText('Lot fournisseur'), 'CB-0412')
     await user.type(within(line).getByLabelText('DLC'), '2026-11-24')

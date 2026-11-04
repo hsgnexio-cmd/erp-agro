@@ -119,7 +119,11 @@ def load_demo_data() -> dict[str, int | str]:
         return counts
 
     warehouse = Site.objects.get(code="MPE")
-    quarantine = Location.objects.get(code="MPE-QUAR")
+    # Zone de quarantaine adaptée à la température de conservation des produits reçus
+    quarantine_by_class = {
+        location.temperature_class: location
+        for location in Location.objects.filter(code__startswith="MPE-QUAR")
+    }
     articles = {a.code: a for a in Article.objects.filter(article_type__in=["MP", "EM"])}
 
     for supplier_code, days_ago, lines, follow_up in ORDERS:
@@ -138,9 +142,10 @@ def load_demo_data() -> dict[str, int | str]:
             _, received_days_ago, received = follow_up
             reception_day = today - timedelta(days=received_days_ago)
             order_lines = {line.article.code: line for line in order.lines.all()}
+            first_article = articles[received[0][0]]
             services.create_reception(
                 order=order,
-                location=quarantine,
+                location=quarantine_by_class[first_article.storage_temperature_class],
                 delivery_note_number=f"BL-{supplier_code[-3:]}-{reception_day:%m%d}",
                 received_at=_at(reception_day),
                 lines=[

@@ -35,8 +35,13 @@ class Lot(ValidatedModel):
     date_type = models.CharField("type de date", max_length=10, choices=DateType.choices)
     expiry_date = models.DateField("DLC / DDM", null=True, blank=True)
     initial_quantity = models.DecimalField("quantité initiale", max_digits=14, decimal_places=3)
+    # Emplacement où le lot est entré en stock ; le stock actuel par emplacement
+    # se calcule à partir des mouvements (un lot peut être réparti sur plusieurs)
     location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="lots", verbose_name="emplacement"
+        Location,
+        on_delete=models.PROTECT,
+        related_name="lots",
+        verbose_name="emplacement d'entrée",
     )
     status = models.CharField("statut", max_length=20, choices=LotStatus.choices)
     block_reason = models.TextField("motif de blocage", blank=True)
@@ -112,6 +117,14 @@ class StockMovement(models.Model):
     )
     reason = models.CharField("motif", max_length=200)
     reference = models.CharField("document d'origine", max_length=30, blank=True)
+    corrected_movement = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        related_name="corrections",
+        null=True,
+        blank=True,
+        verbose_name="mouvement corrigé",
+    )
 
     objects = StockMovementQuerySet.as_manager()
 
@@ -137,3 +150,37 @@ class StockMovement(models.Model):
         raise ValidationError(
             "Un mouvement de stock ne se supprime jamais : passe un mouvement inverse."
         )
+
+
+class LotStatusChange(models.Model):
+    """Journal des changements de statut d'un lot (qui, quand, pourquoi). Jamais modifié."""
+
+    lot = models.ForeignKey(
+        Lot, on_delete=models.PROTECT, related_name="status_changes", verbose_name="lot"
+    )
+    from_status = models.CharField("ancien statut", max_length=20, choices=LotStatus.choices)
+    to_status = models.CharField("nouveau statut", max_length=20, choices=LotStatus.choices)
+    reason = models.TextField("motif", blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="lot_status_changes",
+        null=True,
+        blank=True,
+        verbose_name="utilisateur",
+        help_text="Vide = changement automatique par l'ERP.",
+    )
+    changed_at = models.DateTimeField("date", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+        verbose_name = "changement de statut"
+        verbose_name_plural = "changements de statut"
+
+    def __str__(self) -> str:
+        return f"{self.lot.number} : {self.from_status} → {self.to_status}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValidationError("Un changement de statut enregistré ne se modifie pas.")
+        super().save(*args, **kwargs)

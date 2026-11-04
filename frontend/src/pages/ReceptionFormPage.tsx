@@ -42,8 +42,11 @@ export function ReceptionFormPage() {
   if (!order.data) return <p>Chargement…</p>
 
   const openLines = order.data.lines.filter((line) => remaining(line) > 0)
-  // Par défaut, la marchandise est déposée en zone de quarantaine
-  const defaultLocation = locations.data?.results.find((l) => l.code.endsWith('-QUAR'))
+  // Par défaut, zone de quarantaine à la température de conservation des produits
+  const temperatureClass = openLines[0]?.article_temperature_class
+  const defaultLocation = locations.data?.results.find(
+    (l) => l.code.includes('-QUAR') && l.temperature_class === temperatureClass,
+  )
   const location = locationId || (defaultLocation ? String(defaultLocation.id) : '')
 
   // Valeur saisie, ou valeur par défaut (quantité restant à recevoir, aspect conforme)
