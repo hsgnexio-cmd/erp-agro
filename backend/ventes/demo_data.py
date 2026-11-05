@@ -22,6 +22,10 @@ def _load_prices(today) -> int:
     for customer in Customer.objects.filter(active=True):
         for row in orders.orderable_articles(customer, today):
             article = row["article"]
+            count += 1
+            # Déjà tarifé (chargement d'un autre jour) : les périodes ne doivent pas se chevaucher
+            if SalePrice.objects.filter(customer=customer, article=article).exists():
+                continue
             price = Decimal(BASE_PRICES.get(article.format_size, "2.50"))
             if article.brand_customer_id:
                 price = (price * PRIVATE_LABEL_DISCOUNT).quantize(Decimal("0.01"))
@@ -31,7 +35,6 @@ def _load_prices(today) -> int:
                 valid_from=valid_from,
                 defaults={"unit_price": price},
             )
-            count += 1
     return count
 
 
