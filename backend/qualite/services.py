@@ -2,6 +2,7 @@
 
 import csv
 import io
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -121,6 +122,8 @@ class RecallImpact:
     lots: list[ImpactedLot]
     deliveries: list[dict]
     computed_at: datetime
+    # Durée du calcul (indicateur « délai de traçabilité », objectif ≤ 5 min)
+    duration_ms: int = 0
 
     @property
     def lots_to_block(self) -> list[Lot]:
@@ -138,6 +141,7 @@ def recall_impact(lot: Lot) -> RecallImpact:
     Parcours de l'aval niveau par niveau, en quelques requêtes groupées (rapide même
     avec beaucoup de lots).
     """
+    started = time.perf_counter()
     levels = {lot.pk: 0}
     frontier = {lot.pk}
     depth = 0
@@ -181,7 +185,11 @@ def recall_impact(lot: Lot) -> RecallImpact:
         key=lambda d: (d["warehouse"].customer.code, d["warehouse"].code, d["lot"].number)
     )
     return RecallImpact(
-        origin=lot, lots=impacted, deliveries=deliveries, computed_at=timezone.now()
+        origin=lot,
+        lots=impacted,
+        deliveries=deliveries,
+        computed_at=timezone.now(),
+        duration_ms=round((time.perf_counter() - started) * 1000),
     )
 
 
@@ -269,6 +277,7 @@ def launch_recall(lot: Lot, *, reason: str, user=None) -> ProductRecall:
     ]
     snapshot = impact_to_dict(impact)
     snapshot["blocked_lots"] = [item.number for item in blocked]
+    snapshot["duration_ms"] = impact.duration_ms
     recall = ProductRecall.objects.create(
         number=number,
         origin_lot=lot,
