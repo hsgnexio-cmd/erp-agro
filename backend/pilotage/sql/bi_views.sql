@@ -14,6 +14,8 @@
 CREATE SCHEMA IF NOT EXISTS bi;
 
 -- --- Fonctions de valorisation ----------------------------------------------------------
+-- Elles lisent les tarifs avec les droits du propriétaire (SECURITY DEFINER) : l'utilisateur
+-- Power BI, qui n'a accès qu'au schéma bi, peut ainsi les appeler sans voir les tables.
 
 CREATE OR REPLACE FUNCTION bi.local_date(moment timestamptz) RETURNS date
 LANGUAGE sql IMMUTABLE AS $$
@@ -21,7 +23,7 @@ LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION bi.purchase_price(p_article bigint, p_supplier bigint, p_date date)
-RETURNS numeric LANGUAGE sql STABLE AS $$
+RETURNS numeric LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, bi AS $$
     SELECT COALESCE(
         (SELECT p.unit_price
            FROM achats_supplierprice p
@@ -38,7 +40,7 @@ RETURNS numeric LANGUAGE sql STABLE AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION bi.sale_price(p_article bigint, p_date date)
-RETURNS numeric LANGUAGE sql STABLE AS $$
+RETURNS numeric LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, bi AS $$
     SELECT avg(p.unit_price)
       FROM ventes_saleprice p
      WHERE p.article_id = p_article
@@ -47,7 +49,7 @@ $$;
 
 -- Coût d'un semi-fini : ses matières (prix d'achat) pour une unité, pertes comprises
 CREATE OR REPLACE FUNCTION bi.bom_cost(p_article bigint, p_date date)
-RETURNS numeric LANGUAGE sql STABLE AS $$
+RETURNS numeric LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, bi AS $$
     SELECT sum(
                l.quantity / (1 - l.loss_rate / 100)
                * bi.purchase_price(l.component_id, NULL::bigint, p_date)
@@ -58,7 +60,7 @@ RETURNS numeric LANGUAGE sql STABLE AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION bi.unit_value(p_article bigint, p_supplier bigint, p_date date)
-RETURNS numeric LANGUAGE sql STABLE AS $$
+RETURNS numeric LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, bi AS $$
     SELECT CASE a.article_type
                WHEN 'PF' THEN bi.sale_price(a.id, p_date)
                WHEN 'SF' THEN bi.bom_cost(a.id, p_date)
@@ -329,7 +331,8 @@ SELECT b.day AS date,
        l.article_id,
        b.site_id,
        p.status AS lot_status,
-       sum(b.quantity) AS quantity
+       sum(b.quantity) AS quantity,
+       sum(b.quantity) * bi.unit_value(l.article_id, NULL, b.day) AS value
   FROM balances b
   JOIN stocks_lot l ON l.id = b.lot_id
   JOIN periods p

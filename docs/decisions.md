@@ -255,6 +255,19 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | --- | --- |
 | Consulter le tableau de bord et l'API des indicateurs | tous les rôles |
 
+## Phase 8b – Power BI, Power Query, export Excel
+
+| Décision | Raison |
+| --- | --- |
+| Utilisateur PostgreSQL **`powerbi` en lecture seule** : lecture du schéma `bi` uniquement, sessions en lecture seule (`default_transaction_read_only`) | Validé : Power BI et Excel ne voient aucune table de l'application et ne peuvent rien modifier. Testé en se connectant réellement avec cet utilisateur. |
+| Création par la commande relançable `creer_utilisateur_bi`, mot de passe `BI_DB_PASSWORD` du `.env` (12 caractères minimum) | Validé : jamais de mot de passe dans le code ni dans une migration. |
+| Droits remis automatiquement après chaque `migrate` (`pilotage.bi_access.refresh_grants`) et droits par défaut sur le schéma | Une vue recréée par une migration garde sa lecture pour `powerbi`. |
+| Fonctions de valorisation en `SECURITY DEFINER` (migration `0002`) | Elles lisent les tarifs (tables de l'application) avec les droits de l'ERP : `powerbi` peut les appeler sans accès aux tables. |
+| Colonne `value` ajoutée à `bi.fact_stock_daily` (migration `0003`) | Les mesures DAX ne peuvent pas appeler une fonction SQL : la vue fournit la valeur du stock, utilisée aussi par le tableau de bord. |
+| Une requête Power Query typée par vue (`bi/power-query/*.pq`) et les mesures DAX documentées (`bi/mesures-dax.md`) | Validé : Nicolas construit lui-même le rapport Power BI (formation) et l'enregistre au format projet `.pbip` (texte, suivi par Git) dans `bi/power-bi/`. Un `.pbix` est un binaire qu'on ne peut pas produire de façon fiable par le code. |
+| Excel d'abord, Power BI ensuite | Validé : Excel est déjà installé sur le PC de Nicolas. |
+| **Export CSV** du tableau de bord (`/api/pilotage/indicators/export/`) : séparateur « ; », UTF-8 avec marque d'ordre, décimales à la virgule | Validé : s'ouvre directement dans Excel, sans connexion à configurer. Même format que la liste des clients d'un rappel. |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -281,7 +294,8 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| **Phase 8b** : Power BI, Power Query, utilisateur PostgreSQL en lecture seule | Vues `bi` prêtes (8a) ; plan dans `docs/prochaine-etape.md` | Prochaine session |
+| Rapport Power BI (`bi/power-bi/*.pbip`) | Requêtes et mesures fournies (8b) ; rapport à construire par Nicolas dans Power BI Desktop | Quand Power BI Desktop sera installé |
+| Suite de la feuille de route | Les 8 phases du projet sont terminées ; pistes dans ce tableau (prévisions, TRS, planification avancée…) | À décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
 | Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |

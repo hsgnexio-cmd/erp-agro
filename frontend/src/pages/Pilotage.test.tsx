@@ -119,6 +119,14 @@ describe('Tableau de bord', () => {
     await screen.findByRole('article', { name: 'Taux de service' })
     await userEvent.selectOptions(screen.getByLabelText('Site'), '1')
 
+    // L'export pour Excel suit les mêmes filtres
+    expect(screen.getByRole('link', { name: /Exporter pour Excel/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/api/pilotage/indicators/export/?start='),
+    )
+    expect(screen.getByRole('link', { name: /Exporter pour Excel/ }).getAttribute('href')).toContain(
+      'site=1',
+    )
     const urls = fetchMock.mock.calls.map(([input]) => String(input))
     expect(urls.some((url) => url.includes('/api/pilotage/indicators/') && url.includes('site=1'))).toBe(
       true,

@@ -154,7 +154,7 @@ Menu **Tableau de bord** (tous les rôles) : les 9 indicateurs de la fiche entre
 | Délai de traçabilité | Durée d'un rappel « à blanc », mesurée à l'ouverture | ≤ 5 min |
 | TRS, fiabilité des prévisions | **Non disponibles** : l'ERP n'enregistre ni arrêts de ligne ni prévisions | — |
 
-Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)).
+Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)). Le bouton **Exporter pour Excel (CSV)** télécharge les indicateurs et leur évolution par semaine, avec les filtres choisis.
 
 ### Le parcours d'achat
 
@@ -243,11 +243,64 @@ erp-agro/
 ├── frontend/         # React + TypeScript (Vite)
 ├── docs/             # fiche entreprise, décisions (decisions.md)
 ├── data/             # scripts de données fictives (à venir)
-├── bi/               # documentation des vues SQL « bi » ; Power Query, Power BI (phase 8b)
+├── bi/               # vues SQL « bi » (documentation), requêtes Power Query, mesures DAX
 ├── docker-compose.yml
 └── .env.example      # modèle de configuration (copier en .env)
 ```
 
-## Connexion Power BI / Excel (phase 8)
+## Connexion Power BI / Excel
 
-PostgreSQL est accessible depuis le PC sur `localhost`, port `5432` (modifiable avec `POSTGRES_HOST_PORT` dans `.env`). La base, l'utilisateur et le mot de passe sont ceux du fichier `.env`.
+Excel et Power BI lisent les **vues du schéma `bi`** (décrites dans [`bi/README.md`](bi/README.md)), avec un utilisateur PostgreSQL **en lecture seule**, `powerbi`. Il ne voit aucune table de l'application et ne peut rien modifier. Les chiffres sont les mêmes que ceux du tableau de bord.
+
+Pour un simple fichier Excel, sans connexion : bouton **Exporter pour Excel (CSV)** du tableau de bord.
+
+### 1. Créer l'utilisateur `powerbi` (une seule fois)
+
+Dans le fichier `.env`, ajouter (ou vérifier) ces deux lignes, avec un mot de passe d'au moins 12 caractères :
+
+```
+BI_DB_USER=powerbi
+BI_DB_PASSWORD=un-long-mot-de-passe
+```
+
+Pour générer un mot de passe au hasard dans PowerShell :
+
+```powershell
+-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 20 | ForEach-Object { [char]$_ })
+```
+
+Puis recharger la configuration et créer l'utilisateur (la commande est relançable, par exemple après un changement de mot de passe) :
+
+```powershell
+docker compose up -d
+```
+
+```powershell
+docker compose exec backend python manage.py creer_utilisateur_bi
+```
+
+### 2. Se connecter depuis Excel
+
+1. **Données** → **Obtenir des données** → **À partir d'une base de données** → **À partir d'une base de données PostgreSQL**.
+2. Serveur : `localhost` (ou `localhost:5433` si `POSTGRES_HOST_PORT` a été changé) ; base de données : `erp_agro`. **OK**.
+3. Onglet **Base de données** : utilisateur `powerbi`, mot de passe `BI_DB_PASSWORD` du fichier `.env`. **Se connecter**.
+4. Dans le **Navigateur**, cocher **Sélectionner plusieurs éléments**, puis les vues `bi.fact_…` et `bi.dim_…` utiles (par exemple `bi.fact_service` et `bi.dim_customer`). **Charger** → **Charger dans…** → **Tableau croisé dynamique** et cocher **Ajouter ces données au modèle de données**.
+5. Pour mettre à jour les chiffres : **Données** → **Actualiser tout**.
+
+En cas de message d'erreur :
+
+- **Chiffrement / SSL / certificat** : la base locale n'est pas chiffrée. **Données** → **Obtenir des données** → **Paramètres de la source de données** → choisir `localhost;erp_agro` → **Modifier les autorisations** → décocher **Chiffrer les connexions**.
+- **« Vous devez d'abord installer un ou plusieurs composants supplémentaires »** : Excel a besoin du pilote PostgreSQL **Npgsql 4.0.17** (Power BI Desktop l'intègre déjà ; les versions 4.1 et plus ne fonctionnent pas avec Excel).
+  1. Fermer Excel.
+  2. Télécharger `Npgsql-4.0.17.msi` (1,5 Mo) sur la page officielle du projet : https://github.com/npgsql/npgsql/releases/tag/v4.0.17 (section *Assets*).
+  3. Lancer le fichier ; à l'écran **Custom Setup**, cliquer sur **Npgsql GAC Installation** et choisir **Will be installed on local hard drive** (sinon Excel ne le trouve pas). Terminer l'installation.
+  4. Rouvrir Excel et recommencer l'étape 1.
+
+### 3. Construire le rapport Power BI
+
+1. Installer **Power BI Desktop** (gratuit, depuis le Microsoft Store).
+2. **Accueil** → **Obtenir des données** → **Requête vide** → **Éditeur avancé** : coller le contenu d'un fichier de [`bi/power-query/`](bi/power-query/), **Terminé**, puis renommer la requête comme le fichier (par exemple `fact_service`). Recommencer pour chaque fichier. Les types de colonnes (nombres, dates…) sont déjà réglés.
+3. À la première requête, Power BI demande l'utilisateur et le mot de passe (onglet **Base de données**) ; même remarque que pour Excel s'il parle de chiffrement.
+4. **Fermer et appliquer**, puis créer les relations et les mesures en suivant [`bi/mesures-dax.md`](bi/mesures-dax.md).
+5. Vérifier : sur la même période, les cartes Power BI doivent donner les mêmes chiffres que le tableau de bord de l'application.
+6. Enregistrer au format **projet Power BI** (**Fichier** → **Enregistrer sous** → type `*.pbip`) dans `bi/power-bi/`. Ce format est du texte, que Git sait suivre. Si le type `.pbip` n'apparaît pas : **Fichier** → **Options et paramètres** → **Options** → **Fonctionnalités en préversion** → cocher **Enregistrement de projet Power BI**.

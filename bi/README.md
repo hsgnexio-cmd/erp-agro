@@ -1,6 +1,15 @@
 # bi – Pilotage et analyse
 
-Ce dossier documente les données de pilotage de l'ERP. Les requêtes Power Query et le modèle Power BI arriveront en phase 8b.
+Ce dossier documente les données de pilotage de l'ERP.
+
+| Contenu | Rôle |
+| --- | --- |
+| Ce fichier | Les vues SQL du schéma `bi` et la formule de chaque indicateur |
+| [`power-query/`](power-query/) | Une requête Power Query par vue, avec les types de colonnes, à coller dans Excel ou Power BI |
+| [`mesures-dax.md`](mesures-dax.md) | Relations du modèle Power BI et mesures DAX des indicateurs |
+| `power-bi/` | Le rapport Power BI, enregistré au format projet (`.pbip`) |
+
+Connexion pas à pas (utilisateur `powerbi` en lecture seule) : voir le [README](../README.md#connexion-power-bi--excel).
 
 ## Le schéma `bi` de PostgreSQL
 
@@ -25,7 +34,7 @@ Les dates sont en heure de Paris. Les montants sont en euros HT.
 | Vue | Une ligne par… | Sert à |
 | --- | --- | --- |
 | `bi.fact_stock_movement` | mouvement de stock, valorisé (`value`) ; `is_markdown` = destruction, don, alimentation animale, destruction d'invendable | démarque, couvertures (sorties) |
-| `bi.fact_stock_daily` | jour × article × site × statut du lot ce jour-là : stock de fin de journée | couvertures |
+| `bi.fact_stock_daily` | jour × article × site × statut du lot ce jour-là : stock de fin de journée (`quantity`) et sa valeur (`value`) | couvertures |
 | `bi.fact_sales` | ligne expédiée : quantité, prix, montant (`amount`) | chiffre d'affaires |
 | `bi.fact_service` | commande client : commandé, livré à l'heure, en retard, manquant ; `is_counted` = faux pour une commande encore dans les temps | taux de service |
 | `bi.fact_reception` | ligne de réception : `is_compliant`, motifs | conformité réception |
