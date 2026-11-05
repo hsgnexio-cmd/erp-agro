@@ -5,6 +5,7 @@ import { AlertBadge } from './AlertBadge'
 
 const LINKS = [
   { to: '/', label: 'Accueil', end: true },
+  { to: '/tableau-de-bord', label: 'Tableau de bord' },
   { to: '/articles', label: 'Articles' },
   { to: '/fournisseurs', label: 'Fournisseurs' },
   { to: '/clients', label: 'Clients' },

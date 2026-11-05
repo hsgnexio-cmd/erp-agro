@@ -115,7 +115,7 @@ def test_scenario_de_reference_creme_contaminee(db):
     L'ERP liste tous les produits finis fabriqués avec ce lot, leurs stocks restants et les
     enseignes livrées, avec les quantités — en quelques secondes.
     """
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     cream = Lot.objects.get(supplier_lot_number="CB-0412")
 
     start = time.perf_counter()

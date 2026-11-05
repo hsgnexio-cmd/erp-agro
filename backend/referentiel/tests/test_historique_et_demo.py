@@ -18,8 +18,8 @@ def test_chaque_modification_est_historisee(api_client_for, cream):
 
 
 def test_les_donnees_de_demo_se_chargent_sans_doublon(db):
-    call_command("charger_donnees_demo")
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
+    call_command("charger_donnees_demo", sans_historique=True)
 
     assert Customer.objects.count() == 6
     assert Article.objects.filter(article_type="PF").count() == 22
@@ -29,7 +29,7 @@ def test_les_donnees_de_demo_se_chargent_sans_doublon(db):
 
 def test_la_creme_est_utilisee_dans_plusieurs_recettes(db):
     """Prépare le scénario de rappel produit de la phase 5."""
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     used_in = set(
         BOMLine.objects.filter(component__code="MP-LAI-CREME35").values_list(
             "bom__article__code", flat=True

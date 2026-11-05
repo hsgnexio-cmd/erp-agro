@@ -82,6 +82,11 @@ def _load_prices(today) -> int:
     monday = today - timedelta(days=today.weekday())
     count = 0
     for link in SupplierArticle.objects.select_related("article__category"):
+        # Déjà tarifé (chargement d'un autre jour) : on garde ses tarifs, sinon les périodes
+        # recalculées à partir d'aujourd'hui chevaucheraient les anciennes
+        if link.prices.exists():
+            count += 1
+            continue
         price = _price_for(link.article)
         category = link.article.category.code if link.article.category_id else None
         if category in WEEKLY_PRICE_CATEGORIES:

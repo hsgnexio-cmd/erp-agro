@@ -226,6 +226,35 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Sortir un invendable | `admin`, `qualite` |
 | Consulter bons de livraison, palettes, taux de service | tous les rôles |
 
+## Phase 8a – Indicateurs et tableau de bord
+
+| Décision | Raison |
+| --- | --- |
+| Phase 8 découpée en 8a (historique de démo, vues SQL, API, tableau de bord) et 8b (Power BI, Power Query, utilisateur PostgreSQL en lecture seule) | Deux pull requests plus faciles à relire et à tester. |
+| Calculs dans des **vues SQL** PostgreSQL, schéma `bi` (`pilotage/sql/bi_views.sql`, créé par une migration) | Une seule source de vérité : le tableau de bord (via `pilotage/indicators.py`) et Power BI lisent les mêmes vues. Des tests vérifient que les vues donnent les mêmes résultats que les calculs métier en Python (taux de service, rendement). |
+| Valorisation : produit fini au **prix de vente moyen en vigueur** des enseignes ; matière et emballage au **prix d'achat en vigueur à la date** (fournisseur du lot, sinon moyenne) ; semi-fini au coût de sa nomenclature | Validé en début de phase. Fonctions SQL `bi.unit_value`, `bi.sale_price`, `bi.purchase_price`, `bi.bom_cost`. |
+| Démarque = mouvements `destruction`, `don`, `alimentation_animale`, `destruction_invendable`, divisés par le CA expédié (prix des commandes) | Fiche entreprise : « valeur détruite ou déclassée / CA ». Les ajustements d'inventaire n'en font pas partie. |
+| Couvertures en **valeur** et en jours : stock disponible ÷ sorties moyennes par jour (expéditions pour les produits finis, consommations pour les matières) | Additionner des kg, des litres et des unités n'aurait pas de sens. |
+| Stock disponible = lots **libérés ou en quarantaine** ; les lots bloqués ne comptent pas | La production de la veille attend sa libération du matin : sans elle, la couverture serait sous-estimée. |
+| Stock d'un jour passé : statut retrouvé dans le journal des statuts (`LotStatusChange`) | Vue `bi.fact_stock_daily` : stock de fin de journée par article, site et statut, pour suivre les couvertures semaine par semaine. |
+| TRS et fiabilité des prévisions affichés « **non disponibles** » | Validé : l'ERP n'enregistre ni arrêts de ligne ni prévisions ; on n'invente pas de chiffres. Saisie possible dans une phase complémentaire. |
+| Délai de traçabilité = **rappel à blanc** mesuré à chaque consultation sur le lot de matière le plus utilisé ; la durée des vrais rappels est gardée dans leur photo (`duration_ms`) | Toujours une mesure récente, même sans rappel sur la période. |
+| Filtres : période pour tous ; enseigne pour le taux de service ; site pour le rendement et la couverture matières | Les autres indicateurs ne se découpent pas proprement (le CA et les expéditions sont ceux de la plateforme). Chaque tuile affiche les filtres qu'elle prend en compte. |
+| Période par défaut : les 28 derniers jours ; évolution par semaine ISO (S41, S42…) | Quatre semaines d'historique de démonstration. |
+| **Historique de démonstration** de 4 semaines (`pilotage/demo_history.py`), rejoué jour par jour avec les fonctions métier, dans `charger_donnees_demo` | Validé : indicateurs réalistes. Toutes les règles s'appliquent (FEFO, DLC client, statuts…). Une commande Django plutôt qu'un script dans `data/` : même outil que le reste de la démo. Option `--sans-historique` pour les tests (le chargement complet prend environ 6 minutes). |
+| Horloge simulée pendant l'historique (`simulated_clock`) | Chaque enregistrement porte la date de sa journée. Pour cela, le FEFO ignore les lots créés « dans le futur » (sans effet en usage normal). |
+| Incidents volontaires dans l'historique | Panne de ligne (ruptures), transporteur en retard (livraisons hors délai), fuite en cuisson (rendement faible), 3 % de réceptions non conformes (lots laissés bloqués, pour retour fournisseur), invendables donnés ou détruits. |
+| Quatre légumes n'avaient qu'un fournisseur non audité (FOU-007) | L'historique les référence aussi chez Maraîchers Nantais (FOU-006, audité), au même prix : on ne commande jamais à un fournisseur non audité. |
+
+| Relancer `charger_donnees_demo` un autre jour ne recrée plus les tarifs déjà présents (achat et vente) | Défaut des phases 3 et 7a : les périodes recalculées depuis « aujourd'hui » chevauchaient les anciennes et le chargement échouait. |
+| Tests front-end : attente maximale de 5 s pour qu'un élément apparaisse (au lieu de 1 s) | Le premier affichage d'un fichier de tests dépassait parfois 1 s quand le PC est chargé : échecs aléatoires, sans lien avec le code. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Consulter le tableau de bord et l'API des indicateurs | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -241,7 +270,7 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Décimaux renvoyés en texte par l'API (`"4.2000"`) | toutes les API | Aucune perte de précision ; le front-end formate en français (`formatDecimal`, `formatMoney`). |
 | Erreurs métier → réponse 400 lisible | `config/exceptions.py` ; côté React `errorMessages` + `ErrorList` | Les messages des règles s'affichent tels quels à l'utilisateur. |
 | Connexion par session Django + jeton CSRF | `comptes/views.py`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Sécurité standard ; l'origine du front-end (`localhost:5173`) doit être déclarée de confiance. |
-| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
+| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → historique de 4 semaines ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
 | Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
 | Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. |
 | Front-end | hook `useApi` (rechargement par paramètre `?v=`), `auth/roles.ts`, `StatusBadge` | Même façon de faire sur tous les écrans. |
@@ -252,17 +281,19 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| **Phase 8** : pilotage, indicateurs, Power BI, Power Query | Plan dans `docs/prochaine-etape.md` | Prochaine session |
-| Stock de produits finis de démonstration | Petit (lots de la phase 5) : les commandes EDI de démo sont presque toutes en rupture. Il faudrait des réceptions de matières et des OF déclarés pour toute la gamme | Phase 8 (indicateurs réalistes) ou complémentaire |
-| Valorisation des invendables (démarque) et des ruptures | Les mouvements `don`, `alimentation_animale`, `destruction_invendable` sont prêts ; prix de vente disponibles | Phase 8 |
-| Pénalités des enseignes sous 98,5 % | Seulement signalées | Phase 8 ou si besoin |
+| **Phase 8b** : Power BI, Power Query, utilisateur PostgreSQL en lecture seule | Vues `bi` prêtes (8a) ; plan dans `docs/prochaine-etape.md` | Prochaine session |
+| Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
+| Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
+| Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |
+| TRS et fiabilité des prévisions | « Non disponibles » : pas de saisie des arrêts de ligne ni des prévisions | Phase complémentaire possible |
+| Durée du chargement de l'historique de démo (≈ 6 min) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
 | Planification avancée : prévisions à 8 semaines, plan figé à J-2, promotions (×3), calcul des besoins (MRP) | Hors périmètre des phases 6 et 7a | Phase complémentaire possible |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
 | « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
 | Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |
 | Réservation de stock (OF, préparation) | Pas de réservation ; contrôle du stock au moment de l'opération | Si besoin |
 | Formulaires React du référentiel | Saisie dans l'administration Django | Si besoin |
-| Jours ouvrés et jours fériés | L'heure limite et le planning ne tiennent pas compte des week-ends | Si besoin |
+| Jours ouvrés et jours fériés | L'heure limite, le planning et l'historique de démo (7 jours sur 7) ne tiennent pas compte des week-ends | Si besoin |
 | Durée de la suite de tests back-end (≈ 5 min en local) | Due surtout aux tests qui rechargent toutes les données de démo | À optimiser (données de démo partagées entre tests) |
 | Expéditions de démonstration de la phase 5 | Non rattachées à des commandes clients (numéros `EXP-`) : elles ne comptent pas dans le taux de service | À garder en tête en phase 8 |
 | Base locale de Nicolas modifiée par les vérifications | Commande CA-2026-00011 et lot de crème bloqué (5,2 °C), lot de lait libéré et transféré, message EDI `ENS4-…-ERR`, commande CC-2026-00019 préparée et expédiée en 7b (BL-2026-00005, 54 lasagnes), compte `test-verif` désactivé | Repartir d'une base neuve si besoin (procédure dans `docs/prochaine-etape.md`) |

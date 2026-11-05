@@ -106,7 +106,7 @@ def test_alertes_ouvertes_et_traitement(api_client_for, make_lot, cream):
 
 
 def test_donnees_de_demo_de_la_surveillance(db):
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     from stocks.models import Lot, TemperatureReading
 
     assert TemperatureReading.objects.filter(is_compliant=False).count() == 1
@@ -115,5 +115,5 @@ def test_donnees_de_demo_de_la_surveillance(db):
     assert inv.status == "valide"
     peas = Lot.objects.get(supplier_lot_number="SA-PP-2291")
     assert peas.quantity == Decimal("398")
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert Inventory.objects.count() == 1

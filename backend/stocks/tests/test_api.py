@@ -84,7 +84,7 @@ def test_etat_des_stocks_par_l_api(api_client_for, make_lot, cream):
 
 
 def test_donnees_de_demo_des_stocks(db):
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     from stocks.models import Lot
 
     cream_lot = Lot.objects.get(supplier_lot_number="CB-0412")
@@ -95,5 +95,5 @@ def test_donnees_de_demo_des_stocks(db):
     assert sent.quantity == Decimal("150")
     assert Lot.objects.get(supplier_lot_number="VO-26-3321").status == "detruit"
     # Relancer le chargement ne refait pas les mouvements
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert cream_lot.movements.filter(movement_type="transfert_entree").count() == 2

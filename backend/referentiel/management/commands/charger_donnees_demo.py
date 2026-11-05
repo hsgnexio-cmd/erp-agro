@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from achats.demo_data import load_demo_data as load_purchasing
+from pilotage.demo_history import load_demo_data as load_history
 from production.demo_data import load_demo_data as load_production
 from qualite.demo_tracabilite import load_demo_data as load_traceability
 from referentiel.demo_data import load_demo_data as load_referential
@@ -13,8 +14,16 @@ from ventes.demo_shipping import load_demo_data as load_shipping
 class Command(BaseCommand):
     help = "Charge toutes les données fictives de démonstration, sans doublons."
 
+    def add_arguments(self, parser) -> None:
+        parser.add_argument(
+            "--sans-historique",
+            action="store_true",
+            dest="sans_historique",
+            help="Ne rejoue pas les 4 semaines d'historique (plus rapide, utilisé par les tests).",
+        )
+
     def handle(self, *args, **options) -> None:
-        for title, loader in (
+        loaders = [
             ("Référentiel", load_referential),
             ("Achats", load_purchasing),
             ("Stocks", load_stocks),
@@ -23,7 +32,11 @@ class Command(BaseCommand):
             ("Production", load_production),
             ("Ventes", load_sales),
             ("Expéditions", load_shipping),
-        ):
+        ]
+        if not options["sans_historique"]:
+            # En dernier : l'historique s'appuie sur tout le reste (tarifs, référentiel…)
+            loaders.append(("Historique (4 semaines)", load_history))
+        for title, loader in loaders:
             counts = loader()
             self.stdout.write(self.style.SUCCESS(f"{title} :"))
             for label, count in counts.items():

@@ -426,6 +426,9 @@ def fefo_plan(
             lot__article=article,
             lot__status=LotStatus.RELEASED,
             location__site=site,
+            # Un lot créé après l'instant présent n'existe pas encore : sans effet en usage
+            # normal, indispensable pour rejouer un historique de démonstration dans l'ordre
+            lot__created_at__lte=timezone.now(),
         )
         .filter(Q(lot__expiry_date__isnull=True) | Q(lot__expiry_date__gte=earliest))
         .values("lot", "location")

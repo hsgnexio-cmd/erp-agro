@@ -97,12 +97,13 @@ Ces règles doivent être appliquées **dans le back-end** (modèles et services
 Conventions adoptées en cours de route (détail et raisons dans `docs/decisions.md`) :
 
 - **Aucune voie de contournement** : les modèles du référentiel héritent de `ValidatedModel` (validation complète à chaque enregistrement) ; les opérations passent par des fonctions métier qui relisent et verrouillent le lot (`select_for_update`).
-- **Logique métier** : `services.py`, ou un module dédié quand il devient long (`stocks/monitoring.py`, `stocks/inventory.py`, `production/orders.py`, `production/planning.py`, `ventes/orders.py`, `ventes/edi.py`, `ventes/shipping.py`).
+- **Logique métier** : `services.py`, ou un module dédié quand il devient long (`stocks/monitoring.py`, `stocks/inventory.py`, `production/orders.py`, `production/planning.py`, `ventes/orders.py`, `ventes/edi.py`, `ventes/shipping.py`, `pilotage/indicators.py`).
+- **Indicateurs** : calculés dans les vues SQL du schéma `bi` (`pilotage/sql/bi_views.sql`, migration), lues par l'API du tableau de bord et par Power BI ; pour modifier une vue, nouvelle migration qui recrée le schéma.
 - **Enregistrements jamais modifiés ni supprimés** : mouvements de stock, journal des statuts de lot, relevés de température, rappels ; une alerte se marque « traitée ». Les documents d'opération (commandes, réceptions, lots, OF, inventaires) sont en lecture seule dans l'administration.
 - **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `BL-` (et `EXP-` pour les expéditions de la phase 5) ; série `SSCC` pour les palettes.
 - **Droits** : `comptes.permissions.WriteRolesPermission` + attribut `write_roles` de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
 - **API** : les décimaux sont renvoyés en texte ; une `ValidationError` Django devient une réponse 400 lisible (`config/exceptions.py`).
-- **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui.
+- **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui. Elle rejoue aussi 4 semaines d'historique (`pilotage/demo_history.py`, horloge simulée, ≈ 6 min) ; les tests l'appellent avec `sans_historique=True`.
 - **Front-end** : hook `useApi`, droits dans `auth/roles.ts`, tests avec `mockApi` / `renderApp` (`src/test/utils.tsx`).
 
 ## 7. Façon de travailler
@@ -134,7 +135,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 5. Traçabilité | Traçabilité amont/aval, rappel produit, allergènes | Terminée |
 | 6. Production | Ordres de fabrication, consommations, rendements | Terminée |
 | 7. Ventes | Commandes EDI simulées, préparation FEFO, expédition | Terminée (7a : tarifs, commandes, EDI simulé ; 7b : préparation FEFO, SSCC, expédition, taux de service, invendables) |
-| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | À faire (plan dans `docs/prochaine-etape.md`) |
+| 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | En cours (8a terminée : historique de démo, vues SQL `bi`, tableau de bord ; 8b à faire : Power BI, Power Query, plan dans `docs/prochaine-etape.md`) |
 
 Mettre à jour la colonne Statut à la fin de chaque phase.
 

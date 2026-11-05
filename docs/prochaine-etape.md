@@ -1,59 +1,41 @@
-# Prochaine étape : phase 8 – Pilotage
+# Prochaine étape : phase 8b – Power BI et Power Query
 
-Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md`, `docs/decisions.md` et la section 7 (« Indicateurs ») de `docs/fiche-entreprise.md`.
+Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md`, `docs/decisions.md` (section « Phase 8a ») et `bi/README.md`.
 
-## 1. Où en est le projet (fin de la phase 7)
+## 1. Où en est le projet (fin de la partie 8a)
 
-- Phases 1 à 7 terminées. La partie 7b (préparation FEFO, bons de livraison `BL-`, palettes SSCC, expédition avec contrôle de température, taux de service, invendables) est sur la branche `phase-7b-expedition`, à fusionner par Nicolas.
-- Tests : 360 environ côté back-end (pytest) et 39 côté front-end (Vitest), tous verts.
-- Existant utile pour la phase 8 :
-  - `ventes/shipping.py` : `service_rate(start, end, customer)` (taux de service complet, déjà calculé) ;
-  - `production/orders.py` : `yield_report(order)` (rendement matière) ;
-  - mouvements de stock typés (`stocks/choices.py`) : `expedition`, `consommation`, `destruction`, `don`, `alimentation_animale`, `destruction_invendable`, `inventaire`… ;
-  - tarifs de vente datés (`ventes.SalePrice`), tarifs d'achat datés (`achats.SupplierPrice`) ;
-  - lignes de réception avec leur conformité (achats) ;
-  - rappels avec la durée de calcul mesurée (`qualite`).
-  - PostgreSQL accessible depuis le PC (`localhost:5432`, identifiants du `.env`) pour Excel et Power BI.
+- Phases 1 à 7 terminées. Partie 8a sur la branche `phase-8a-indicateurs`, à fusionner par Nicolas :
+  - historique de démonstration de 4 semaines (`pilotage/demo_history.py`, dans `charger_donnees_demo`, ≈ 6 min ; option `--sans-historique`) ;
+  - vues SQL du schéma `bi` (`pilotage/sql/bi_views.sql`, migration `pilotage/0001_vues_bi`), décrites dans `bi/README.md` ;
+  - calcul des indicateurs (`pilotage/indicators.py`) et API `/api/pilotage/indicators/?start=…&end=…&site=…&customer=…` ;
+  - écran React **Tableau de bord** (`/tableau-de-bord`) : une tuile par indicateur, évolution par semaine.
+- Décisions validées : TRS et fiabilité des prévisions « non disponibles » ; valorisation au prix de vente moyen (produits finis) et au prix d'achat en vigueur (matières) ; vues SQL communes ; historique de démo de 4 semaines.
+- PostgreSQL est accessible depuis le PC (`localhost:5432`, identifiants du `.env`).
 
-## 2. Indicateurs de la fiche entreprise
+## 2. Contenu de la partie 8b
 
-| Indicateur | Définition | Objectif | Source dans l'ERP |
-| --- | --- | --- | --- |
-| Taux de service | Livré complet et à l'heure / commandé | ≥ 98,5 % | `service_rate` (déjà fait) |
-| Démarque | Valeur détruite ou déclassée / CA | ≤ 1,5 % | mouvements de destruction et d'invendables × prix ; CA = expéditions × prix de vente |
-| Couverture PF | Stock / ventes moyennes journalières | 2 à 4 j | stock libéré PF ÷ expéditions moyennes |
-| Couverture matières | Stock / consommation moyenne journalière | 5 à 10 j | stock MP ÷ consommations moyennes |
-| Rendement matière | Produit / théorique | ≥ 96 % | `yield_report` par OF |
-| TRS | Taux de rendement synthétique des lignes | ≥ 70 % | **pas de données** (temps d'arrêt, cadences réelles) : à décider |
-| Fiabilité prévisions | 1 − écart absolu / ventes réelles | ≥ 80 % à S-1 | **pas de prévisions** dans l'ERP : à décider |
-| Conformité réception | Livraisons conformes / total | ≥ 97 % | lignes de réception |
-| Délai de traçabilité | Durée d'un rappel complet | ≤ 5 min | mesure du calcul d'impact |
+1. **Utilisateur PostgreSQL en lecture seule** (ex. `powerbi`) : droit de lecture sur le schéma `bi` uniquement (vues et fonctions), rien sur les tables de l'application. Mot de passe dans `.env` (`POWERBI_PASSWORD`), ajouté à `.env.example`. À créer par une commande Django relançable (ex. `creer_utilisateur_bi`) plutôt que par une migration, pour ne pas mettre de mot de passe dans le code.
+2. **Requêtes Power Query** (`bi/power-query/*.pq`) : une par vue utile (dimensions et faits), avec les types de colonnes.
+3. **Modèle Power BI** si possible (`bi/`) : relations entre faits et dimensions, mesures DAX des indicateurs, une page par thème. Sinon, un classeur Excel avec Power Query et des tableaux croisés.
+4. **Documentation pas à pas** dans le README : installer le pilote PostgreSQL si besoin, se connecter depuis Excel (Données → Obtenir des données → PostgreSQL) et depuis Power BI Desktop, actualiser.
+5. Test : l'utilisateur `powerbi` lit `bi.fact_service` mais ne peut ni lire `stocks_lot`, ni écrire.
 
 ## 3. Points à faire valider au début de la session
 
-1. **TRS et fiabilité des prévisions** : proposition → les afficher « non disponibles » (sans données de temps d'arrêt ni de prévisions), plutôt que d'inventer des chiffres ; ou ajouter une saisie simple (arrêts par ligne, prévisions hebdomadaires) dans une phase complémentaire.
-2. **Valorisation de la démarque** : proposition → produits finis au prix de vente moyen en vigueur (Brévanne), matières au prix d'achat en vigueur à la date du mouvement.
-3. **Où calculer** : proposition → des **vues SQL** PostgreSQL en lecture seule (schéma `bi`, une migration Django), utilisées à la fois par l'API des tableaux de bord et par Power BI / Power Query. Un utilisateur PostgreSQL en **lecture seule** pour Power BI.
-4. **Données de démonstration plus riches** : le stock de produits finis est petit et les commandes EDI de démo sont presque toutes en rupture (taux de service très bas). Proposition → générer un historique de quelques semaines (réceptions, OF déclarés, expéditions) pour des indicateurs réalistes, via un script dans `data/`.
+1. Nom de l'utilisateur PostgreSQL (`powerbi` ?) et création par commande Django.
+2. Livrable : fichier Power BI (`.pbix`, binaire, créé à la main dans Power BI Desktop par Nicolas avec les requêtes fournies) ou seulement les requêtes `.pq` et la documentation.
+3. Faut-il ajouter au tableau de bord un export CSV des indicateurs (pour Excel sans Power Query) ?
 
-## 4. Conception proposée (à préciser)
-
-- App Django `pilotage` : `pilotage/indicators.py` (calculs), API `/api/pilotage/indicators/?start=…&end=…&site=…`.
-- Écran React **Tableau de bord** : une tuile par indicateur (valeur, objectif, rouge/vert), évolution par semaine, filtres période / site / enseigne.
-- Dossier `bi/` : requêtes Power Query (`.pq`), documentation de chaque indicateur (définition, source, formule), modèle Power BI si possible.
-- Tests : chaque indicateur sur un petit jeu de données dont le résultat est connu ; droits (tous les rôles consultent, `direction` en particulier).
-
-## 5. Fin de la phase 8 (liste de contrôle)
+## 4. Fin de la phase 8 (liste de contrôle)
 
 - [ ] Tests back-end et front-end verts, lint propre, migrations à jour.
-- [ ] Vérification dans le navigateur (avec le compte `test-verif`, à l'adresse `127.0.0.1:5173` pour ne pas toucher à la session de Nicolas sur `localhost`).
-- [ ] Connexion testée depuis Excel (Power Query) ou Power BI Desktop.
-- [ ] `docs/decisions.md` : section « Phase 8 » + mise à jour des points en suspens.
-- [ ] `README.md` : tableau de bord et connexion Power BI pas à pas.
+- [ ] Connexion testée depuis Excel (Power Query) ou Power BI Desktop, avec l'utilisateur en lecture seule.
+- [ ] `docs/decisions.md` : section « Phase 8b » + mise à jour des points en suspens.
+- [ ] `README.md` : connexion Power BI pas à pas.
 - [ ] `CLAUDE.md` : phase 8 → « Terminée ».
 - [ ] Commits, envoi de la branche, pull request créée et fusionnée par Nicolas.
 
-## 6. Repartir d'une base de démonstration neuve (si besoin)
+## 5. Repartir d'une base de démonstration neuve (si besoin)
 
 ⚠️ Efface toutes les données locales, y compris le compte administrateur. À ne faire qu'avec l'accord de Nicolas.
 

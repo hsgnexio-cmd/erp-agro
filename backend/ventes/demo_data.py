@@ -22,6 +22,10 @@ def _load_prices(today) -> int:
     for customer in Customer.objects.filter(active=True):
         for row in orders.orderable_articles(customer, today):
             article = row["article"]
+            count += 1
+            # Déjà tarifé (chargement d'un autre jour) : les périodes ne doivent pas se chevaucher
+            if SalePrice.objects.filter(customer=customer, article=article).exists():
+                continue
             price = Decimal(BASE_PRICES.get(article.format_size, "2.50"))
             if article.brand_customer_id:
                 price = (price * PRIVATE_LABEL_DISCOUNT).quantize(Decimal("0.01"))
@@ -31,7 +35,6 @@ def _load_prices(today) -> int:
                 valid_from=valid_from,
                 defaults={"unit_price": price},
             )
-            count += 1
     return count
 
 
@@ -69,21 +72,21 @@ def load_demo_data() -> dict[str, int | str]:
         )
     # Un message erroné, pour voir un rejet : Proxi Ville commande un produit MDD d'Hyper
     # Atlantique, avec une livraison le jour même
-    sent_at = timezone.make_aware(datetime.combine(today, time(9, 55)))
-    if sent_at <= timezone.now():
-        messages.append(
-            edi.integrate_message(
-                {
-                    "message_id": f"ENS4-{today:%Y%m%d}-ERR",
-                    "sender": "ENS4",
-                    "order_reference": "PV-ERREUR-DEMO",
-                    "delivery_location": proxi.warehouses.order_by("code").first().code,
-                    "requested_delivery_date": today.isoformat(),
-                    "lines": [{"article": "PF-PAT-LASBOL-ENS1-300", "quantity": 120}],
-                },
-                received_at=sent_at,
-            )
+    # À 9 h 55, ou tout de suite si on charge la démo plus tôt dans la matinée
+    sent_at = min(timezone.make_aware(datetime.combine(today, time(9, 55))), timezone.now())
+    messages.append(
+        edi.integrate_message(
+            {
+                "message_id": f"ENS4-{today:%Y%m%d}-ERR",
+                "sender": "ENS4",
+                "order_reference": "PV-ERREUR-DEMO",
+                "delivery_location": proxi.warehouses.order_by("code").first().code,
+                "requested_delivery_date": today.isoformat(),
+                "lines": [{"article": "PF-PAT-LASBOL-ENS1-300", "quantity": 120}],
+            },
+            received_at=sent_at,
         )
+    )
     counts["messages EDI"] = len(messages)
     counts["rejetés"] = sum(1 for message in messages if message.status == "rejete")
     counts["commandes clients"] = CustomerOrder.objects.count()
