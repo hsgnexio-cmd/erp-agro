@@ -133,7 +133,7 @@ def _coverage(
     """
     where, params = _filter("site_id", site_id)
     (stock,) = _one(
-        "SELECT sum(s.quantity * bi.unit_value(s.article_id, NULL, s.date)) "
+        "SELECT sum(s.value) "
         "FROM bi.fact_stock_daily s JOIN bi.dim_article a USING (article_id) "
         f"WHERE s.date = %s AND s.lot_status IN ('libere', 'quarantaine') "
         f"AND a.article_type = ANY(%s){where}",

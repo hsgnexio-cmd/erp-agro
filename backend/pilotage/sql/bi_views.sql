@@ -331,7 +331,8 @@ SELECT b.day AS date,
        l.article_id,
        b.site_id,
        p.status AS lot_status,
-       sum(b.quantity) AS quantity
+       sum(b.quantity) AS quantity,
+       sum(b.quantity) * bi.unit_value(l.article_id, NULL, b.day) AS value
   FROM balances b
   JOIN stocks_lot l ON l.id = b.lot_id
   JOIN periods p
