@@ -221,3 +221,23 @@ def test_api_refuse_les_filtres_incoherents(api_client_for, factory_site):
 
 def test_api_reservee_aux_utilisateurs_connectes(client):
     assert client.get("/api/pilotage/indicators/").status_code in (401, 403)
+
+
+def test_export_csv_des_indicateurs_pour_excel(demo, api_client_for):
+    response = api_client_for("direction").get(
+        "/api/pilotage/indicators/export/?start=2026-10-01&end=2026-11-05"
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "text/csv; charset=utf-8"
+    assert 'filename="indicateurs-20261001-20261105.csv"' in response["Content-Disposition"]
+    content = response.content.decode("utf-8")
+    assert content.startswith("﻿Indicateurs du 01/10/2026 au 05/11/2026")
+    lines = content.splitlines()
+    assert "Indicateur;Valeur;Unité;Objectif;Statut;Détail" in lines
+    trs = next(line for line in lines if line.startswith("TRS;"))
+    assert ";Non disponible;" in trs
+    # Décimales à la française pour Excel
+    yield_line = next(line for line in lines if line.startswith("Rendement matière;"))
+    assert "," in yield_line.split(";")[1]
+    assert "Évolution par semaine" in lines
+    assert any(line.startswith("Indicateur;Unité;S40 (01/10)") for line in lines)

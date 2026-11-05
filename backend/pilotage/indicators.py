@@ -8,6 +8,8 @@ le site au rendement matière et à la couverture matières. Chaque indicateur i
 filtres qu'il prend en compte.
 """
 
+import csv
+import io
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
@@ -326,3 +328,40 @@ def weekly(
         )
         monday += timedelta(days=7)
     return weeks
+
+
+# --- Export pour Excel ------------------------------------------------------------------
+
+STATUS_LABELS = {
+    "ok": "Objectif atteint",
+    "alerte": "Hors objectif",
+    "sans_donnee": "Pas de donnée",
+    "indisponible": "Non disponible",
+}
+
+
+def _fr(value: Decimal | None) -> str:
+    return "" if value is None else f"{value:f}".replace(".", ",")
+
+
+def to_csv(start: date, end: date, results: list[Indicator], weeks: list[dict]) -> str:
+    """Indicateurs et évolution par semaine, au format CSV lisible par Excel (« ; »)."""
+    buffer = io.StringIO()
+    buffer.write("﻿")  # indique à Excel que le fichier est en UTF-8 (accents)
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow([f"Indicateurs du {start:%d/%m/%Y} au {end:%d/%m/%Y}"])
+    writer.writerow(["Indicateur", "Valeur", "Unité", "Objectif", "Statut", "Détail"])
+    for item in results:
+        writer.writerow(
+            [item.label, _fr(item.value), item.unit, item.target.label,
+             STATUS_LABELS[item.status], item.detail]
+        )  # fmt: skip
+    writer.writerow([])
+    writer.writerow(["Évolution par semaine"])
+    writer.writerow(["Indicateur", "Unité", *(f"{w['label']} ({w['start']:%d/%m})" for w in weeks)])
+    for item in results:
+        if item.code in WEEKLY_CODES:
+            writer.writerow(
+                [item.label, item.unit, *(_fr(w["values"].get(item.code)) for w in weeks)]
+            )
+    return buffer.getvalue()

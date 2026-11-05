@@ -86,6 +86,11 @@ export function DashboardPage() {
     <section>
       <div className="page-title">
         <h1>Tableau de bord</h1>
+        <div className="actions">
+          <a className="button" href={`/api/pilotage/indicators/export/?${params}`}>
+            ⬇ Exporter pour Excel (CSV)
+          </a>
+        </div>
       </div>
       <p className="hint">
         Les indicateurs de la fiche entreprise, calculés à partir des vues du schéma « bi » (les
