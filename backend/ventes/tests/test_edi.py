@@ -156,9 +156,9 @@ def test_produits_commandables_par_l_api(api_client_for, private_label_customer,
 
 
 def test_donnees_de_demo_des_ventes(db):
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert EdiMessage.objects.filter(status="rejete").count() >= 1
     assert CustomerOrder.objects.filter(source="edi").exists()
     count = CustomerOrder.objects.count()
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert CustomerOrder.objects.count() == count

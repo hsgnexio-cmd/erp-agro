@@ -21,7 +21,7 @@ MODELS = [
 
 @pytest.fixture
 def admin_client_with_data(admin_client):
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     return admin_client
 
 

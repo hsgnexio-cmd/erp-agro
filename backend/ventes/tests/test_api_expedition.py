@@ -167,7 +167,7 @@ def test_donnees_de_demo_des_expeditions(db):
     from ventes import shipping
     from ventes.models import Shipment
 
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     statuses = sorted(Shipment.objects.values_list("status", flat=True))
     assert statuses == ["expediee", "expediee", "expediee", "refusee"]
     assert Alert.objects.filter(alert_type="temperature_expedition").count() == 1
@@ -182,5 +182,5 @@ def test_donnees_de_demo_des_expeditions(db):
     assert problems["ENS3"] == "en retard"
     assert "ENS1" not in problems or problems["ENS1"] != "en retard"
 
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert Shipment.objects.count() == 4

@@ -132,7 +132,7 @@ def test_planning_par_l_api(api_client_for, lasagna_line, finished_product, fact
 
 
 def test_donnees_de_demo_de_la_production(db):
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     done = ProductionOrder.objects.filter(status="termine")
     yields = sorted(orders.yield_report(order)["mass_yield"] for order in done)
     assert yields[0] < orders.YIELD_TARGET <= yields[1]
@@ -142,5 +142,5 @@ def test_donnees_de_demo_de_la_production(db):
     week = planning.week_planning(tomorrow - timedelta(days=tomorrow.weekday()))
     warnings = [w for line in week["lines"] for cell in line["cells"] for w in cell["warnings"]]
     assert any("Nettoyage renforcé" in w for w in warnings)
-    call_command("charger_donnees_demo")
+    call_command("charger_donnees_demo", sans_historique=True)
     assert ProductionOrder.objects.count() == 9

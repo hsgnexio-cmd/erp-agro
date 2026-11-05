@@ -1,0 +1,529 @@
+"""Historique de démonstration : quatre semaines d'activité rejouées jour par jour (phase 8).
+
+Sans historique, les indicateurs de pilotage n'ont presque rien à mesurer. Ce module rejoue
+chaque journée passée comme si l'ERP avait tourné : réceptions de matières, fabrications
+(semi-finis puis produits finis), libérations qualité, commandes des enseignes, préparation
+FEFO et expédition, sorties d'invendables.
+
+Tout passe par les fonctions métier habituelles : les règles (FEFO, DLC minimale client,
+statuts de lot, mouvements, numérotation…) s'appliquent exactement comme en temps réel.
+Pour que chaque enregistrement porte la date de sa journée, l'horloge de Django est
+« avancée » jour après jour pendant le chargement (`simulated_clock`).
+
+Quelques incidents volontaires rendent les indicateurs réalistes : une panne de ligne
+(ruptures), un transporteur en retard (livraisons hors délai), une fuite en cuisson
+(rendement faible), des réceptions non conformes, des invendables.
+"""
+
+import random
+from contextlib import contextmanager
+from datetime import date, datetime, time, timedelta
+from decimal import ROUND_CEILING, Decimal
+from unittest import mock
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+
+from achats import services as purchasing
+from achats.models import SupplierPrice
+from production import orders as production
+from referentiel.choices import ArticleType, DateType, TemperatureClass
+from referentiel.models import (
+    Article,
+    Customer,
+    Location,
+    ProductionLine,
+    Site,
+    Supplier,
+    SupplierArticle,
+)
+from referentiel.services import line_accepts
+from stocks import services as stock_services
+from stocks.choices import LotStatus, UnsoldDestination
+from stocks.models import Lot
+from ventes import orders as sales
+from ventes import shipping
+from ventes.models import CustomerOrder, OrderSource
+
+HISTORY_DAYS = 28
+# Les commandes des enseignes commencent après deux jours de production
+FIRST_ORDER_DAY = 2
+REFERENCE = "HIST"
+SEED = 2026
+QUALITY_REASON = "Contrôle qualité conforme"
+ZERO = Decimal("0")
+UNLIMITED = Decimal("1000000000")
+
+# Produits finis de l'historique : demande moyenne par enseigne et par jour (unités)
+DAILY_DEMAND = {
+    "PF-PAT-LASBOL-BRE-300": 360,
+    "PF-PAT-LASBOL-ENS1-300": 480,
+    "PF-GRA-GRADAU-BRE-1000": 120,
+    "PF-GRA-HACHIS-BRE-300": 240,
+    "PF-GRA-HACHIS-ENS5-300": 480,
+    "PF-SAU-BOEBOU-BRE-300": 180,
+    "PF-SAL-PIEMON-BRE-300": 180,
+    "PF-SAL-PIEMON-ENS6-300": 240,
+    "PF-TAB-TABOR-BRE-500": 240,
+    "PF-ENT-CARAP-BRE-250": 240,
+    "PF-ENT-CELREM-ENS2-250": 360,
+}
+# Variation de la demande d'une enseigne d'un jour à l'autre (± 15 %)
+DEMAND_SPREAD = 0.15
+# Stock de sécurité visé (en jours de demande) : faible pour les produits à DLC courte,
+# qu'il faut expédier dès le lendemain de leur fabrication
+SAFETY_DAYS_SHORT = Decimal("0.03")
+SAFETY_DAYS_LONG = Decimal("1")
+SHORT_SHELF_LIFE_DAYS = 10
+# Marge prise sur les matières pour absorber les écarts de consommation
+MATERIAL_MARGIN = Decimal("1.08")
+# Achats, en jours de besoin : frais selon sa durée de vie (au plus la moitié, 6 jours
+# maximum), sec, surgelés et emballages : 24 jours
+FRESH_MAX_COVER_DAYS = 6
+OTHER_COVER_DAYS = 24
+# Navette entrepôt → usine : jusqu'à 3 jours de besoin d'un coup
+FACTORY_SUPPLY_DAYS = 3
+NON_COMPLIANT_RATE = 0.03
+
+# Incidents volontaires : (jour de l'historique, …)
+BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : pas de production")
+LATE_CARRIER = (16, "ENS3", "Translog Froid Ouest")
+LEAK = (22, "PF-GRA-GRADAU-BRE-1000", Decimal("1.075"), "Fuite sur la cuve de cuisson")
+
+STORAGE = {
+    TemperatureClass.CHILLED: "MPE-FP-01",
+    TemperatureClass.FROZEN: "MPE-FN-01",
+    TemperatureClass.AMBIENT: "MPE-AMB-01",
+}
+QUARANTINE = {
+    TemperatureClass.CHILLED: "MPE-QUAR",
+    TemperatureClass.FROZEN: "MPE-QUAR-FN",
+    TemperatureClass.AMBIENT: "MPE-QUAR-AMB",
+}
+
+
+@contextmanager
+def simulated_clock(moment: datetime):
+    """Fait croire à Django qu'on est à `moment` (dates de création, « aujourd'hui »…)."""
+    with mock.patch("django.utils.timezone.now", return_value=moment):
+        yield
+
+
+def _at(day: date, hour: int, minute: int = 0) -> datetime:
+    return timezone.make_aware(datetime.combine(day, time(hour, minute)))
+
+
+def _round_up(value: Decimal, step: Decimal) -> Decimal:
+    return (value / step).to_integral_value(rounding=ROUND_CEILING) * step
+
+
+def _days(value: Decimal) -> int:
+    return int(value.to_integral_value(rounding=ROUND_CEILING))
+
+
+class History:
+    """Rejoue les journées de l'historique, de la plus ancienne à hier."""
+
+    def __init__(self, days: int):
+        self.days = days
+        self.today = timezone.localdate()
+        self.start = self.today - timedelta(days=days)
+        self.rng = random.Random(SEED)
+        self.loc = {location.code: location for location in Location.objects.all()}
+        self.warehouse = Site.objects.get(code="MPE")
+        self.products = {
+            article.code: article
+            for article in Article.objects.filter(code__in=DAILY_DEMAND).select_related(
+                "recipe__family__site"
+            )
+        }
+        self.lines = {}
+        for article in self.products.values():
+            for line in ProductionLine.objects.filter(active=True).order_by("code"):
+                if line_accepts(line, article) is None:
+                    self.lines[article.code] = line
+                    break
+        # Enseignes qui achètent chaque produit, avec leur demande moyenne
+        self.buyers: dict[str, list[Customer]] = {code: [] for code in self.products}
+        self.customers = list(Customer.objects.filter(active=True).order_by("code"))
+        for customer in self.customers:
+            for code, article in self.products.items():
+                if sales.orderable_refusal(customer, article) is None:
+                    self.buyers[code].append(customer)
+        self.delayed: list[CustomerOrder] = []
+        self.counts = {"commandes fournisseurs": 0, "OF": 0, "commandes clients": 0}
+        self.counts["seconds fournisseurs référencés"] = self._second_sources()
+
+    def _second_sources(self) -> int:
+        """Une matière dont le seul fournisseur n'est pas audité ne peut pas être commandée :
+        on la référence aussi chez un fournisseur audité de la même catégorie, au même prix."""
+        created = 0
+        materials = Article.objects.filter(article_type=ArticleType.RAW_MATERIAL, active=True)
+        for article in materials.exclude(supplier_links__supplier__audited=True):
+            supplier = (
+                Supplier.objects.filter(audited=True, active=True, categories=article.category)
+                .order_by("code")
+                .first()
+            )
+            current = article.supplier_links.first()
+            if supplier is None or current is None:
+                continue
+            link = SupplierArticle.objects.create(supplier=supplier, article=article)
+            for price in current.prices.all():
+                SupplierPrice.objects.create(
+                    supplier_article=link,
+                    unit_price=price.unit_price,
+                    valid_from=price.valid_from,
+                    valid_to=price.valid_to,
+                )
+            created += 1
+        return created
+
+    # --- Journée type ---------------------------------------------------------------
+
+    def run(self) -> dict:
+        for offset in range(self.days):
+            day = self.start + timedelta(days=offset)
+            with simulated_clock(_at(day, 7)):
+                self._ship_delayed(day)
+                self._release_finished_products(day)
+            if offset >= FIRST_ORDER_DAY - 1:
+                with simulated_clock(_at(day, 8)):
+                    self._produce(offset, day)
+            if offset >= FIRST_ORDER_DAY:
+                with simulated_clock(_at(day, 9, 30)):
+                    received = self._receive_customer_orders(day)
+                with simulated_clock(_at(day, 15)):
+                    self._ship(offset, received)
+            with simulated_clock(_at(day, 19)):
+                self._dispose_unsellable(day)
+                self._destroy_expired_materials(day)
+        return self.counts
+
+    # --- Achats et approvisionnement des usines -------------------------------------------
+
+    def _supplier_link(self, article: Article) -> SupplierArticle:
+        links = SupplierArticle.objects.filter(
+            article=article, supplier__audited=True, supplier__active=True
+        ).select_related("supplier")
+        return links.filter(is_main_supplier=True).first() or links.first()
+
+    def _purchase(self, article: Article, quantity: Decimal, day: date, compliant: bool) -> Lot:
+        """Commande, réception (contrôles), libération qualité et rangement d'une matière."""
+        link = self._supplier_link(article)
+        quantity = max(quantity, link.min_order_quantity or ZERO)
+        step = Decimal("1000") if article.article_type == ArticleType.PACKAGING else Decimal("10")
+        quantity = _round_up(quantity, step)
+        supplier = link.supplier
+        order = purchasing.create_purchase_order(
+            supplier=supplier,
+            delivery_site=self.warehouse,
+            order_date=day - timedelta(days=supplier.lead_time_days),
+            lines=[{"article": article, "quantity": quantity}],
+            comment=f"{REFERENCE} – réapprovisionnement",
+        )
+        purchasing.send_order(order)
+        self.counts["commandes fournisseurs"] += 1
+
+        temperature_class = article.storage_temperature_class
+        temperature = None
+        if temperature_class == TemperatureClass.CHILLED:
+            temperature = Decimal(self.rng.choice(["2.3", "2.8", "3.1", "3.5", "3.8"]))
+            if not compliant:
+                temperature = Decimal("6.2")
+        elif temperature_class == TemperatureClass.FROZEN:
+            temperature = Decimal("-19.5")
+        expiry = None
+        if article.date_type != DateType.NONE and article.shelf_life_days:
+            expiry = day + timedelta(days=round(article.shelf_life_days * 0.9))
+        line = order.lines.get()
+        reception = purchasing.create_reception(
+            order=order,
+            location=self.loc[QUARANTINE[temperature_class]],
+            delivery_note_number=f"BL-{supplier.code[-3:]}-{day:%m%d}-{order.pk}",
+            received_at=_at(day, 6),
+            lines=[
+                {
+                    "order_line": line,
+                    "quantity": quantity,
+                    "supplier_lot_number": f"{supplier.code[-3:]}-{day:%y%m%d}-{order.pk}",
+                    "expiry_date": expiry,
+                    "temperature": temperature,
+                    # Une matière ambiante non conforme : emballage abîmé
+                    "appearance_ok": compliant or temperature is not None,
+                }
+            ],
+        )
+        lot = reception.lines.get().lot
+        if lot.status != LotStatus.QUARANTINE:
+            # Non conforme : le lot reste bloqué (retour fournisseur), on recommande
+            return self._purchase(article, quantity, day, compliant=True)
+        stock_services.release_lot(lot, reason=QUALITY_REASON)
+        storage = STORAGE[temperature_class]
+        if article.article_type == ArticleType.PACKAGING:
+            storage = "MPE-EMB-01"
+        stock_services.transfer(
+            lot,
+            from_location=self.loc[QUARANTINE[temperature_class]],
+            to_location=self.loc[storage],
+            quantity=quantity,
+            reason="Rangement après libération",
+        )
+        return lot
+
+    @staticmethod
+    def _available(article: Article, site: Site) -> Decimal:
+        plan = stock_services.fefo_plan(article, site, UNLIMITED)
+        return sum((line.available for line in plan.lines), ZERO)
+
+    def _supply(self, article: Article, site: Site, quantity: Decimal, day: date) -> None:
+        """Amène à l'usine la quantité manquante (lots FEFO de l'entrepôt, achat si besoin)."""
+        missing = quantity - self._available(article, site)
+        if missing <= 0:
+            return
+        # `missing` vaut environ un jour de besoin : on achète et on amène plusieurs jours
+        cover_days = OTHER_COVER_DAYS
+        if article.storage_temperature_class == TemperatureClass.CHILLED:
+            cover_days = max(1, min(FRESH_MAX_COVER_DAYS, (article.shelf_life_days or 2) // 2))
+        wanted = missing * min(FACTORY_SUPPLY_DAYS, cover_days)
+        in_warehouse = self._available(article, self.warehouse)
+        if in_warehouse < missing:
+            compliant = self.rng.random() >= NON_COMPLIANT_RATE
+            self._purchase(article, missing * cover_days, day, compliant)
+            in_warehouse = self._available(article, self.warehouse)
+        chilled = article.storage_temperature_class == TemperatureClass.CHILLED
+        target = self.loc[f"{site.code}-{'CF' if chilled else 'AMB'}-MP"]
+        quantity = min(wanted, in_warehouse)
+        for line in stock_services.fefo_plan(article, self.warehouse, quantity).lines:
+            stock_services.transfer(
+                line.lot,
+                from_location=line.location,
+                to_location=target,
+                quantity=line.take,
+                reason="Approvisionnement usine",
+            )
+
+    # --- Production -----------------------------------------------------------------
+
+    def _usable_stock(self, article: Article, day: date) -> Decimal:
+        """Stock de produit fini encore assez frais pour être expédié ce jour-là."""
+        min_expiry = day + timedelta(days=1 + _days(Decimal(article.shelf_life_days) * 75 / 100))
+        lots = Lot.objects.filter(
+            article=article,
+            status__in=[LotStatus.RELEASED, LotStatus.QUARANTINE],
+            expiry_date__gte=min_expiry,
+            created_at__lte=timezone.now(),
+        )
+        return sum((lot.quantity for lot in lots), ZERO)
+
+    def _planned_quantity(self, article: Article, day: date, first: bool = False) -> Decimal:
+        mean = Decimal(DAILY_DEMAND[article.code] * len(self.buyers[article.code]))
+        short = article.shelf_life_days <= SHORT_SHELF_LIFE_DAYS
+        safety = SAFETY_DAYS_SHORT if short else SAFETY_DAYS_LONG
+        if first:
+            # Veille des premières commandes : aucune expédition aujourd'hui
+            return _round_up(mean * (1 + safety), Decimal("12"))
+        # Le stock du matin part dans les expéditions du jour : la fabrication du jour sert
+        # aux commandes de demain (plus le stock de sécurité)
+        quantity = mean * (2 + safety) - self._usable_stock(article, day)
+        return _round_up(quantity, Decimal("12")) if quantity > 0 else ZERO
+
+    def _declare(self, order, quantity: Decimal, factor: Decimal) -> None:
+        """Déclaration avec les lots proposés par le FEFO ; `factor` simule les écarts matière."""
+        consumptions = []
+        for row in production.proposal(order, quantity):
+            need = row["need"]
+            ratio = factor if need.unit in production.MASS_UNITS else Decimal("1")
+            remaining = (need.gross * ratio).quantize(Decimal("0.001"))
+            for item in row["lots"]:
+                take = min(item["available"], remaining)
+                if take > 0:
+                    consumptions.append(
+                        {"lot": item["lot"], "location": item["location"], "quantity": take}
+                    )
+                    remaining -= take
+        production.declare_production(order, quantity=quantity, consumptions=consumptions)
+
+    def _make(
+        self, article: Article, quantity: Decimal, day: date, site: Site, factor=None, comment=""
+    ):
+        """Approvisionne, fabrique (OF lancé, déclaré, clôturé) et renvoie le lot fabriqué."""
+        factor = factor or Decimal(str(round(self.rng.uniform(0.995, 1.035), 3)))
+        for need in production.theoretical_needs(article, quantity):
+            gross = need.gross * MATERIAL_MARGIN
+            if need.component.article_type == ArticleType.SEMI_FINISHED:
+                missing = gross - self._available(need.component, site)
+                if missing > 0:
+                    lot = self._make(need.component, _round_up(missing, Decimal("10")), day, site)
+                    stock_services.release_lot(lot, reason=QUALITY_REASON)
+            else:
+                self._supply(need.component, site, gross, day)
+        finished = article.article_type == ArticleType.FINISHED_PRODUCT
+        line = self.lines[article.code] if finished else None
+        order = production.create_order(
+            article=article,
+            planned_quantity=quantity,
+            planned_date=day,
+            line=line,
+            site=None if line else site,
+            comment=comment,
+        )
+        production.launch_order(order)
+        self._declare(order, quantity, factor)
+        production.close_order(order)
+        self.counts["OF"] += 1
+        return order.declarations.get().lot
+
+    def _produce(self, offset: int, day: date) -> None:
+        for code, article in self.products.items():
+            quantity = self._planned_quantity(article, day, first=offset < FIRST_ORDER_DAY)
+            if quantity <= 0:
+                continue
+            if (offset, code) == BREAKDOWN[:2]:
+                # Panne : l'OF prévu est annulé, rien n'est fabriqué ce jour-là
+                order = production.create_order(
+                    article=article, planned_quantity=quantity, planned_date=day,
+                    line=self.lines[code], comment=BREAKDOWN[2],
+                )  # fmt: skip
+                production.cancel_order(order)
+                continue
+            factor, comment = None, ""
+            if (offset, code) == LEAK[:2]:
+                factor, comment = LEAK[2], LEAK[3]
+            self._make(article, quantity, day, self.lines[code].site, factor, comment)
+
+    def _release_finished_products(self, day: date) -> None:
+        """Libération qualité des produits finis de la veille, puis rangement en allée A."""
+        lots = Lot.objects.filter(
+            article__in=self.products.values(),
+            status=LotStatus.QUARANTINE,
+            production_date__lt=day,
+            created_at__lte=timezone.now(),
+        )
+        for lot in lots:
+            stock_services.release_lot(lot, reason=QUALITY_REASON)
+            for location, quantity in stock_services.stock_by_location(lot):
+                if location.code == "PFN-QUAR":
+                    stock_services.transfer(
+                        lot,
+                        from_location=location,
+                        to_location=self.loc["PFN-FRAIS-A"],
+                        quantity=quantity,
+                        reason="Rangement après libération",
+                    )
+
+    # --- Ventes -----------------------------------------------------------------------
+
+    def _receive_customer_orders(self, day: date) -> list[CustomerOrder]:
+        received = []
+        for customer in self.customers:
+            lines = []
+            for code, buyers in self.buyers.items():
+                if customer in buyers:
+                    spread = self.rng.uniform(1 - DEMAND_SPREAD, 1 + DEMAND_SPREAD)
+                    quantity = max(12, round(DAILY_DEMAND[code] * spread / 12) * 12)
+                    lines.append({"article": self.products[code], "quantity": Decimal(quantity)})
+            if not lines:
+                continue
+            warehouses = list(customer.warehouses.filter(active=True).order_by("code"))
+            received.append(
+                sales.create_order(
+                    customer=customer,
+                    warehouse=self.rng.choice(warehouses),
+                    requested_delivery_date=day + timedelta(days=1),
+                    lines=lines,
+                    customer_reference=f"{REFERENCE}-{customer.code}-{day:%Y%m%d}",
+                    received_at=timezone.now(),
+                    source=OrderSource.EDI,
+                    comment="Historique de démonstration",
+                )
+            )
+            self.counts["commandes clients"] += 1
+        return received
+
+    def _prepare(self, order: CustomerOrder):
+        lines = [
+            {
+                "order_line": row["order_line"],
+                "lot": item.lot,
+                "location": item.location,
+                "quantity": item.suggested,
+            }
+            for row in shipping.picking_proposal(order)
+            for item in row["lots"]
+            if item.suggested > 0
+        ]
+        if not lines:
+            return None  # rupture totale : la commande reste non livrée
+        return shipping.prepare_order(order, lines=lines)
+
+    def _ship(self, offset: int, received: list[CustomerOrder]) -> None:
+        for order in received:
+            if (offset, order.customer.code) == LATE_CARRIER[:2]:
+                self.delayed.append(order)  # le camion ne passe que demain matin
+                continue
+            shipment = self._prepare(order)
+            if shipment is not None:
+                temperature = Decimal(self.rng.choice(["2.1", "2.6", "3.0", "3.4"]))
+                shipping.ship_order(
+                    shipment, carrier="Transports Frigo Atlantique", temperature=temperature
+                )
+
+    def _ship_delayed(self, day: date) -> None:
+        for order in self.delayed:
+            shipment = self._prepare(order)
+            if shipment is not None:
+                shipping.ship_order(shipment, carrier=LATE_CARRIER[2], temperature=Decimal("2.9"))
+        self.delayed = []
+
+    # --- Invendables et matières périmées -------------------------------------------------
+
+    def _dispose_unsellable(self, day: date) -> None:
+        """Produit fini que plus aucune enseigne n'acceptera demain : don ou destruction."""
+        lots = Lot.objects.filter(
+            article__in=self.products.values(),
+            status=LotStatus.RELEASED,
+            created_at__lte=timezone.now(),
+        ).select_related("article")
+        for lot in lots:
+            if lot.quantity <= 0:
+                continue
+            buyers = self.buyers[lot.article.code]
+            pct = min((customer.min_remaining_shelf_life_pct for customer in buyers), default=0)
+            delivery = day + timedelta(days=2)
+            if lot.expiry_date >= delivery + timedelta(
+                days=_days(Decimal(lot.article.shelf_life_days) * pct / 100)
+            ):
+                continue
+            reason = "DLC trop courte pour toutes les enseignes"
+            lot = stock_services.block_lot(lot, reason=reason)
+            destination = (
+                UnsoldDestination.DONATION
+                if lot.expiry_date >= day + timedelta(days=2)
+                else UnsoldDestination.DESTRUCTION
+            )
+            stock_services.dispose_unsold(lot, destination=destination, reason=reason)
+
+    def _destroy_expired_materials(self, day: date) -> None:
+        lots = Lot.objects.filter(
+            article__article_type__in=[ArticleType.RAW_MATERIAL, ArticleType.SEMI_FINISHED],
+            status=LotStatus.RELEASED,
+            expiry_date__lt=day + timedelta(days=1),
+            created_at__lte=timezone.now(),
+        )
+        for lot in lots:
+            if lot.quantity <= 0:
+                continue
+            lot = stock_services.block_lot(lot, reason="DLC atteinte : matière inutilisable")
+            stock_services.destroy_lot(lot, reason="DLC atteinte : destruction")
+
+
+@transaction.atomic
+def load_demo_data(days: int = HISTORY_DAYS) -> dict[str, int | str]:
+    if CustomerOrder.objects.filter(customer_reference__startswith=f"{REFERENCE}-").exists():
+        return {"historique": "déjà présent, non modifié"}
+    missing = [code for code in DAILY_DEMAND if not Article.objects.filter(code=code).exists()]
+    if missing:
+        raise ValidationError(f"Référentiel incomplet pour l'historique : {', '.join(missing)}.")
+    return History(days).run()
