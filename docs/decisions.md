@@ -264,9 +264,17 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Droits remis automatiquement après chaque `migrate` (`pilotage.bi_access.refresh_grants`) et droits par défaut sur le schéma | Une vue recréée par une migration garde sa lecture pour `powerbi`. |
 | Fonctions de valorisation en `SECURITY DEFINER` (migration `0002`) | Elles lisent les tarifs (tables de l'application) avec les droits de l'ERP : `powerbi` peut les appeler sans accès aux tables. |
 | Colonne `value` ajoutée à `bi.fact_stock_daily` (migration `0003`) | Les mesures DAX ne peuvent pas appeler une fonction SQL : la vue fournit la valeur du stock, utilisée aussi par le tableau de bord. |
-| Une requête Power Query typée par vue (`bi/power-query/*.pq`) et les mesures DAX documentées (`bi/mesures-dax.md`) | Validé : Nicolas construit lui-même le rapport Power BI (formation) et l'enregistre au format projet `.pbip` (texte, suivi par Git) dans `bi/power-bi/`. Un `.pbix` est un binaire qu'on ne peut pas produire de façon fiable par le code. |
+| Une requête Power Query typée par vue (`bi/power-query/*.pq`) et les mesures DAX documentées (`bi/mesures-dax.md`) | Validé : Nicolas construit lui-même le rapport Power BI (formation) et l'enregistre au format projet `.pbip` (texte, suivi par Git) dans `bi/powerbi/`. Un `.pbix` est un binaire qu'on ne peut pas produire de façon fiable par le code. |
 | Excel d'abord, Power BI ensuite | Validé : Excel est déjà installé sur le PC de Nicolas. |
 | **Export CSV** du tableau de bord (`/api/pilotage/indicators/export/`) : séparateur « ; », UTF-8 avec marque d'ordre, décimales à la virgule | Validé : s'ouvre directement dans Excel, sans connexion à configurer. Même format que la liste des clients d'un rappel. |
+
+### Rapport Power BI (après la 8b)
+
+| Décision | Raison |
+| --- | --- |
+| Rapport construit par Nicolas dans Power BI Desktop, enregistré au format projet dans `bi/powerbi/indicateurs.pbip` | Format texte (TMDL, JSON) suivi par Git. Vérifié : aucun mot de passe dans les fichiers (les identifiants restent dans le profil Windows). |
+| `cache.abf` et `localSettings.json` exclus de Git (`bi/powerbi/.gitignore`) | Recommandation Microsoft : le cache contient une copie des données, les réglages sont propres à chaque PC. À l'ouverture, Power BI relit la base. |
+| Détection automatique des relations désactivée dans le rapport | Les vues n'ont pas de clés déclarées : la détection tournait sans fin et proposait de fausses relations (ex. `fact_service.order_id` ↔ `fact_production_yield.order_id`, deux numéros sans rapport). Relations créées à la main, d'après `bi/mesures-dax.md`. |
 
 ## Conventions techniques transverses
 
@@ -294,7 +302,6 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| Rapport Power BI (`bi/power-bi/*.pbip`) | Requêtes et mesures fournies (8b) ; rapport à construire par Nicolas dans Power BI Desktop | Quand Power BI Desktop sera installé |
 | Suite de la feuille de route | Les 8 phases du projet sont terminées ; pistes dans ce tableau (prévisions, TRS, planification avancée…) | À décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |

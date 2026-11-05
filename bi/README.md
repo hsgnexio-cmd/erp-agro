@@ -7,7 +7,7 @@ Ce dossier documente les données de pilotage de l'ERP.
 | Ce fichier | Les vues SQL du schéma `bi` et la formule de chaque indicateur |
 | [`power-query/`](power-query/) | Une requête Power Query par vue, avec les types de colonnes, à coller dans Excel ou Power BI |
 | [`mesures-dax.md`](mesures-dax.md) | Relations du modèle Power BI et mesures DAX des indicateurs |
-| `power-bi/` | Le rapport Power BI, enregistré au format projet (`.pbip`) |
+| `powerbi/` | Le rapport Power BI, enregistré au format projet (`.pbip`) |
 
 Connexion pas à pas (utilisateur `powerbi` en lecture seule) : voir le [README](../README.md#connexion-power-bi--excel).
 

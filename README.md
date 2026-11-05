@@ -296,11 +296,15 @@ En cas de message d'erreur :
   3. Lancer le fichier ; à l'écran **Custom Setup**, cliquer sur **Npgsql GAC Installation** et choisir **Will be installed on local hard drive** (sinon Excel ne le trouve pas). Terminer l'installation.
   4. Rouvrir Excel et recommencer l'étape 1.
 
-### 3. Construire le rapport Power BI
+### 3. Ouvrir le rapport Power BI existant
+
+Le rapport est dans `bi/powerbi/indicateurs.pbip` : double-clic pour l'ouvrir dans Power BI Desktop (Docker Desktop doit être lancé), puis **Actualiser**. Au premier lancement sur un PC, Power BI demande l'utilisateur `powerbi` et son mot de passe.
+
+### 4. Construire un rapport Power BI depuis zéro
 
 1. Installer **Power BI Desktop** (gratuit, depuis le Microsoft Store).
 2. **Accueil** → **Obtenir des données** → **Requête vide** → **Éditeur avancé** : coller le contenu d'un fichier de [`bi/power-query/`](bi/power-query/), **Terminé**, puis renommer la requête comme le fichier (par exemple `fact_service`). Recommencer pour chaque fichier. Les types de colonnes (nombres, dates…) sont déjà réglés.
 3. À la première requête, Power BI demande l'utilisateur et le mot de passe (onglet **Base de données**) ; même remarque que pour Excel s'il parle de chiffrement.
-4. **Fermer et appliquer**, puis créer les relations et les mesures en suivant [`bi/mesures-dax.md`](bi/mesures-dax.md).
+4. **Fermer et appliquer**. Si la « Détection des relations » tourne sans fin : **Fermer**, puis **Fichier** → **Options et paramètres** → **Options** → **Fichier actif** → **Chargement des données** → décocher **Détecter automatiquement les nouvelles relations**. Créer ensuite les relations et les mesures en suivant [`bi/mesures-dax.md`](bi/mesures-dax.md).
 5. Vérifier : sur la même période, les cartes Power BI doivent donner les mêmes chiffres que le tableau de bord de l'application.
-6. Enregistrer au format **projet Power BI** (**Fichier** → **Enregistrer sous** → type `*.pbip`) dans `bi/power-bi/`. Ce format est du texte, que Git sait suivre. Si le type `.pbip` n'apparaît pas : **Fichier** → **Options et paramètres** → **Options** → **Fonctionnalités en préversion** → cocher **Enregistrement de projet Power BI**.
+6. Enregistrer au format **projet Power BI** (**Fichier** → **Enregistrer sous** → type `*.pbip`) dans `bi/powerbi/`. Ce format est du texte, que Git sait suivre. Si le type `.pbip` n'apparaît pas : **Fichier** → **Options et paramètres** → **Options** → **Fonctionnalités en préversion** → cocher **Enregistrement de projet Power BI**.
