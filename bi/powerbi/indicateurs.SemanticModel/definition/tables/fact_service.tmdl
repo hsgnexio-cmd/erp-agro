@@ -1,0 +1,153 @@
+table fact_service
+	lineageTag: 8bdaab0e-3b83-44a9-8350-5ecc4762cbe7
+
+	column order_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 4ce95f9f-e415-4de2-bd18-020ddf724f32
+		summarizeBy: sum
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column order_number
+		dataType: string
+		lineageTag: 6971f959-3642-46e4-863f-589a49eb2776
+		summarizeBy: none
+		sourceColumn: order_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 130274b2-929f-4c3e-96cc-279e342260ff
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column requested_delivery_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: b074905f-bd68-4721-ba42-e6733e809424
+		summarizeBy: none
+		sourceColumn: requested_delivery_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column on_time_limit
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: eb57b74b-f981-4aae-a1d2-ed4a420c7053
+		summarizeBy: none
+		sourceColumn: on_time_limit
+
+		variation Variation
+			isDefault
+			relationship: 57bf5ff7-88c4-4da6-af10-0330d490dc5e
+			defaultHierarchy: LocalDateTable_fe322f8c-f79d-429b-92c0-b01cef6d637b.'Hiérarchie de dates'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column shipped_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 1a6d46c7-d1cc-4d47-b55d-ed864cd3485b
+		summarizeBy: none
+		sourceColumn: shipped_date
+
+		variation Variation
+			isDefault
+			relationship: dc15673a-54ce-4f91-8257-fad5fcb980b6
+			defaultHierarchy: LocalDateTable_203dcb15-e790-44cb-a2a9-d19400ca2234.'Hiérarchie de dates'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column is_counted
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 06c6b08f-676e-49f4-871e-1d053bbf8346
+		summarizeBy: none
+		sourceColumn: is_counted
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_on_time
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 941b25d7-1dc3-4e0b-b58c-b5db9bdd37c4
+		summarizeBy: none
+		sourceColumn: is_on_time
+
+		annotation SummarizationSetBy = Automatic
+
+	column ordered
+		dataType: double
+		lineageTag: 4c58a92e-b259-49fa-b2c4-e1db23da1d0a
+		summarizeBy: sum
+		sourceColumn: ordered
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column delivered
+		dataType: double
+		lineageTag: 25e8c19e-6d2b-4200-abc7-8301a11fda36
+		summarizeBy: sum
+		sourceColumn: delivered
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column delivered_on_time
+		dataType: double
+		lineageTag: c04995af-0131-44b2-b56d-74d14008959f
+		summarizeBy: sum
+		sourceColumn: delivered_on_time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column delivered_late
+		dataType: double
+		lineageTag: 8438601d-689a-4ff4-a02c-97eacc7d95ce
+		summarizeBy: sum
+		sourceColumn: delivered_late
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column missing
+		dataType: double
+		lineageTag: 4853e706-8dab-4838-b577-944512c7d15a
+		summarizeBy: sum
+		sourceColumn: missing
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_service = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_service = Source{[Schema="bi",Item="fact_service"]}[Data]
+				in
+				    bi_fact_service
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

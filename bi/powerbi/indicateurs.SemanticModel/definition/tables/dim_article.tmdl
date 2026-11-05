@@ -1,0 +1,132 @@
+table dim_article
+	lineageTag: 94b4e0cb-5082-4c7e-a236-cdb7c6f02032
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e7220ce9-d930-466d-9a65-32e3c250eac4
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: dcc48d13-7d68-4fa2-8835-a393dd6250fe
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: f5de9529-b6fa-488b-ab53-5d445ec9faf2
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_type
+		dataType: string
+		lineageTag: d6027872-3a3a-409c-b89a-fdaf13d8130a
+		summarizeBy: none
+		sourceColumn: article_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_type_label
+		dataType: string
+		lineageTag: 21694bf8-6590-4b53-91a7-b139b6c8427e
+		summarizeBy: none
+		sourceColumn: article_type_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit
+		dataType: string
+		lineageTag: e06739b4-40a0-415b-b393-79208bbb160e
+		summarizeBy: none
+		sourceColumn: unit
+
+		annotation SummarizationSetBy = Automatic
+
+	column category_code
+		dataType: string
+		lineageTag: 6b70e026-91a5-40a1-b771-5b0220e8a64f
+		summarizeBy: none
+		sourceColumn: category_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column family_code
+		dataType: string
+		lineageTag: 20185e17-c2aa-48c7-b64a-5de91c580ad1
+		summarizeBy: none
+		sourceColumn: family_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column family_name
+		dataType: string
+		lineageTag: 9eb7ebce-06c3-4ce5-9657-449cc0876b6c
+		summarizeBy: none
+		sourceColumn: family_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column factory_code
+		dataType: string
+		lineageTag: f0087533-2a85-4481-aed3-3634d9edb094
+		summarizeBy: none
+		sourceColumn: factory_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column brand
+		dataType: string
+		lineageTag: 7c330069-8eda-4a0b-9e3d-a1190adca900
+		summarizeBy: none
+		sourceColumn: brand
+
+		annotation SummarizationSetBy = Automatic
+
+	column format_size
+		dataType: int64
+		formatString: 0
+		lineageTag: 82240f9b-dd1a-47a1-afd7-6a0f421cb98d
+		summarizeBy: sum
+		sourceColumn: format_size
+
+		annotation SummarizationSetBy = Automatic
+
+	column shelf_life_days
+		dataType: int64
+		formatString: 0
+		lineageTag: cedbac66-234c-49f2-90a9-a92563ce9831
+		summarizeBy: sum
+		sourceColumn: shelf_life_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column active
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d119cf02-97ee-477e-84cb-5645eb6b29e6
+		summarizeBy: none
+		sourceColumn: active
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_article = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_dim_article = Source{[Schema="bi",Item="dim_article"]}[Data]
+				in
+				    bi_dim_article
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

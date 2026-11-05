@@ -1,0 +1,66 @@
+table dim_site
+	lineageTag: 0488638c-010d-41dc-8a13-7209059fd1e1
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: d2535435-09e5-41bc-8a91-43a26ffcad4b
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: 373782f9-e7fd-4b30-bd47-796c299d2f9d
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: cebcf932-3090-4925-b7e9-9a9aaa762458
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_type
+		dataType: string
+		lineageTag: 7bb809b1-1fda-40c9-afcf-7f2261d0414e
+		summarizeBy: none
+		sourceColumn: site_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column city
+		dataType: string
+		lineageTag: 0766d391-8e71-4ab9-b101-fd1477e7bdb7
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = Automatic
+
+	column active
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 517f3b7b-7a6c-416a-b53c-2188ee8726a4
+		summarizeBy: none
+		sourceColumn: active
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_site = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_dim_site = Source{[Schema="bi",Item="dim_site"]}[Data]
+				in
+				    bi_dim_site
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "b30243e2e3e0304cee4e",
+  "position": {
+    "x": 280,
+    "y": 722,
+    "z": 1007,
+    "height": 205,
+    "width": 280,
+    "tabOrder": 1007
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Mesures"
+                    }
+                  },
+                  "Property": "Couverture produits finis (j)"
+                }
+              },
+              "queryRef": "Mesures.Couverture produits finis (j)",
+              "nativeQueryRef": "Couverture produits finis (j)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Mesures"
+                  }
+                },
+                "Property": "Couverture produits finis (j)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "13ad8cb0c64b7c95cae4",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Mesures"
+              }
+            },
+            "Property": "Couverture produits finis (j)"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

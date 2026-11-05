@@ -1,0 +1,93 @@
+table dim_date
+	lineageTag: d28c0746-34a8-4f47-affa-4e37e368bc36
+	dataCategory: Time
+
+	column date
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: bab7f643-77e1-448a-8a4a-21d236db55ff
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column iso_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 8dd4752d-8016-4682-93e0-fd8732582fc7
+		summarizeBy: sum
+		sourceColumn: iso_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column iso_week
+		dataType: int64
+		formatString: 0
+		lineageTag: b3b1b1c5-237e-4cfd-a74e-973b122261ac
+		summarizeBy: sum
+		sourceColumn: iso_week
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_start
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4ed53f0f-8787-466a-9066-c6dccf902a84
+		summarizeBy: none
+		sourceColumn: week_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column week_label
+		dataType: string
+		lineageTag: db3f9d8e-eb54-4e59-8bf8-0a7bb6b011f7
+		summarizeBy: none
+		sourceColumn: week_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: a54eddbc-f402-418c-98ee-9f179c660255
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: int64
+		formatString: 0
+		lineageTag: 6ce3c2dc-d653-4daf-9afc-754cc6302303
+		summarizeBy: sum
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_week
+		dataType: int64
+		formatString: 0
+		lineageTag: 9a30e52f-aa5b-4e14-9ce9-bdc0d4f617e1
+		summarizeBy: sum
+		sourceColumn: day_of_week
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_dim_date = Source{[Schema="bi",Item="dim_date"]}[Data]
+				in
+				    bi_dim_date
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

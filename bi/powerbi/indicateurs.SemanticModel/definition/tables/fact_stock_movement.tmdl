@@ -1,0 +1,156 @@
+table fact_stock_movement
+	lineageTag: 2c53d2e4-8867-4a8c-9d45-a74a7d2edfce
+
+	column movement_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 2803fc9a-9b01-4cec-b6df-97ca61fb7344
+		summarizeBy: sum
+		sourceColumn: movement_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 0dc4808f-6fce-43bb-be6a-b6ab8b4e149d
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column created_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 2b4c0c47-0c71-43ff-99a5-04c7bb10a61a
+		summarizeBy: none
+		sourceColumn: created_at
+
+		variation Variation
+			isDefault
+			relationship: bbae4402-1a02-4ff8-8457-bbefc19ac3cb
+			defaultHierarchy: LocalDateTable_c97e0756-b3dc-4305-9be4-9ca78d9341b6.'Hiérarchie de dates'
+
+		annotation SummarizationSetBy = Automatic
+
+	column movement_type
+		dataType: string
+		lineageTag: 542e033f-c5f7-4058-81c5-8f14b2067d17
+		summarizeBy: none
+		sourceColumn: movement_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_markdown
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 082ab62b-6d23-4c9d-8ac2-90b39cd400ef
+		summarizeBy: none
+		sourceColumn: is_markdown
+
+		annotation SummarizationSetBy = Automatic
+
+	column lot_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 7b1692c2-34e9-40f4-9599-4caf8e2c8bcb
+		summarizeBy: sum
+		sourceColumn: lot_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column lot_number
+		dataType: string
+		lineageTag: 49784c7d-588e-4060-84f4-d634ec2a69f0
+		summarizeBy: none
+		sourceColumn: lot_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 71dc21c2-5ae1-4b1d-9356-f1bc16b7718c
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: b3bca15d-fb89-4678-b1f6-a38617e5b521
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column location_code
+		dataType: string
+		lineageTag: 17c2961a-b59b-4c21-9379-343cfa8b7c41
+		summarizeBy: none
+		sourceColumn: location_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity
+		dataType: double
+		lineageTag: aa0e75aa-ff12-403e-aec5-90c98e990b2b
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column unit_value
+		dataType: double
+		lineageTag: 280cb42c-c09c-4e14-8e12-c2473fb7f225
+		summarizeBy: sum
+		sourceColumn: unit_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column value
+		dataType: double
+		lineageTag: 01341593-7d65-4f0b-a3a1-9e772497771a
+		summarizeBy: sum
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column reference
+		dataType: string
+		lineageTag: 39b3640b-af40-44d4-b5ab-43d8bb75b624
+		summarizeBy: none
+		sourceColumn: reference
+
+		annotation SummarizationSetBy = Automatic
+
+	column reason
+		dataType: string
+		lineageTag: 791b64d3-c5c9-4d43-a69a-8cc22b09752f
+		summarizeBy: none
+		sourceColumn: reason
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_stock_movement = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_stock_movement = Source{[Schema="bi",Item="fact_stock_movement"]}[Data]
+				in
+				    bi_fact_stock_movement
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

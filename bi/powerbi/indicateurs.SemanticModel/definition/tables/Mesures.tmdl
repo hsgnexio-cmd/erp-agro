@@ -1,0 +1,62 @@
+table Mesures
+	lineageTag: 10e8b1ab-2635-428f-946d-c3dd18d46f2d
+
+	measure 'Taux de service' = DIVIDE ( CALCULATE ( SUM ( fact_service[delivered_on_time] ), fact_service[is_counted] = TRUE () ), CALCULATE ( SUM ( fact_service[ordered] ), fact_service[is_counted] = TRUE () ) )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: 31b1247b-a671-484f-9b47-4b5ce1a94e1f
+
+	measure CA = SUM ( fact_sales[amount] )
+		formatString: "€"\ #,0.00;-"€"\ #,0.00;"€"\ #,0.00
+		lineageTag: f76f66d2-4089-4090-bb8c-d65413a80740
+
+	measure 'Démarque (€)' = - CALCULATE ( SUM ( fact_stock_movement[value] ), fact_stock_movement[is_markdown] = TRUE () )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 9ab552a9-dc49-4985-8165-c5f7710ea255
+
+	measure 'Démarque (% du CA)' = DIVIDE ( [Démarque (€)], [CA] )
+		lineageTag: 812f582a-012b-4853-b804-1b38bdab2a69
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Rendement matière' = DIVIDE ( SUM ( fact_production_yield[theoretical_mass] ), SUM ( fact_production_yield[actual_mass] ) )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 49917771-47cd-4c63-931f-85058bb0ec94
+
+	measure 'Conformité réception' = DIVIDE ( CALCULATE ( COUNTROWS ( fact_reception ), fact_reception[is_compliant] = TRUE () ), COUNTROWS ( fact_reception ) )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 90c33966-ed85-4dca-ba7d-820aa45e5a9b
+
+	measure 'Couverture produits finis (j)' =
+			
+			VAR LastDay = MIN ( MAX ( dim_date[date] ), TODAY () )
+			VAR FirstDay = MIN ( dim_date[date] )
+			VAR Days = DATEDIFF ( FirstDay, LastDay, DAY ) + 1
+			VAR Stock = CALCULATE ( SUM ( fact_stock_daily[value] ), dim_date[date] = LastDay, fact_stock_daily[lot_status] IN { "libere", "quarantaine" }, dim_article[article_type] = "PF" )
+			VAR Outflow = - CALCULATE ( SUM ( fact_stock_movement[value] ), dim_date[date] >= FirstDay && dim_date[date] <= LastDay, fact_stock_movement[movement_type] = "expedition", dim_article[article_type] = "PF" )
+			RETURN DIVIDE ( Stock, DIVIDE ( Outflow, Days ) )
+		formatString: 0.00
+		lineageTag: 5f7decc9-152f-4380-8dd7-0d65bada6441
+
+	measure 'Couverture matières (j)' =
+			
+			VAR LastDay = MIN ( MAX ( dim_date[date] ), TODAY () )
+			VAR FirstDay = MIN ( dim_date[date] )
+			VAR Days = DATEDIFF ( FirstDay, LastDay, DAY ) + 1
+			VAR Stock = CALCULATE ( SUM ( fact_stock_daily[value] ), dim_date[date] = LastDay, fact_stock_daily[lot_status] IN { "libere", "quarantaine" }, dim_article[article_type] = "MP" )
+			VAR Outflow = - CALCULATE ( SUM ( fact_stock_movement[value] ), dim_date[date] >= FirstDay && dim_date[date] <= LastDay, fact_stock_movement[movement_type] = "consommation", dim_article[article_type] = "MP" )
+			RETURN DIVIDE ( Stock, DIVIDE ( Outflow, Days ) )
+		formatString: 0.00
+		lineageTag: cb89d76b-3019-42ae-88f2-9ed215a0a086
+
+	partition Mesures = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Colonne 1" = _t]),
+				    #"Type modifié" = Table.TransformColumnTypes(Source,{{"Colonne 1", type text}}),
+				    #"Colonnes supprimées" = Table.RemoveColumns(#"Type modifié",{"Colonne 1"})
+				in
+				    #"Colonnes supprimées"
+
+	annotation PBI_ResultType = Table
+

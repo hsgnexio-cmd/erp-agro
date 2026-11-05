@@ -1,0 +1,110 @@
+table fact_production_yield
+	lineageTag: 67eb258d-c97e-4e61-b546-8efdb8bc2498
+
+	column order_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 8a5bcc33-2e04-48ae-ac5a-9aaade2ce7cf
+		summarizeBy: sum
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column order_number
+		dataType: string
+		lineageTag: df6685aa-ef42-4ff3-a0ad-2f26dfe56eca
+		summarizeBy: none
+		sourceColumn: order_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 01c94f8a-8940-42ee-a7f1-c03353e16f83
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 97a34654-8962-4596-99d9-bcdf852fe927
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column line_code
+		dataType: string
+		lineageTag: b8004845-b87a-4f4b-b03f-87d3278d3315
+		summarizeBy: none
+		sourceColumn: line_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 6f46de1e-b052-4e00-b06d-59613e27d22d
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column produced
+		dataType: double
+		lineageTag: c2c0a7f7-3692-46ab-91ca-d8469ca8ef3e
+		summarizeBy: sum
+		sourceColumn: produced
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column theoretical_mass
+		dataType: double
+		lineageTag: f4bb4c89-bf2a-4cd7-b2b3-b25cd1ff0985
+		summarizeBy: sum
+		sourceColumn: theoretical_mass
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column actual_mass
+		dataType: double
+		lineageTag: ca860043-3f8d-4f1e-931f-d8fca7d2e859
+		summarizeBy: sum
+		sourceColumn: actual_mass
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column yield_pct
+		dataType: double
+		lineageTag: 675a49af-bd06-4ac4-85bd-e52761263d93
+		summarizeBy: sum
+		sourceColumn: yield_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_production_yield = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_production_yield = Source{[Schema="bi",Item="fact_production_yield"]}[Data]
+				in
+				    bi_fact_production_yield
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
