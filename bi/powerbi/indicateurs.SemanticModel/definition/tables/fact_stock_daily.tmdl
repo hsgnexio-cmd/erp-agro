@@ -1,0 +1,73 @@
+table fact_stock_daily
+	lineageTag: bdc2a68e-ae3c-410c-9fbd-30322100f04d
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 31bc1270-799d-43b1-bb37-8f6260339fbf
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: b13cc58d-b9fd-4b67-8285-41c190bb0a01
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: c251feea-7333-4af0-bfdb-1f61a280d55a
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column lot_status
+		dataType: string
+		lineageTag: 42a5a9bd-75b6-4c3e-a0bf-a77f407cb0cd
+		summarizeBy: none
+		sourceColumn: lot_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity
+		dataType: double
+		lineageTag: 7ea26d63-859b-4b43-bbdb-0c9e67f310e7
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column value
+		dataType: double
+		lineageTag: fe8030a3-9a47-4fc3-97c0-d219d454fa72
+		summarizeBy: sum
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_stock_daily = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_stock_daily = Source{[Schema="bi",Item="fact_stock_daily"]}[Data]
+				in
+				    bi_fact_stock_daily
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -4,12 +4,12 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 
 ## 1. Où en est le projet
 
-- **Les 8 phases du projet sont terminées.** La partie 8b est sur la branche `phase-8b-power-bi`, à fusionner par Nicolas :
+- **Les 8 phases du projet sont terminées.** La partie 8b est fusionnée (pull request #10) :
   - utilisateur PostgreSQL `powerbi` en lecture seule sur le schéma `bi` (commande `creer_utilisateur_bi`, mot de passe `BI_DB_PASSWORD` du `.env`) ;
   - requêtes Power Query typées (`bi/power-query/`) et mesures DAX (`bi/mesures-dax.md`) ;
   - export CSV du tableau de bord ;
   - guide de connexion Excel et Power BI pas à pas dans le README.
-- Reste côté Nicolas : construire le rapport Power BI dans Power BI Desktop (à installer, gratuit) et l'enregistrer en `.pbip` dans `bi/power-bi/`.
+- Rapport Power BI construit par Nicolas : `bi/powerbi/indicateurs.pbip` (cartes des indicateurs, filtre de période, segment par enseigne, matrice par semaine). Docker Desktop doit être lancé pour actualiser.
 
 ## 2. Pistes pour la suite (à choisir avec Nicolas)
 

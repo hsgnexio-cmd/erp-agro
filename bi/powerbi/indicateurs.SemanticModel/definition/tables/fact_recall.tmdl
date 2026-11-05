@@ -1,0 +1,88 @@
+table fact_recall
+	lineageTag: 73baa321-28c2-4c4e-8dcd-20c142152ecf
+
+	column recall_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 3ffcc185-84b5-441d-87de-8d3be949ec83
+		summarizeBy: sum
+		sourceColumn: recall_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column recall_number
+		dataType: string
+		lineageTag: 1ce57bb7-498d-430c-9a41-1967a28e2cf0
+		summarizeBy: none
+		sourceColumn: recall_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2f82e4c8-58c3-4719-b4fa-e946d78f59ed
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column origin_lot_number
+		dataType: string
+		lineageTag: 51984cd8-0d6c-45d5-9853-3d1494e58a8d
+		summarizeBy: none
+		sourceColumn: origin_lot_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 8f19bde2-e977-4e4d-92ee-c0e5faf94402
+		summarizeBy: sum
+		sourceColumn: origin_article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column duration_ms
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d8aab14-fb4f-495f-a53d-7fc153995a6c
+		summarizeBy: sum
+		sourceColumn: duration_ms
+
+		annotation SummarizationSetBy = Automatic
+
+	column blocked_lots
+		dataType: int64
+		formatString: 0
+		lineageTag: eaea8fb1-f226-4403-8bce-695267bc5d95
+		summarizeBy: sum
+		sourceColumn: blocked_lots
+
+		annotation SummarizationSetBy = Automatic
+
+	column customers
+		dataType: int64
+		formatString: 0
+		lineageTag: f5eb7ef9-8970-495a-88d0-ba84954d1fb0
+		summarizeBy: sum
+		sourceColumn: customers
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_recall = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_recall = Source{[Schema="bi",Item="fact_recall"]}[Data]
+				in
+				    bi_fact_recall
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

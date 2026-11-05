@@ -1,0 +1,4 @@
+# Fichiers propres à chaque PC, à ne pas partager (recommandation Microsoft pour les projets .pbip)
+# cache.abf : copie des données importées ; localSettings.json : réglages personnels
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

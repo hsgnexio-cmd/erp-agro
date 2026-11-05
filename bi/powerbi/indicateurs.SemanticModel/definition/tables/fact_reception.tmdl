@@ -1,0 +1,98 @@
+table fact_reception
+	lineageTag: cb5243c3-5243-413c-b247-84b4cd0733e7
+
+	column reception_line_id
+		dataType: int64
+		formatString: 0
+		lineageTag: a1c14dde-75f8-4b86-9534-58f05a522dd6
+		summarizeBy: sum
+		sourceColumn: reception_line_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4ba1bea5-56a0-4ac3-9850-376b4620e7f4
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column reception_number
+		dataType: string
+		lineageTag: 57fbf5f7-562f-450b-918e-3dc94193b062
+		summarizeBy: none
+		sourceColumn: reception_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column supplier_id
+		dataType: int64
+		formatString: 0
+		lineageTag: c288bdb8-5393-477e-98ef-87b5a856c8f0
+		summarizeBy: sum
+		sourceColumn: supplier_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d96d273-7260-48ac-88f0-713bfd35ef67
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 65ee03d8-2807-43bc-b994-437e7d8ea9c8
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity
+		dataType: double
+		lineageTag: f9514d28-03d4-4b1e-8c5d-1266c069b2a9
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column is_compliant
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 201dd365-35e2-4287-a7b6-a5fa907829a8
+		summarizeBy: none
+		sourceColumn: is_compliant
+
+		annotation SummarizationSetBy = Automatic
+
+	column non_compliance_reasons
+		dataType: string
+		lineageTag: ab980535-cf7c-4dd6-8c3a-01b423890cc5
+		summarizeBy: none
+		sourceColumn: non_compliance_reasons
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_reception = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_reception = Source{[Schema="bi",Item="fact_reception"]}[Data]
+				in
+				    bi_fact_reception
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
