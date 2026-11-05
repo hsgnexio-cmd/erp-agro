@@ -3,6 +3,7 @@ import { useAuth } from '../auth/context'
 import { useApi } from '../hooks/useApi'
 
 const SECTIONS = [
+  { to: '/tableau-de-bord', title: 'Tableau de bord', text: 'Indicateurs de la fiche entreprise, par semaine' },
   { to: '/articles', title: 'Articles', text: 'Matières, semi-finis, produits finis, emballages' },
   { to: '/fournisseurs', title: 'Fournisseurs', text: 'Coordonnées, délais, audits' },
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },

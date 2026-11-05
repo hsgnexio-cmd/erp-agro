@@ -4,6 +4,7 @@ import { AlertsPage } from './pages/AlertsPage'
 import { ArticleDetailPage } from './pages/ArticleDetailPage'
 import { ArticlesPage } from './pages/ArticlesPage'
 import { CustomersPage } from './pages/CustomersPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { HomePage } from './pages/HomePage'
 import { InventoriesPage } from './pages/InventoriesPage'
 import { InventoryDetailPage } from './pages/InventoryDetailPage'
@@ -43,6 +44,7 @@ export function AppRoutes() {
       <Route path="/connexion" element={<LoginPage />} />
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="tableau-de-bord" element={<DashboardPage />} />
         <Route path="articles" element={<ArticlesPage />} />
         <Route path="articles/:id" element={<ArticleDetailPage />} />
         <Route path="fournisseurs" element={<SuppliersPage />} />

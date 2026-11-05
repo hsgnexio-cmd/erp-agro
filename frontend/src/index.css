@@ -330,6 +330,62 @@ tr.inactive {
   color: #8a1c1c;
 }
 
+/* --- Tableau de bord (indicateurs) --- */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+
+.kpi {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.kpi-ok {
+  border-left-color: var(--brand);
+}
+
+.kpi-alerte {
+  border-left-color: #b42318;
+}
+
+.kpi header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.kpi h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0.4rem 0 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-target,
+.kpi-definition {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.2rem 0;
+}
+
+.kpi-detail {
+  font-size: 0.9rem;
+  margin: 0.4rem 0;
+}
+
 /* --- Formulaires et actions --- */
 
 .page-title {
