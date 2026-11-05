@@ -113,6 +113,12 @@ Remplir la base avec des données fictives cohérentes avec la fiche entreprise 
 docker compose exec backend python manage.py charger_donnees_demo
 ```
 
+La commande rejoue aussi **4 semaines d'historique**, jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes). C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
+
+```powershell
+docker compose exec backend python manage.py charger_donnees_demo --sans-historique
+```
+
 ## Rôles et utilisateurs
 
 Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md).
@@ -126,11 +132,29 @@ Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Pui
 
 | Adresse | Contenu |
 | --- | --- |
-| http://localhost:5173 | Application React : référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning, ventes, EDI, préparation et expédition, taux de service |
+| http://localhost:5173 | Application React : tableau de bord, référentiel (articles, fournisseurs, clients, sites), commandes fournisseurs, réceptions, lots, état des stocks, FEFO, températures, inventaires, alertes, traçabilité, rappels, production, planning, ventes, EDI, préparation et expédition, taux de service |
 | http://localhost:8000/admin/ | Administration : saisie du référentiel et des tarifs fournisseurs, historique des modifications |
 | http://localhost:8000/api/referentiel/ | API du référentiel (liste des adresses disponibles, une fois connecté) |
 | http://localhost:8000/api/achats/ | API des achats : tarifs, commandes, réceptions |
 | http://localhost:8000/api/stocks/ | API des stocks : lots et mouvements |
+| http://localhost:8000/api/pilotage/indicators/ | API des indicateurs du tableau de bord |
+
+### Le tableau de bord
+
+Menu **Tableau de bord** (tous les rôles) : les 9 indicateurs de la fiche entreprise, avec leur objectif (vert : atteint ; rouge : hors objectif) et leur évolution semaine par semaine.
+
+| Indicateur | Calcul | Objectif |
+| --- | --- | --- |
+| Taux de service | Livré complet et à l'heure ÷ commandé | ≥ 98,5 % |
+| Démarque | Valeur détruite ou donnée ÷ chiffre d'affaires | ≤ 1,5 % |
+| Couverture produits finis | Stock disponible ÷ expéditions moyennes par jour (en valeur) | 2 à 4 jours |
+| Couverture matières | Stock disponible ÷ consommations moyennes par jour (en valeur) | 5 à 10 jours |
+| Rendement matière | Consommation théorique ÷ consommation réelle | ≥ 96 % |
+| Conformité réception | Lignes conformes ÷ lignes reçues | ≥ 97 % |
+| Délai de traçabilité | Durée d'un rappel « à blanc », mesurée à l'ouverture | ≤ 5 min |
+| TRS, fiabilité des prévisions | **Non disponibles** : l'ERP n'enregistre ni arrêts de ligne ni prévisions | — |
+
+Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)).
 
 ### Le parcours d'achat
 
@@ -219,7 +243,7 @@ erp-agro/
 ├── frontend/         # React + TypeScript (Vite)
 ├── docs/             # fiche entreprise, décisions (decisions.md)
 ├── data/             # scripts de données fictives (à venir)
-├── bi/               # Power Query, Power BI (à venir)
+├── bi/               # documentation des vues SQL « bi » ; Power Query, Power BI (phase 8b)
 ├── docker-compose.yml
 └── .env.example      # modèle de configuration (copier en .env)
 ```
