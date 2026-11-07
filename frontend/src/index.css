@@ -756,3 +756,55 @@ ul.errors {
     font-size: 12pt;
   }
 }
+
+/* --- Prévisions de vente --- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.legend .forecast-cell {
+  padding: 0.1em 0.5em;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+.forecast-cell.is-promo {
+  background: #fdf0d5;
+}
+
+.forecast-cell.is-adjusted {
+  background: #dbe8f8;
+}
+
+.forecast-cell.is-selected {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.forecast-cell small {
+  color: var(--muted);
+}
+
+button.cell-button {
+  background: none;
+  color: inherit;
+  padding: 0;
+  width: 100%;
+  text-align: right;
+}
+
+button.cell-button:hover {
+  text-decoration: underline;
+}
+
+.inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
