@@ -12,8 +12,9 @@ Toutes de type « un à plusieurs », la dimension du côté « un », filtre da
 | --- | --- |
 | `dim_date[date]` | `fact_stock_movement[date]`, `fact_stock_daily[date]`, `fact_sales[date]`, `fact_reception[date]`, `fact_production_yield[date]`, `fact_recall[date]` |
 | `dim_date[date]` | `fact_service[requested_delivery_date]` (le taux de service se compte sur la livraison demandée) |
-| `dim_article[article_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_sales`, `fact_reception`, `fact_production_yield` (colonne `article_id`) |
-| `dim_customer[customer_id]` | `fact_sales[customer_id]`, `fact_service[customer_id]` |
+| `dim_date[date]` | `fact_forecast_accuracy[week_start]` et `fact_forecast[week_start]` (lundi de la semaine prévue) |
+| `dim_article[article_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_sales`, `fact_reception`, `fact_production_yield`, `fact_forecast`, `fact_forecast_accuracy` (colonne `article_id`) |
+| `dim_customer[customer_id]` | `fact_sales[customer_id]`, `fact_service[customer_id]`, `fact_forecast[customer_id]`, `fact_forecast_accuracy[customer_id]` |
 | `dim_site[site_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_reception`, `fact_production_yield` (colonne `site_id`) |
 
 Puis : clic droit sur `dim_date` → **Marquer comme table de dates**, colonne `date`.
@@ -118,6 +119,28 @@ DIVIDE (
 )
 ```
 
+### Fiabilité des prévisions à S-1 (pourcentage, 1 décimale)
+
+Prévision figée la semaine précédente, comparée aux quantités commandées, produit par produit et enseigne par enseigne. Seules les semaines terminées comptent ; le résultat ne descend jamais sous 0 %. Dans l'application, une semaine compte si son lundi tombe entre le lundi de la semaine de début et la date de fin : choisis une période qui commence un lundi pour retrouver exactement le même chiffre.
+
+```dax
+Fiabilité prévisions =
+VAR Ecart =
+    CALCULATE ( SUM ( fact_forecast_accuracy[abs_error] ), fact_forecast_accuracy[is_complete] = TRUE () )
+VAR Commande =
+    CALCULATE ( SUM ( fact_forecast_accuracy[actual_quantity] ), fact_forecast_accuracy[is_complete] = TRUE () )
+RETURN
+    IF ( Commande > 0, MAX ( 0, 1 - DIVIDE ( Ecart, Commande ) ) )
+```
+
+```dax
+Prévu à S-1 = SUM ( fact_forecast_accuracy[forecast_quantity] )
+```
+
+```dax
+Commandé = SUM ( fact_forecast_accuracy[actual_quantity] )
+```
+
 ### Délai de traçabilité (nombre entier, en millisecondes)
 
 Durée des rappels lancés. Le « rappel à blanc » mesuré à chaque ouverture du tableau de bord n'existe que dans l'application.
@@ -132,7 +155,7 @@ Délai de traçabilité max (ms) = MAX ( fact_recall[duration_ms] )
 Taux de service – objectif atteint = IF ( [Taux de service] >= 0.985, 1, 0 )
 ```
 
-Pour colorer une valeur : sélectionner le visuel → Format → Valeurs → couleur de police → **fx** → « Règles » (vert si ≥ objectif, rouge sinon). Objectifs de la fiche entreprise : taux de service ≥ 98,5 %, démarque ≤ 1,5 %, couverture produits finis 2 à 4 j, couverture matières 5 à 10 j, rendement ≥ 96 %, conformité réception ≥ 97 %.
+Pour colorer une valeur : sélectionner le visuel → Format → Valeurs → couleur de police → **fx** → « Règles » (vert si ≥ objectif, rouge sinon). Objectifs de la fiche entreprise : taux de service ≥ 98,5 %, démarque ≤ 1,5 %, couverture produits finis 2 à 4 j, couverture matières 5 à 10 j, rendement ≥ 96 %, conformité réception ≥ 97 %, fiabilité des prévisions ≥ 80 %.
 
 ## 3. Pages proposées
 
@@ -140,3 +163,4 @@ Pour colorer une valeur : sélectionner le visuel → Format → Valeurs → cou
 2. **Évolution** : matrice avec `dim_date[week_label]` en colonnes et les mesures en valeurs.
 3. **Ventes et service** : taux de service et CA par enseigne (`dim_customer[name]`), par marque (`dim_article[brand]`).
 4. **Démarque** : démarque (€) par article et par type de mouvement (`fact_stock_movement[movement_type]`).
+5. **Prévisions** : fiabilité à S-1 par semaine (`fact_forecast_accuracy[week_label]`) et par enseigne ; histogramme « Prévu à S-1 » / « Commandé » par semaine.

@@ -276,6 +276,32 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | `cache.abf` et `localSettings.json` exclus de Git (`bi/powerbi/.gitignore`) | Recommandation Microsoft : le cache contient une copie des données, les réglages sont propres à chaque PC. À l'ouverture, Power BI relit la base. |
 | Détection automatique des relations désactivée dans le rapport | Les vues n'ont pas de clés déclarées : la détection tournait sans fin et proposait de fausses relations (ex. `fact_service.order_id` ↔ `fact_production_yield.order_id`, deux numéros sans rapport). Relations créées à la main, d'après `bi/mesures-dax.md`. |
 
+## Phase 9a – Prévisions de vente
+
+| Décision | Raison |
+| --- | --- |
+| Phase 9 découpée en 9a (prévisions de vente) et 9b (plan de production figé à J-2, calcul des besoins d'achat / MRP) | Deux pull requests plus faciles à relire et à tester. |
+| Nouvelle app `previsions`, logique dans `previsions/forecast.py` | Module à part entière de la planification ; la 9b s'appuiera dessus. |
+| On prévoit la **demande** : quantités commandées (commandes non annulées), par semaine de livraison demandée | Validé. Les expéditions sont réduites par les ruptures : prévoir à partir d'elles ferait baisser la prévision à chaque rupture, donc la production. |
+| Maille produit fini × enseigne × semaine ISO (lundi → dimanche), horizon S+1 à S+8 | Validé (fiche entreprise : prévisions à 8 semaines). Une semaine est désignée par la date de son lundi. Seuls les couples commandables sont prévus (MDD : son enseigne ; marque : les enseignes qui la vendent). |
+| Méthode : moyenne pondérée des 4 dernières semaines (40/30/20/10 %), arrondie au colis de 12 | Validé : simple, refaisable dans Excel. Trop peu d'historique pour une saisonnalité. Une semaine en promotion est divisée par son coefficient ; les semaines antérieures à la première commande du couple ne comptent pas (sinon un nouveau produit serait sous-estimé). |
+| Promotions : coefficient de 1,01 à 3 ; refus au-delà de ×3, d'un chevauchement avec une autre promotion du couple, d'un début avant la semaine prochaine | Validé (fiche : jusqu'à ×3). Annonce à moins de 6 semaines : **avertissement** seulement. Annulation avec motif, uniquement avant son début ; historique des modifications (règle 12). |
+| Corrections manuelles : quantité qui **remplace** le total calculé, motif obligatoire, jamais modifiées ni supprimées | Validé. La dernière correction l'emporte ; une correction sans quantité rend la main au calcul. Le détail (base, promotion, correction) reste visible. |
+| Versions figées `PRV-AAAA-NNNNN` : chaque lundi à 5 h (Celery Beat, une seule automatique par jour) et à la demande | Validé. Une version et ses lignes ne se modifient ni ne se suppriment. Une version ne retient que les promotions et corrections saisies avant elle. |
+| Fiabilité à S-1 = 1 − Σ écart absolu (prévu − commandé) ÷ Σ commandé, au couple produit × enseigne, jamais sous 0 % | Validé (fiche : ≥ 80 % à S-1). Version de référence : la dernière figée **avant le lundi** de la semaine (heure de Paris) et qui la couvre. Seules les semaines terminées comptent ; un produit commandé mais non prévu compte en entier dans l'écart. |
+| Vues `bi.fact_forecast` et `bi.fact_forecast_accuracy` (migration `pilotage/0004`) | Le tableau de bord et Power BI lisent la même vue ; un test vérifie qu'elle donne les mêmes résultats que le calcul Python. La tuile « Fiabilité des prévisions » est activée (filtres période et enseigne) et ajoutée à l'évolution par semaine et à l'export CSV. |
+| Écran React **Prévisions** : grille 8 semaines, correction en cliquant sur une case, promotions, fiabilité par semaine, versions | Saisie par `commercial` et `admin`, consultation pour tous (la production en aura besoin en 9b). Rien ne se saisit dans l'administration : les règles passent par les fonctions métier. |
+| Historique de démonstration porté à **6 semaines** (mesuré : ≈ 6 min de chargement, comme avant) | Avec 4 semaines, une seule semaine aurait eu une prévision figée la semaine précédente. Avec 6 : trois semaines mesurables sur les 28 derniers jours. Une promotion ×2 (ENS2, lasagnes Brévanne), annoncée 7 semaines avant, double réellement les commandes et la production de sa semaine. |
+| Démo du moment : deux promotions à venir (dont une annoncée tard) et une correction manuelle | Montre l'avertissement et le code couleur de la grille. |
+| Test de l'export CSV rendu indépendant de la date du jour | Il utilisait une période fixe (01/10 → 05/11/2026) : à partir du 07/11, les OF de la démo tombaient hors période. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Saisir ou annuler une promotion, saisir une correction, figer une version | `admin`, `commercial` |
+| Consulter prévisions, promotions, corrections, versions, fiabilité | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -284,15 +310,15 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | --- | --- | --- |
 | `ValidatedModel` : validation complète (`full_clean`) à chaque enregistrement | `referentiel/models.py` | Les règles s'appliquent quel que soit le chemin (API, administration, script, données de démo). |
 | Les opérations relisent et verrouillent le lot (`select_for_update`) | `stocks/services.py`, `production/services.py`, `ventes/services.py` | Statut et stock lus à l'instant de l'opération ; deux personnes ne modifient pas le même lot en même temps. |
-| Enregistrements jamais modifiés ni supprimés | `StockMovement`, `LotStatusChange`, `TemperatureReading`, `ProductRecall`, `Alert` (marquée traitée) | Preuves pour les audits IFS / BRCGS (règles 11 et 12). |
+| Enregistrements jamais modifiés ni supprimés | `StockMovement`, `LotStatusChange`, `TemperatureReading`, `ProductRecall`, `Alert` (marquée traitée), `ForecastVersion`, `ForecastLine`, `ForecastAdjustment` | Preuves pour les audits IFS / BRCGS (règles 11 et 12). |
 | Documents d'opération en lecture seule dans l'administration | `ReadOnlyAdminMixin` (`stocks/admin.py`) | Commandes, réceptions, lots, OF, inventaires, rappels, commandes clients naissent des opérations de l'application, qui appliquent les règles. |
-| Numérotation par compteur en base | `referentiel.services.next_document_number`, modèle `DocumentSequence` (aussi pour la série des SSCC) | Sans doublon même en accès simultané ; numéro attribué après validation. |
+| Numérotation par compteur en base | `referentiel.services.next_document_number`, modèle `DocumentSequence` (aussi pour la série des SSCC et les versions de prévision `PRV-`) | Sans doublon même en accès simultané ; numéro attribué après validation. |
 | Droits par rôle | `comptes.permissions.WriteRolesPermission` + `write_roles` sur chaque vue ; `sync_group_permissions` après chaque `migrate` | Lecture pour tous, écriture selon le métier ; mêmes droits dans l'administration. |
 | Décimaux renvoyés en texte par l'API (`"4.2000"`) | toutes les API | Aucune perte de précision ; le front-end formate en français (`formatDecimal`, `formatMoney`). |
 | Erreurs métier → réponse 400 lisible | `config/exceptions.py` ; côté React `errorMessages` + `ErrorList` | Les messages des règles s'affichent tels quels à l'utilisateur. |
 | Connexion par session Django + jeton CSRF | `comptes/views.py`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Sécurité standard ; l'origine du front-end (`localhost:5173`) doit être déclarée de confiance. |
-| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → historique de 4 semaines ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
-| Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
+| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → prévisions → historique de 6 semaines ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
+| Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé ; lundi 5 h : prévision figée. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
 | Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. |
 | Front-end | hook `useApi` (rechargement par paramètre `?v=`), `auth/roles.ts`, `StatusBadge` | Même façon de faire sur tous les écrans. |
 
@@ -302,13 +328,14 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| Suite de la feuille de route | Les 8 phases du projet sont terminées ; pistes dans ce tableau (prévisions, TRS, planification avancée…) | À décider avec Nicolas |
+| Suite de la feuille de route | Phase 9a (prévisions de vente) faite ; 9b (plan figé à J-2, MRP) à suivre ; autres pistes dans ce tableau (TRS…) | 9b, puis à décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
 | Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |
-| TRS et fiabilité des prévisions | « Non disponibles » : pas de saisie des arrêts de ligne ni des prévisions | Phase complémentaire possible |
-| Durée du chargement de l'historique de démo (≈ 6 min) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
-| Planification avancée : prévisions à 8 semaines, plan figé à J-2, promotions (×3), calcul des besoins (MRP) | Hors périmètre des phases 6 et 7a | Phase complémentaire possible |
+| TRS | « Non disponible » : pas de saisie des arrêts de ligne (la fiabilité des prévisions est disponible depuis la 9a) | Phase complémentaire possible |
+| Durée du chargement de l'historique de démo (≈ 6 min, 6 semaines depuis la 9a) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
+| Planification avancée : plan figé à J-2, calcul des besoins (MRP) | Prévisions à 8 semaines et promotions faites en 9a | Phase 9b |
+| Saisonnalité et événements calendaires dans les prévisions | La moyenne pondérée ne connaît que les 4 dernières semaines ; le commercial corrige à la main | Si besoin, quand l'historique sera plus long |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
 | « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
 | Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |

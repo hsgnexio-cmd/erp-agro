@@ -40,6 +40,8 @@ Les dates sont en heure de Paris. Les montants sont en euros HT.
 | `bi.fact_reception` | ligne de réception : `is_compliant`, motifs | conformité réception |
 | `bi.fact_production_yield` | OF terminé : masse théorique, masse réelle, `yield_pct` | rendement matière |
 | `bi.fact_recall` | rappel lancé : durée du calcul (`duration_ms`), lots bloqués, clients | délai de traçabilité |
+| `bi.fact_forecast` | ligne d'une version de prévision figée : semaine (`week_start`), enseigne, produit, quantité calculée, coefficient de promotion, `is_adjusted`, quantité prévue | suivi des prévisions |
+| `bi.fact_forecast_accuracy` | semaine × enseigne × produit : prévision figée la semaine précédente (`forecast_quantity`), quantité commandée (`actual_quantity`), `abs_error`, `is_complete` | fiabilité des prévisions |
 
 ### Valorisation
 
@@ -61,7 +63,7 @@ Une fonction SQL donne le prix d'un article à une date : `bi.unit_value(article
 | Conformité réception | lignes `is_compliant` ÷ lignes de `fact_reception` | ≥ 97 % |
 | Délai de traçabilité | rappel « à blanc » mesuré par l'application ; durée des vrais rappels dans `fact_recall` | ≤ 5 min |
 | TRS | non disponible : pas de données d'arrêts de ligne | ≥ 70 % |
-| Fiabilité des prévisions | non disponible : pas de prévisions dans l'ERP | ≥ 80 % |
+| Fiabilité des prévisions | 1 − `sum(abs_error) / sum(actual_quantity)` de `fact_forecast_accuracy`, semaines terminées (`is_complete`) dont le lundi tombe dans la période ; jamais sous 0 % | ≥ 80 % à S-1 |
 
 Exemple de requête pour le taux de service par semaine :
 
