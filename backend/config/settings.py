@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "stocks",
     "production",
     "ventes",
+    "previsions",
     "qualite",
     "pilotage",
 ]
@@ -147,5 +148,10 @@ CELERY_BEAT_SCHEDULE = {
     "simulation-edi-commandes": {
         "task": "ventes.tasks.simulate_edi_orders",
         "schedule": crontab(hour=9, minute=30, day_of_week="mon-fri"),
+    },
+    # Chaque lundi à 5 h : la prévision de vente à 8 semaines est figée (fiabilité à S-1)
+    "prevision-figee-du-lundi": {
+        "task": "previsions.tasks.freeze_weekly_forecast",
+        "schedule": crontab(hour=5, minute=0, day_of_week="mon"),
     },
 }
