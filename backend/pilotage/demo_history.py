@@ -1,4 +1,4 @@
-"""Historique de démonstration : quatre semaines d'activité rejouées jour par jour (phase 8).
+"""Historique de démonstration : six semaines d'activité rejouées jour par jour (phase 8).
 
 Sans historique, les indicateurs de pilotage n'ont presque rien à mesurer. Ce module rejoue
 chaque journée passée comme si l'ERP avait tourné : réceptions de matières, fabrications
@@ -13,6 +13,10 @@ Pour que chaque enregistrement porte la date de sa journée, l'horloge de Django
 Quelques incidents volontaires rendent les indicateurs réalistes : une panne de ligne
 (ruptures), un transporteur en retard (livraisons hors délai), une fuite en cuisson
 (rendement faible), des réceptions non conformes, des invendables.
+
+Prévisions (phase 9a) : la prévision est figée chaque lundi à 5 h, dès qu'il existe des
+commandes passées, pour mesurer la fiabilité à S-1. Une promotion annoncée 7 semaines
+avant double les commandes d'une enseigne pendant une semaine (production comprise).
 """
 
 import random
@@ -27,6 +31,8 @@ from django.utils import timezone
 
 from achats import services as purchasing
 from achats.models import SupplierPrice
+from previsions import forecast
+from previsions.models import Promotion
 from production import orders as production
 from referentiel.choices import ArticleType, DateType, TemperatureClass
 from referentiel.models import (
@@ -44,9 +50,11 @@ from stocks.choices import LotStatus, UnsoldDestination
 from stocks.models import Lot
 from ventes import orders as sales
 from ventes import shipping
-from ventes.models import CustomerOrder, OrderSource
+from ventes.models import CustomerOrder, CustomerOrderLine, OrderSource
 
-HISTORY_DAYS = 28
+# Six semaines : il faut quelques semaines de commandes avant que les prévisions figées
+# puissent être comparées aux commandes réelles (fiabilité à S-1 sur trois semaines)
+HISTORY_DAYS = 42
 # Les commandes des enseignes commencent après deux jours de production
 FIRST_ORDER_DAY = 2
 REFERENCE = "HIST"
@@ -90,6 +98,10 @@ NON_COMPLIANT_RATE = 0.03
 BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : pas de production")
 LATE_CARRIER = (16, "ENS3", "Translog Froid Ouest")
 LEAK = (22, "PF-GRA-GRADAU-BRE-1000", Decimal("1.075"), "Fuite sur la cuve de cuisson")
+# Promotion réalisée : (enseigne, produit, semaines avant la semaine courante, coefficient)
+PAST_PROMOTION = ("ENS2", "PF-PAT-LASBOL-BRE-300", 2, Decimal("2"))
+PROMOTION_NOTICE_DAYS = 49
+FORECAST_HOUR = 5
 
 STORAGE = {
     TemperatureClass.CHILLED: "MPE-FP-01",
@@ -154,6 +166,7 @@ class History:
         self.delayed: list[CustomerOrder] = []
         self.counts = {"commandes fournisseurs": 0, "OF": 0, "commandes clients": 0}
         self.counts["seconds fournisseurs référencés"] = self._second_sources()
+        self.promotions = self._past_promotion()
 
     def _second_sources(self) -> int:
         """Une matière dont le seul fournisseur n'est pas audité ne peut pas être commandée :
@@ -180,11 +193,66 @@ class History:
             created += 1
         return created
 
+    # --- Prévisions et promotions (phase 9a) --------------------------------------------
+
+    def _past_promotion(self) -> list[Promotion]:
+        """Promotion déjà réalisée, saisie le jour de son annonce (7 semaines avant)."""
+        customer_code, code, weeks_ago, coefficient = PAST_PROMOTION
+        customer = next((c for c in self.customers if c.code == customer_code), None)
+        week = forecast.current_week() - timedelta(days=7 * weeks_ago)
+        if customer is None or code not in self.products or week < self.start:
+            return []  # historique trop court (tests)
+        announced = week - timedelta(days=PROMOTION_NOTICE_DAYS)
+        promotion = Promotion.objects.create(
+            customer=customer,
+            article=self.products[code],
+            first_week=week,
+            last_week=week,
+            coefficient=coefficient,
+            announced_on=announced,
+            created_at=_at(announced, 10),
+            comment="Historique de démonstration",
+        )
+        self.counts["promotions réalisées"] = 1
+        return [promotion]
+
+    def _coefficient(self, customer: Customer, article: Article, delivery: date) -> Decimal:
+        for promotion in self.promotions:
+            if (
+                promotion.customer_id == customer.pk
+                and promotion.article_id == article.pk
+                and promotion.first_week <= delivery < promotion.last_week + timedelta(days=7)
+            ):
+                return promotion.coefficient
+        return Decimal("1")
+
+    def _demand(self, article: Article, day: date) -> Decimal:
+        """Demande moyenne des commandes reçues ce jour-là (livrées le lendemain)."""
+        return sum(
+            (
+                DAILY_DEMAND[article.code]
+                * self._coefficient(customer, article, day + timedelta(days=1))
+                for customer in self.buyers[article.code]
+            ),
+            ZERO,
+        )
+
+    def _freeze_forecast(self, day: date) -> None:
+        """Version du lundi 5 h, dès qu'il existe des commandes livrées avant ce lundi."""
+        past_orders = CustomerOrderLine.objects.filter(
+            order__requested_delivery_date__lt=day
+        ).exclude(order__status="annulee")
+        if past_orders.exists() and forecast.freeze_weekly() is not None:
+            self.counts["prévisions figées"] = self.counts.get("prévisions figées", 0) + 1
+
     # --- Journée type ---------------------------------------------------------------
 
     def run(self) -> dict:
         for offset in range(self.days):
             day = self.start + timedelta(days=offset)
+            if day.weekday() == 0:
+                with simulated_clock(_at(day, FORECAST_HOUR)):
+                    self._freeze_forecast(day)
             with simulated_clock(_at(day, 7)):
                 self._ship_delayed(day)
                 self._release_finished_products(day)
@@ -321,12 +389,16 @@ class History:
         mean = Decimal(DAILY_DEMAND[article.code] * len(self.buyers[article.code]))
         short = article.shelf_life_days <= SHORT_SHELF_LIFE_DAYS
         safety = SAFETY_DAYS_SHORT if short else SAFETY_DAYS_LONG
+        tomorrow = self._demand(article, day + timedelta(days=1))
         if first:
             # Veille des premières commandes : aucune expédition aujourd'hui
-            return _round_up(mean * (1 + safety), Decimal("12"))
+            return _round_up(tomorrow + mean * safety, Decimal("12"))
         # Le stock du matin part dans les expéditions du jour : la fabrication du jour sert
-        # aux commandes de demain (plus le stock de sécurité)
-        quantity = mean * (2 + safety) - self._usable_stock(article, day)
+        # aux commandes de demain (plus le stock de sécurité). Les promotions annoncées
+        # augmentent la demande de leurs jours.
+        quantity = (
+            self._demand(article, day) + tomorrow + mean * safety - self._usable_stock(article, day)
+        )
         return _round_up(quantity, Decimal("12")) if quantity > 0 else ZERO
 
     def _declare(self, order, quantity: Decimal, factor: Decimal) -> None:
@@ -422,6 +494,8 @@ class History:
             for code, buyers in self.buyers.items():
                 if customer in buyers:
                     spread = self.rng.uniform(1 - DEMAND_SPREAD, 1 + DEMAND_SPREAD)
+                    article = self.products[code]
+                    spread *= float(self._coefficient(customer, article, day + timedelta(days=1)))
                     quantity = max(12, round(DAILY_DEMAND[code] * spread / 12) * 12)
                     lines.append({"article": self.products[code], "quantity": Decimal(quantity)})
             if not lines:

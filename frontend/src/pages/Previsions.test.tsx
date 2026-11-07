@@ -174,6 +174,32 @@ describe('Prévisions de vente', () => {
     expect(screen.getByText('83,4 %')).toBeInTheDocument()
   })
 
+  it('masque par défaut les produits sans prévision', async () => {
+    const empty = {
+      ...FORECAST.rows[0],
+      article: 70,
+      article_code: 'PF-SAU-BLANQ-BRE-300',
+      cells: FORECAST.rows[0].cells.map((cell) => ({
+        ...cell, base: '0', promotion: null, promo_coefficient: null, promo_quantity: null,
+        adjustment: null, quantity: '0',
+      })),
+    }
+    mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/referentiel/customers/': { body: paginated([]) },
+      '/api/previsions/forecast/': { body: { ...FORECAST, rows: [...FORECAST.rows, empty] } },
+      '/api/previsions/promotions/': { body: paginated([]) },
+      '/api/previsions/accuracy/': { body: { ...ACCURACY, weeks: [], accuracy: null } },
+      '/api/previsions/versions/': { body: paginated([]) },
+    })
+    renderApp('/previsions')
+    await screen.findByText('PF-PAT-LASBOL-BRE-300')
+    expect(screen.queryByText('PF-SAU-BLANQ-BRE-300')).not.toBeInTheDocument()
+    expect(screen.getByText('(1 masqués)')).toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText(/Afficher les produits sans prévision/))
+    expect(screen.getByText('PF-SAU-BLANQ-BRE-300')).toBeInTheDocument()
+  })
+
   it('la production consulte sans pouvoir modifier', async () => {
     mockForecast(PRODUCTION)
     renderApp('/previsions')

@@ -382,6 +382,7 @@ def create_promotion(
         coefficient=coefficient,
         announced_on=announced_on,
         comment=comment.strip(),
+        created_at=timezone.now(),
         created_by=user if user is not None and user.is_authenticated else None,
     )
 
@@ -428,6 +429,7 @@ def create_adjustment(
         week=week,
         quantity=quantity,
         reason=(reason or "").strip(),
+        created_at=timezone.now(),
         created_by=user if user is not None and user.is_authenticated else None,
     )
 

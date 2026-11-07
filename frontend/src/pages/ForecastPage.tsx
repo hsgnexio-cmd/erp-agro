@@ -48,6 +48,13 @@ export function ForecastPage() {
   const reload = () => setVersion((v) => v + 1)
   const forecast = useApi<Forecast>(`/api/previsions/forecast/?customer=${customer}&v=${version}`)
   const [selected, setSelected] = useState<CellKey | null>(null)
+  const [showEmpty, setShowEmpty] = useState(false)
+
+  // Produits jamais commandés par l'enseigne : prévision nulle, masqués par défaut
+  const hasForecast = (row: ForecastRow) =>
+    row.cells.some((cell) => Number(cell.quantity) > 0 || cell.adjustment || cell.promotion)
+  const visibleRows = forecast.data?.rows.filter((row) => showEmpty || hasForecast(row)) ?? []
+  const hiddenCount = (forecast.data?.rows.length ?? 0) - visibleRows.length
 
   const selectedRow = forecast.data?.rows.find(
     (row) => selected && row.customer === selected.customer && row.article === selected.article,
@@ -79,6 +86,11 @@ export function ForecastPage() {
             </option>
           ))}
         </select>
+        <label className="checkbox-inline">
+          <input type="checkbox" checked={showEmpty} onChange={(e) => setShowEmpty(e.target.checked)} />
+          Afficher les produits sans prévision
+          {!showEmpty && hiddenCount > 0 && <small> ({hiddenCount} masqués)</small>}
+        </label>
       </div>
       {forecast.error && <p className="error">{forecast.error}</p>}
       {forecast.data && (
@@ -89,7 +101,7 @@ export function ForecastPage() {
             {canEdit && <> · Clique sur une quantité pour la corriger.</>}
           </p>
           <ForecastGrid
-            data={forecast.data}
+            data={{ ...forecast.data, rows: visibleRows }}
             showCustomer={customer === ''}
             canEdit={canEdit}
             selected={selected}
@@ -155,7 +167,7 @@ function ForecastGrid(props: {
         <tbody>
           {data.rows.length === 0 && (
             <tr>
-              <td colSpan={data.weeks.length + 2}>Aucun produit commandable.</td>
+              <td colSpan={data.weeks.length + 2}>Aucun produit avec une prévision.</td>
             </tr>
           )}
           {data.rows.map((row) => (

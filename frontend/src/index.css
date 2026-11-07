@@ -808,3 +808,9 @@ button.cell-button:hover {
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
