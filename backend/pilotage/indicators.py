@@ -3,7 +3,8 @@
 Tous les chiffres viennent des vues SQL du schéma `bi` (pilotage/sql/bi_views.sql) : le
 tableau de bord et Power BI lisent exactement les mêmes données.
 
-Filtres : la période s'applique à tous les indicateurs ; l'enseigne au taux de service ;
+Filtres : la période s'applique à tous les indicateurs ; l'enseigne au taux de service et à
+la fiabilité des prévisions ;
 le site au rendement matière et à la couverture matières. Chaque indicateur indique les
 filtres qu'il prend en compte.
 """
@@ -166,6 +167,28 @@ def material_yield(start: date, end: date, site_id: int | None) -> tuple[Decimal
     return _ratio(theoretical, actual), f"{orders} OF terminé(s), dont {low} sous 96 %"
 
 
+def forecast_accuracy(
+    start: date, end: date, customer_id: int | None
+) -> tuple[Decimal | None, str]:
+    """Fiabilité à S-1 sur les semaines terminées qui touchent la période (vue
+    bi.fact_forecast_accuracy, même règle que previsions.forecast.week_accuracy)."""
+    where, params = _filter("customer_id", customer_id)
+    abs_error, actual, weeks = _one(
+        "SELECT sum(abs_error), sum(actual_quantity), count(DISTINCT week_start) "
+        "FROM bi.fact_forecast_accuracy "
+        f"WHERE is_complete AND week_start BETWEEN %s AND %s{where}",
+        [start - timedelta(days=start.weekday()), end, *params],
+    )
+    if not actual:
+        return None, "Aucune semaine terminée avec une prévision figée la semaine précédente"
+    value = max(ZERO, (1 - Decimal(abs_error) / Decimal(actual)) * 100).quantize(Decimal("0.1"))
+    detail = (
+        f"{weeks} semaine(s) terminée(s) : écart de {abs_error:,.0f} unités pour "
+        f"{actual:,.0f} commandées"
+    ).replace(",", " ")
+    return value, detail
+
+
 def reception_compliance(start: date, end: date) -> tuple[Decimal | None, str]:
     compliant, total = _one(
         "SELECT count(*) FILTER (WHERE is_compliant), count(*) FROM bi.fact_reception "
@@ -268,9 +291,10 @@ def compute(
     )  # fmt: skip
     add(
         "forecast_accuracy", "Fiabilité des prévisions", "%",
-        "1 − écart absolu ÷ ventes réelles", [],
-        available=False,
-        detail="Non disponible : l'ERP ne gère pas encore de prévisions de vente.",
+        "1 − écart absolu ÷ commandes réelles, prévision figée la semaine précédente (S-1), "
+        "par produit et par enseigne",
+        ["période (semaines terminées)", "enseigne"],
+        forecast_accuracy(start, end, customer_id),
     )  # fmt: skip
     add(
         "reception_compliance", "Conformité réception", "%",
@@ -294,6 +318,7 @@ WEEKLY_CODES = (
     "finished_coverage",
     "material_coverage",
     "material_yield",
+    "forecast_accuracy",
     "reception_compliance",
 )
 

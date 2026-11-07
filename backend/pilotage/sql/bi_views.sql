@@ -352,3 +352,77 @@ SELECT r.id AS recall_id,
        jsonb_array_length(COALESCE(r.snapshot -> 'customers', '[]'::jsonb)) AS customers
   FROM qualite_productrecall r
   JOIN stocks_lot l ON l.id = r.origin_lot_id;
+
+-- --- Prévisions de vente (phase 9a) -----------------------------------------------------
+
+-- Lignes de toutes les versions de prévision figées (produit × enseigne × semaine)
+CREATE OR REPLACE VIEW bi.fact_forecast AS
+SELECT l.id AS forecast_line_id,
+       v.number AS version_number,
+       bi.local_date(v.created_at) AS version_date,
+       v.source AS version_source,
+       l.week AS week_start,
+       to_char(l.week, 'IYYY-"S"IW') AS week_label,
+       l.customer_id,
+       l.article_id,
+       l.base_quantity,
+       l.promo_coefficient,
+       l.adjustment_id IS NOT NULL AS is_adjusted,
+       l.quantity
+  FROM previsions_forecastline l
+  JOIN previsions_forecastversion v ON v.id = l.version_id;
+
+-- Fiabilité à S-1 (même règle que previsions.forecast.week_accuracy) : pour chaque semaine,
+-- la dernière version figée avant son lundi (heure de Paris) et qui la couvre, comparée aux
+-- quantités commandées (commandes non annulées, par semaine de livraison demandée).
+-- Fiabilité = 1 − sum(abs_error) ÷ sum(actual_quantity), sur les semaines terminées.
+CREATE OR REPLACE VIEW bi.fact_forecast_accuracy AS
+WITH actual AS (
+    SELECT date_trunc('week', o.requested_delivery_date)::date AS week_start,
+           o.customer_id,
+           ol.article_id,
+           sum(ol.quantity) AS quantity
+      FROM ventes_customerorderline ol
+      JOIN ventes_customerorder o ON o.id = ol.order_id
+     WHERE o.status <> 'annulee'
+     GROUP BY 1, 2, 3
+), weeks AS (
+    SELECT week_start FROM actual
+    UNION
+    SELECT week FROM previsions_forecastline
+), s1 AS (
+    SELECT w.week_start,
+           (SELECT v.id
+              FROM previsions_forecastversion v
+             WHERE v.created_at < (w.week_start::timestamp AT TIME ZONE 'Europe/Paris')
+               AND w.week_start BETWEEN v.first_week AND v.first_week + 49
+             ORDER BY v.created_at DESC, v.id DESC
+             LIMIT 1) AS version_id
+      FROM weeks w
+), forecast AS (
+    SELECT s1.week_start, l.customer_id, l.article_id, l.quantity
+      FROM s1
+      JOIN previsions_forecastline l ON l.version_id = s1.version_id AND l.week = s1.week_start
+), pairs AS (
+    SELECT COALESCE(f.week_start, a.week_start) AS week_start,
+           COALESCE(f.customer_id, a.customer_id) AS customer_id,
+           COALESCE(f.article_id, a.article_id) AS article_id,
+           COALESCE(f.quantity, 0) AS forecast_quantity,
+           COALESCE(a.quantity, 0) AS actual_quantity
+      FROM forecast f
+      FULL JOIN actual a
+        ON a.week_start = f.week_start AND a.customer_id = f.customer_id
+       AND a.article_id = f.article_id
+)
+SELECT p.week_start,
+       to_char(p.week_start, 'IYYY-"S"IW') AS week_label,
+       p.week_start + 6 < bi.local_date(now()) AS is_complete,
+       v.number AS version_number,
+       p.customer_id,
+       p.article_id,
+       p.forecast_quantity,
+       p.actual_quantity,
+       abs(p.forecast_quantity - p.actual_quantity) AS abs_error
+  FROM pairs p
+  JOIN s1 ON s1.week_start = p.week_start
+  JOIN previsions_forecastversion v ON v.id = s1.version_id;
