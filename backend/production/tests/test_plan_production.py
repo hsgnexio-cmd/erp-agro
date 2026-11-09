@@ -317,3 +317,17 @@ def test_api_droits_du_plan(api_client_for, lasagna_line, finished_product, fore
     assert detail.status_code == 200
     assert detail.json()["week_label"].startswith("S")
     assert direction.post(f"{URL}{plan.pk}/freeze/").status_code == 403
+
+
+# --- Démonstration -------------------------------------------------------------------------
+
+
+def test_demo_plan_de_la_semaine_prochaine_en_brouillon(db):
+    from django.core.management import call_command
+
+    from production import demo_plan
+
+    call_command("charger_donnees_demo", sans_historique=True)
+    plan = MasterPlan.objects.get(week=NEXT)
+    assert plan.status == PlanStatus.DRAFT
+    assert demo_plan.load_demo_data() == {"plan de production": "déjà présent, non modifié"}

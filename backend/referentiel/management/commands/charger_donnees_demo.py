@@ -4,6 +4,7 @@ from achats.demo_data import load_demo_data as load_purchasing
 from pilotage.demo_history import load_demo_data as load_history
 from previsions.demo_data import load_demo_data as load_forecasts
 from production.demo_data import load_demo_data as load_production
+from production.demo_plan import load_demo_data as load_master_plan
 from qualite.demo_tracabilite import load_demo_data as load_traceability
 from referentiel.demo_data import load_demo_data as load_referential
 from stocks.demo_data import load_demo_data as load_stocks
@@ -38,6 +39,8 @@ class Command(BaseCommand):
         if not options["sans_historique"]:
             # En dernier : l'historique s'appuie sur tout le reste (tarifs, référentiel…)
             loaders.append(("Historique (6 semaines)", load_history))
+        # Après l'historique : le plan s'appuie sur ses prévisions figées et son stock
+        loaders.append(("Plan de production (semaine prochaine)", load_master_plan))
         for title, loader in loaders:
             counts = loader()
             self.stdout.write(self.style.SUCCESS(f"{title} :"))
