@@ -209,3 +209,16 @@ class ReceptionInputSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         return services.create_reception(user=self.context["request"].user, **validated_data)
+
+
+# --- Calcul des besoins (MRP, phase 9c) ---------------------------------------------------
+
+
+class MrpSelectionSerializer(serializers.Serializer):
+    article = serializers.PrimaryKeyRelatedField(queryset=Article.objects.all())
+    week = serializers.DateField()
+    quantity = serializers.DecimalField(max_digits=12, decimal_places=3)
+
+
+class MrpOrdersInputSerializer(serializers.Serializer):
+    selections = MrpSelectionSerializer(many=True)

@@ -10,5 +10,7 @@ router.register("receptions", views.ReceptionViewSet)
 
 urlpatterns = [
     path("catalog/", views.SupplierCatalogView.as_view(), name="supplier-catalog"),
+    path("mrp/", views.MrpView.as_view(), name="mrp"),
+    path("mrp/create-orders/", views.MrpCreateOrdersView.as_view(), name="mrp-create-orders"),
     *router.urls,
 ]
