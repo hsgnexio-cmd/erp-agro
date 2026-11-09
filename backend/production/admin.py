@@ -5,7 +5,12 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from stocks.admin import ReadOnlyAdminMixin
 
-from .models import ProductionDeclaration, ProductionOrder
+from .models import (
+    MasterPlan,
+    MasterPlanItem,
+    ProductionDeclaration,
+    ProductionOrder,
+)
 
 
 class DeclarationInline(ReadOnlyAdminMixin, admin.TabularInline):
@@ -21,3 +26,17 @@ class ProductionOrderAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
     list_filter = ("status", "site", "line")
     search_fields = ("number", "article__code")
     inlines = [DeclarationInline]
+
+
+class MasterPlanItemInline(ReadOnlyAdminMixin, admin.TabularInline):
+    model = MasterPlanItem
+    extra = 0
+    fields = ("article", "line", "demand", "safety_stock", "projected_stock", "proposed_quantity")
+    readonly_fields = fields
+
+
+@admin.register(MasterPlan)
+class MasterPlanAdmin(ReadOnlyAdminMixin, SimpleHistoryAdmin):
+    list_display = ("week", "status", "forecast_version", "computed_at", "frozen_at")
+    list_filter = ("status",)
+    inlines = [MasterPlanItemInline]

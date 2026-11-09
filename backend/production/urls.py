@@ -5,6 +5,7 @@ from . import views
 
 router = DefaultRouter()
 router.register("orders", views.ProductionOrderViewSet)
+router.register("master-plans", views.MasterPlanViewSet)
 
 urlpatterns = [
     path("planning/", views.PlanningView.as_view(), name="production-planning"),

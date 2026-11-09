@@ -154,4 +154,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "previsions.tasks.freeze_weekly_forecast",
         "schedule": crontab(hour=5, minute=0, day_of_week="mon"),
     },
+    # Chaque samedi à 12 h (J-2 avant le lundi) : le plan de production de S+1 est figé
+    "plan-de-production-fige-du-samedi": {
+        "task": "production.tasks.freeze_next_week_plan",
+        "schedule": crontab(hour=12, minute=0, day_of_week="sat"),
+    },
 }

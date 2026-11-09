@@ -153,7 +153,10 @@ class ArticleAdmin(SimpleHistoryAdmin):
     fieldsets = (
         (None, {"fields": ("article_type", "code", "name", "unit", "active")}),
         ("Matière première", {"fields": ("category", "allergens")}),
-        ("Produit fini", {"fields": ("recipe", "brand_customer", "format_size")}),
+        (
+            "Produit fini",
+            {"fields": ("recipe", "brand_customer", "format_size", "safety_stock_days")},
+        ),
         (
             "Conservation",
             {"fields": ("shelf_life_days", "date_type", "storage_temperature_class")},

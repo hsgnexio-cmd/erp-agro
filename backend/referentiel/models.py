@@ -280,6 +280,16 @@ class Article(ValidatedModel):
     shelf_life_days = models.PositiveSmallIntegerField(
         "durée de vie (jours)", null=True, blank=True
     )
+    # Phase 9b : stock de sécurité des produits finis de marque Brévanne (fabriqués sur stock)
+    safety_stock_days = models.DecimalField(
+        "stock de sécurité (jours de demande)",
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Vide = 1 jour, ou 0,5 jour si la durée de vie est de 10 jours ou moins.",
+    )
     # Déduits automatiquement (voir services.prepare_and_validate_article)
     date_type = models.CharField(
         "type de date", max_length=10, choices=DateType.choices, editable=False, blank=True
