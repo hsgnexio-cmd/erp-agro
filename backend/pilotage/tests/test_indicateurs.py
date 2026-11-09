@@ -241,7 +241,7 @@ def test_export_csv_des_indicateurs_pour_excel(demo, api_client_for):
     lines = content.splitlines()
     assert "Indicateur;Valeur;Unité;Objectif;Statut;Détail" in lines
     trs = next(line for line in lines if line.startswith("TRS;"))
-    assert ";Non disponible;" in trs
+    assert ";Pas de donnée;" in trs  # aucune plage de marche sans historique
     # Décimales à la française pour Excel
     yield_line = next(line for line in lines if line.startswith("Rendement matière;"))
     assert "," in yield_line.split(";")[1]
