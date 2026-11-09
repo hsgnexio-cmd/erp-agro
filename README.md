@@ -153,9 +153,9 @@ Menu **Tableau de bord** (tous les rôles) : les 9 indicateurs de la fiche entre
 | Conformité réception | Lignes conformes ÷ lignes reçues | ≥ 97 % |
 | Délai de traçabilité | Durée d'un rappel « à blanc », mesurée à l'ouverture | ≤ 5 min |
 | Fiabilité des prévisions | 1 − écart absolu ÷ quantités commandées, avec la prévision figée la semaine précédente (semaines terminées) | ≥ 80 % à S-1 |
-| TRS | **Non disponible** : l'ERP n'enregistre pas les arrêts de ligne | — |
+| TRS | Temps utile ÷ temps requis des lignes = disponibilité × performance × qualité | ≥ 70 % |
 
-Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service, fiabilité des prévisions). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)). Le bouton **Exporter pour Excel (CSV)** télécharge les indicateurs et leur évolution par semaine, avec les filtres choisis.
+Filtres : la période (28 derniers jours par défaut), le site (rendement, TRS, couverture matières) et l'enseigne (taux de service, fiabilité des prévisions). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)). Le bouton **Exporter pour Excel (CSV)** télécharge les indicateurs et leur évolution par semaine, avec les filtres choisis.
 
 ### Le parcours d'achat
 
@@ -191,6 +191,12 @@ Menu **Prévisions** (consultation pour tous ; saisie par les rôles commercial 
 - **Promotions** : enseigne, produit, semaine(s), coefficient jusqu'à ×3. Une promotion annoncée moins de 6 semaines avant est acceptée mais signalée.
 - **Versions figées** : la prévision est figée chaque lundi à 5 h (Celery) et à la demande (« Figer une version »). Une version n'est jamais modifiée.
 - **Fiabilité à S-1** : pour chaque semaine, la dernière version figée avant son lundi comparée aux quantités commandées.
+
+### Le TRS des lignes
+
+- À la **déclaration de production** d'un produit fini, l'opérateur saisit la **plage de marche** de la ligne (début et fin, arrêts compris) et la **quantité rebutée** avec son motif (hors stock).
+- Menu **TRS** : saisie des **arrêts** (ligne, début, fin, cause : panne, changement de série, manque matière ou personnel, réglage, maintenance préventive ou nettoyage planifiés). Un arrêt ne se modifie pas : il s'annule avec un motif.
+- Le TRS (objectif ≥ 70 %) = disponibilité × performance × qualité, par ligne et au total, avec le **Pareto** des causes d'arrêt. Les arrêts planifiés sont retirés du temps requis.
 
 ### Le plan de production
 

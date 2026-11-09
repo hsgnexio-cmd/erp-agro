@@ -12,10 +12,11 @@ Toutes de type « un à plusieurs », la dimension du côté « un », filtre da
 | --- | --- |
 | `dim_date[date]` | `fact_stock_movement[date]`, `fact_stock_daily[date]`, `fact_sales[date]`, `fact_reception[date]`, `fact_production_yield[date]`, `fact_recall[date]` |
 | `dim_date[date]` | `fact_service[requested_delivery_date]` (le taux de service se compte sur la livraison demandée) |
+| `dim_date[date]` | `fact_line_time[date]`, `fact_line_stop[date]` |
 | `dim_date[date]` | `fact_forecast_accuracy[week_start]` et `fact_forecast[week_start]` (lundi de la semaine prévue) |
 | `dim_article[article_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_sales`, `fact_reception`, `fact_production_yield`, `fact_forecast`, `fact_forecast_accuracy` (colonne `article_id`) |
 | `dim_customer[customer_id]` | `fact_sales[customer_id]`, `fact_service[customer_id]`, `fact_forecast[customer_id]`, `fact_forecast_accuracy[customer_id]` |
-| `dim_site[site_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_reception`, `fact_production_yield` (colonne `site_id`) |
+| `dim_site[site_id]` | `fact_stock_movement`, `fact_stock_daily`, `fact_reception`, `fact_production_yield`, `fact_line_time`, `fact_line_stop` (colonne `site_id`) |
 
 Puis : clic droit sur `dim_date` → **Marquer comme table de dates**, colonne `date`.
 
@@ -119,6 +120,32 @@ DIVIDE (
 )
 ```
 
+### TRS (pourcentage, 1 décimale)
+
+Même calcul que l'application : les temps sont déjà calculés jour par jour et ligne par ligne dans la vue.
+
+```dax
+TRS = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[required_hours] ) )
+```
+
+```dax
+Disponibilité = DIVIDE ( SUM ( fact_line_time[operating_hours] ), SUM ( fact_line_time[required_hours] ) )
+```
+
+```dax
+Performance = DIVIDE ( SUM ( fact_line_time[net_hours] ), SUM ( fact_line_time[operating_hours] ) )
+```
+
+```dax
+Qualité = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[net_hours] ) )
+```
+
+```dax
+Heures d'arrêt = SUM ( fact_line_stop[duration_hours] )
+```
+
+Pareto : histogramme de `Heures d'arrêt` par `fact_line_stop[category]`, trié par valeur décroissante, avec un filtre `is_planned = Faux`.
+
 ### Fiabilité des prévisions à S-1 (pourcentage, 1 décimale)
 
 Prévision figée la semaine précédente, comparée aux quantités commandées, produit par produit et enseigne par enseigne. Seules les semaines terminées comptent ; le résultat ne descend jamais sous 0 %. Dans l'application, une semaine compte si son lundi tombe entre le lundi de la semaine de début et la date de fin : choisis une période qui commence un lundi pour retrouver exactement le même chiffre.
@@ -155,7 +182,7 @@ Délai de traçabilité max (ms) = MAX ( fact_recall[duration_ms] )
 Taux de service – objectif atteint = IF ( [Taux de service] >= 0.985, 1, 0 )
 ```
 
-Pour colorer une valeur : sélectionner le visuel → Format → Valeurs → couleur de police → **fx** → « Règles » (vert si ≥ objectif, rouge sinon). Objectifs de la fiche entreprise : taux de service ≥ 98,5 %, démarque ≤ 1,5 %, couverture produits finis 2 à 4 j, couverture matières 5 à 10 j, rendement ≥ 96 %, conformité réception ≥ 97 %, fiabilité des prévisions ≥ 80 %.
+Pour colorer une valeur : sélectionner le visuel → Format → Valeurs → couleur de police → **fx** → « Règles » (vert si ≥ objectif, rouge sinon). Objectifs de la fiche entreprise : taux de service ≥ 98,5 %, démarque ≤ 1,5 %, couverture produits finis 2 à 4 j, couverture matières 5 à 10 j, rendement ≥ 96 %, conformité réception ≥ 97 %, fiabilité des prévisions ≥ 80 %, TRS ≥ 70 %.
 
 ## 3. Pages proposées
 
