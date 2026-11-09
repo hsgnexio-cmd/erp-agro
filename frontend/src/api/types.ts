@@ -33,6 +33,7 @@ export interface Article {
   brand_code: string
   format_size: number | null
   shelf_life_days: number | null
+  safety_stock_days: string | null
   date_type: string
   storage_temperature_class: string
   technical_sheet: string
