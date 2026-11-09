@@ -192,6 +192,20 @@ Menu **Prévisions** (consultation pour tous ; saisie par les rôles commercial 
 - **Versions figées** : la prévision est figée chaque lundi à 5 h (Celery) et à la demande (« Figer une version »). Une version n'est jamais modifiée.
 - **Fiabilité à S-1** : pour chaque semaine, la dernière version figée avant son lundi comparée aux quantités commandées.
 
+### Le plan de production
+
+Menu **Plan de production** (consultation pour tous ; calcul, ajustement et gel par les rôles production et admin) :
+
+1. **Calculer le plan** de la semaine prochaine : pour chaque produit fini, demande (prévision figée ; pour un MDD, la plus grande valeur entre prévision et commandes reçues), stock de sécurité (marque Brévanne seulement, en jours de demande, réglable sur l'article), stock projeté au lundi. Le survol des chiffres donne le détail du calcul.
+2. **Ajuster** : quantités par jour (du lundi au vendredi), ligne de conditionnement, ajout d'un produit. Le tableau **Charge des lignes** signale en rouge une journée au-delà de 15 h.
+3. **Figer le plan** : un OF planifié est créé par produit et par jour. Sans action, le plan est figé automatiquement le **samedi à 12 h** (J-2). Ensuite, on modifie les OF ; l'écart avec le plan figé s'affiche dans le plan.
+
+Figer tout de suite le plan de la semaine prochaine (comme le ferait la tâche du samedi) :
+
+```powershell
+docker compose exec backend python manage.py shell -c "from production.master_plan import freeze_next_week; print(freeze_next_week())"
+```
+
 ### Les ventes
 
 - Chaque jour de semaine à 9 h 30, Celery simule les **commandes EDI** des 6 enseignes (menu **EDI**) : chaque message devient une commande client, ou est rejeté avec ses motifs (heure limite 11 h, produit MDD d'une autre enseigne, article inconnu…).

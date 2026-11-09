@@ -302,6 +302,28 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Saisir ou annuler une promotion, saisir une correction, figer une version | `admin`, `commercial` |
 | Consulter prévisions, promotions, corrections, versions, fiabilité | tous les rôles |
 
+## Phase 9b – Plan de production hebdomadaire
+
+| Décision | Raison |
+| --- | --- |
+| Suite de la phase 9 découpée en 9b (plan de production figé à J-2) et 9c (calcul des besoins d'achat / MRP) | Deux pull requests plus faciles à relire et à tester. |
+| Plan de la semaine S+1 calculé, ajusté par la production, puis **figé le samedi à 12 h** (Celery Beat, J-2 avant le lundi) ou plus tôt avec un bouton | Validé (fiche : « plan hebdomadaire figé à J-2 »). Le gel crée un OF planifié par produit et par jour ; un plan figé ne se modifie plus. Trop tard une fois la semaine commencée. Logique dans `production/master_plan.py`. |
+| Après le gel, on modifie les **OF** (écran existant) ; l'écart avec le plan figé est affiché | Le plan figé reste la référence ; l'OF est la réalité de l'atelier (quantité modifiée, OF annulé, déplacé, autre ligne). |
+| Marque Brévanne sur stock : demande + stock de sécurité − stock projeté au lundi | Validé. Demande = prévision de la semaine (dernière version figée qui la couvre, sinon prévision du moment). Stock projeté = lots libérés ou en quarantaine non périmés + OF à venir avant la semaine − demande prévue d'ici lundi (prévision de la semaine en cours au prorata des jours restants), jamais négatif. |
+| Stock de sécurité : nouveau champ de l'article « stock de sécurité (jours de demande) » | Validé. Vide = 1 jour, ou 0,5 jour si la durée de vie est de 10 jours ou moins. Stock de sécurité = demande ÷ 7 × jours, arrondi à l'unité supérieure. |
+| MDD à la commande : plus grande valeur entre la prévision et les commandes déjà reçues, **sans stock de sécurité** | Validé. Le stock projeté est aussi déduit, pour ne pas refabriquer un surplus déjà en stock. |
+| Quantité arrondie au colis de 12 supérieur, répartie à parts égales du lundi au vendredi (le reste sur les premiers jours), première ligne compatible | Validé (fiche : 5 jours sur 7). La production ajuste quantités et ligne avant le gel ; recalculer efface ces ajustements (confirmation demandée). |
+| Charge des lignes affichée (quantité ÷ cadence), surcharge au-delà de 15 h par jour | Même règle que le planning de la phase 6 : avertissement, pas blocage. |
+| Semi-finis hors du plan | Ils se préparent en cuisine pour les produits finis ; leurs besoins seront calculés par le MRP (9c). |
+| Démo : plan de la semaine prochaine calculé **en brouillon**, après l'historique | Aucun plan n'est rejoué dans l'historique : ses OF « planifiés » resteraient dans le passé et fausseraient les indicateurs. La production peut figer le plan de démo (sinon gel automatique samedi). |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Calculer, ajuster, figer le plan de production | `admin`, `production` |
+| Consulter les plans | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -317,8 +339,8 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Décimaux renvoyés en texte par l'API (`"4.2000"`) | toutes les API | Aucune perte de précision ; le front-end formate en français (`formatDecimal`, `formatMoney`). |
 | Erreurs métier → réponse 400 lisible | `config/exceptions.py` ; côté React `errorMessages` + `ErrorList` | Les messages des règles s'affichent tels quels à l'utilisateur. |
 | Connexion par session Django + jeton CSRF | `comptes/views.py`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Sécurité standard ; l'origine du front-end (`localhost:5173`) doit être déclarée de confiance. |
-| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → prévisions → historique de 6 semaines ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
-| Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé ; lundi 5 h : prévision figée. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
+| Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → prévisions → historique de 6 semaines → plan de production de S+1 (brouillon) ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
+| Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé ; lundi 5 h : prévision figée ; samedi 12 h : plan de production de S+1 figé. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
 | Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. |
 | Front-end | hook `useApi` (rechargement par paramètre `?v=`), `auth/roles.ts`, `StatusBadge` | Même façon de faire sur tous les écrans. |
 
@@ -328,13 +350,13 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| Suite de la feuille de route | Phase 9a (prévisions de vente) faite ; 9b (plan figé à J-2, MRP) à suivre ; autres pistes dans ce tableau (TRS…) | 9b, puis à décider avec Nicolas |
+| Suite de la feuille de route | Phases 9a (prévisions) et 9b (plan de production figé à J-2) faites ; 9c (MRP) à suivre ; autres pistes dans ce tableau (TRS…) | 9c, puis à décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
 | Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |
 | TRS | « Non disponible » : pas de saisie des arrêts de ligne (la fiabilité des prévisions est disponible depuis la 9a) | Phase complémentaire possible |
 | Durée du chargement de l'historique de démo (≈ 6 min, 6 semaines depuis la 9a) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
-| Planification avancée : plan figé à J-2, calcul des besoins (MRP) | Prévisions à 8 semaines et promotions faites en 9a | Phase 9b |
+| Calcul des besoins (MRP) et propositions d'achat | Prévisions (9a) et plan de production figé (9b) faits | Phase 9c |
 | Saisonnalité et événements calendaires dans les prévisions | La moyenne pondérée ne connaît que les 4 dernières semaines ; le commercial corrige à la main | Si besoin, quand l'historique sera plus long |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
 | « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
