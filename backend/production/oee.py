@@ -170,7 +170,7 @@ def cancel_stop(stop: LineStop, *, reason: str, user=None) -> LineStop:
 
 @dataclass
 class LineTime:
-    """Temps et quantités d'une ligne sur une période, et les taux qui en découlent."""
+    """Temps et quantités d'une ligne (sur un jour, ou cumulés sur une période)."""
 
     line: ProductionLine
     opening: Decimal = ZERO
@@ -178,18 +178,24 @@ class LineTime:
     unplanned_stops: Decimal = ZERO
     produced: Decimal = ZERO
     scrap: Decimal = ZERO
+    # Cumuls des temps requis et de fonctionnement calculés jour par jour (jamais négatifs)
+    required_total: Decimal = ZERO
+    operating_total: Decimal = ZERO
 
-    def add(self, other: LineTime) -> None:
+    def add_day(self, day: LineTime) -> None:
         for name in ("opening", "planned_stops", "unplanned_stops", "produced", "scrap"):
-            setattr(self, name, getattr(self, name) + getattr(other, name))
+            setattr(self, name, getattr(self, name) + getattr(day, name))
+        required = max(ZERO, day.opening - day.planned_stops)
+        self.required_total += required
+        self.operating_total += max(ZERO, required - day.unplanned_stops)
 
     @property
     def required(self) -> Decimal:
-        return max(ZERO, self.opening - self.planned_stops)
+        return self.required_total
 
     @property
     def operating(self) -> Decimal:
-        return max(ZERO, self.required - self.unplanned_stops)
+        return self.operating_total
 
     @property
     def net(self) -> Decimal:
@@ -229,30 +235,42 @@ def _bounds(start: date, end: date) -> tuple[datetime, datetime]:
 
 
 def line_times(start: date, end: date, site_id: int | None = None) -> list[LineTime]:
-    """Temps et quantités de chaque ligne entre deux dates (comprises)."""
+    """Temps et quantités de chaque ligne entre deux dates (comprises), cumulés jour par jour
+    (même calcul que la vue bi.fact_line_time)."""
     first, last = _bounds(start, end)
     lines = ProductionLine.objects.select_related("site").order_by("code")
     if site_id is not None:
         lines = lines.filter(site_id=site_id)
-    result = {line.pk: LineTime(line) for line in lines}
+    lines = {line.pk: line for line in lines}
+    days: dict[tuple[int, date], LineTime] = {}
+
+    def day_of(line_id: int, moment: datetime) -> LineTime:
+        key = (line_id, timezone.localtime(moment).date())
+        if key not in days:
+            days[key] = LineTime(lines[line_id])
+        return days[key]
+
     declarations = ProductionDeclaration.objects.filter(
-        order__line_id__in=result, run_start__gte=first, run_start__lt=last
+        order__line_id__in=lines, run_start__gte=first, run_start__lt=last
     ).select_related("lot", "order")
     for declaration in declarations:
-        row = result[declaration.order.line_id]
+        row = day_of(declaration.order.line_id, declaration.run_start)
         row.opening += _hours(declaration.run_end - declaration.run_start)
         row.produced += declaration.lot.initial_quantity + declaration.scrap_quantity
         row.scrap += declaration.scrap_quantity
     stops = LineStop.objects.filter(
-        line_id__in=result, cancelled_at__isnull=True, started_at__gte=first, started_at__lt=last
+        line_id__in=lines, cancelled_at__isnull=True, started_at__gte=first, started_at__lt=last
     )
     for stop in stops:
-        row = result[stop.line_id]
+        row = day_of(stop.line_id, stop.started_at)
         duration = _hours(stop.ended_at - stop.started_at)
         if stop.is_planned:
             row.planned_stops += duration
         else:
             row.unplanned_stops += duration
+    result = {pk: LineTime(line) for pk, line in lines.items()}
+    for (line_id, _), day in sorted(days.items(), key=lambda item: item[0][1]):
+        result[line_id].add_day(day)
     return list(result.values())
 
 

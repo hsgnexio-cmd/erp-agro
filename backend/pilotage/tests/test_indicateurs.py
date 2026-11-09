@@ -104,8 +104,8 @@ def test_indicateurs_identiques_aux_calculs_metier_sur_la_demo(demo):
     assert kpi["traceability"].status == "ok"
     assert kpi["traceability"].value < 2
 
-    # Sans données dans l'ERP : « non disponible », pas de chiffre inventé
-    assert kpi["oee"].status == "indisponible"
+    # TRS : calculable, mais aucune plage de marche déclarée sans l'historique
+    assert kpi["oee"].status == "sans_donnee"
     assert kpi["oee"].value is None
     # Fiabilité des prévisions : calculable, mais aucune version figée sans l'historique
     assert kpi["forecast_accuracy"].status == "sans_donnee"

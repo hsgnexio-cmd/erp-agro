@@ -426,3 +426,72 @@ SELECT p.week_start,
   FROM pairs p
   JOIN s1 ON s1.week_start = p.week_start
   JOIN previsions_forecastversion v ON v.id = s1.version_id;
+
+-- --- TRS des lignes (phase 10) ----------------------------------------------------------
+
+-- Arrêts de ligne saisis (hors arrêts annulés), avec leur durée
+CREATE OR REPLACE VIEW bi.fact_line_stop AS
+SELECT s.id AS stop_id,
+       bi.local_date(s.started_at) AS date,
+       s.line_id,
+       l.code AS line_code,
+       l.site_id,
+       s.category,
+       s.category IN ('maintenance_preventive', 'nettoyage_planifie') AS is_planned,
+       extract(epoch FROM s.ended_at - s.started_at) / 3600 AS duration_hours,
+       o.number AS production_order_number
+  FROM production_linestop s
+  JOIN referentiel_productionline l ON l.id = s.line_id
+  LEFT JOIN production_productionorder o ON o.id = s.production_order_id
+ WHERE s.cancelled_at IS NULL;
+
+-- Temps d'une ligne par jour (même calcul que production.oee.line_times) :
+-- TRS = sum(useful_hours) ÷ sum(required_hours) ; disponibilité = fonctionnement ÷ requis ;
+-- performance = net ÷ fonctionnement ; qualité = utile ÷ net.
+CREATE OR REPLACE VIEW bi.fact_line_time AS
+WITH runs AS (
+    SELECT o.line_id,
+           bi.local_date(d.run_start) AS date,
+           sum(extract(epoch FROM d.run_end - d.run_start) / 3600) AS opening_hours,
+           sum(lot.initial_quantity + d.scrap_quantity) AS produced,
+           sum(d.scrap_quantity) AS scrap
+      FROM production_productiondeclaration d
+      JOIN production_productionorder o ON o.id = d.order_id
+      JOIN stocks_lot lot ON lot.id = d.lot_id
+     WHERE d.run_start IS NOT NULL AND o.line_id IS NOT NULL
+     GROUP BY 1, 2
+), stops AS (
+    SELECT line_id,
+           date,
+           sum(duration_hours) FILTER (WHERE is_planned) AS planned_stop_hours,
+           sum(duration_hours) FILTER (WHERE NOT is_planned) AS unplanned_stop_hours
+      FROM bi.fact_line_stop
+     GROUP BY 1, 2
+), days AS (
+    SELECT COALESCE(r.line_id, s.line_id) AS line_id,
+           COALESCE(r.date, s.date) AS date,
+           COALESCE(r.opening_hours, 0) AS opening_hours,
+           COALESCE(s.planned_stop_hours, 0) AS planned_stop_hours,
+           COALESCE(s.unplanned_stop_hours, 0) AS unplanned_stop_hours,
+           COALESCE(r.produced, 0) AS produced,
+           COALESCE(r.scrap, 0) AS scrap
+      FROM runs r
+      FULL JOIN stops s ON s.line_id = r.line_id AND s.date = r.date
+)
+SELECT d.date,
+       d.line_id,
+       l.code AS line_code,
+       l.site_id,
+       l.capacity_per_hour,
+       d.opening_hours,
+       d.planned_stop_hours,
+       d.unplanned_stop_hours,
+       GREATEST(0, d.opening_hours - d.planned_stop_hours) AS required_hours,
+       GREATEST(0, GREATEST(0, d.opening_hours - d.planned_stop_hours) - d.unplanned_stop_hours)
+           AS operating_hours,
+       d.produced,
+       d.scrap,
+       d.produced / l.capacity_per_hour AS net_hours,
+       (d.produced - d.scrap) / l.capacity_per_hour AS useful_hours
+  FROM days d
+  JOIN referentiel_productionline l ON l.id = d.line_id;
