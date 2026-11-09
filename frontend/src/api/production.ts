@@ -138,3 +138,65 @@ export interface Planning {
     cells: PlanningCell[]
   }[]
 }
+
+// --- Plan de production hebdomadaire (phase 9b) ---
+
+export interface MasterPlanDay {
+  day: string
+  quantity: string
+  production_order: number | null
+  production_order_number: string | null
+  /** Écart entre le plan figé et l'OF actuel (vide si aucun) */
+  deviation: string
+}
+
+export interface MasterPlanItem {
+  article: number
+  article_code: string
+  article_name: string
+  brand: 'Brévanne' | 'MDD'
+  line: number
+  line_code: string
+  forecast_quantity: string
+  ordered_quantity: string
+  demand: string
+  safety_days: string
+  safety_stock: string
+  stock: string
+  open_orders: string
+  demand_before: string
+  projected_stock: string
+  proposed_quantity: string
+  days: MasterPlanDay[]
+}
+
+export interface MasterPlanSummary {
+  id: number
+  week: string
+  week_label: string
+  status: 'brouillon' | 'fige'
+  status_label: string
+  forecast_version_number: string | null
+  computed_at: string
+  frozen_at: string | null
+  frozen_by_name: string
+}
+
+export interface MasterPlan {
+  id: number
+  week: string
+  week_label: string
+  status: 'brouillon' | 'fige'
+  status_label: string
+  forecast_version: string | null
+  computed_at: string
+  computed_by_name: string
+  frozen_at: string | null
+  frozen_by_name: string
+  days: string[]
+  capacity_hours: string
+  items: MasterPlanItem[]
+  load: { line: number; line_code: string; cells: { day: string; hours: string; overload: boolean }[] }[]
+  /** Produits écartés du calcul (renvoyé seulement après un calcul) */
+  skipped?: string[]
+}

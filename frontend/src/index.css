@@ -814,3 +814,13 @@ button.cell-button:hover {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* --- Plan de production --- */
+
+.week-title {
+  align-self: center;
+}
+
+.master-plan input.qty {
+  width: 6em;
+}

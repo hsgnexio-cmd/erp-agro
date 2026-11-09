@@ -10,6 +10,7 @@ const SECTIONS = [
   { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
   { to: '/commandes', title: 'Achats', text: 'Commandes fournisseurs et réceptions' },
   { to: '/production', title: 'Production', text: 'Ordres de fabrication, déclarations, rendements' },
+  { to: '/plan-production', title: 'Plan de production', text: 'Plan de la semaine, figé à J-2' },
   { to: '/planning', title: 'Planning', text: 'Charge des lignes, ordre des allergènes' },
   { to: '/previsions', title: 'Prévisions', text: 'Demande à 8 semaines, promotions, fiabilité' },
   { to: '/ventes', title: 'Ventes', text: 'Commandes clients, tarifs de vente' },

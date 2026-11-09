@@ -1,26 +1,28 @@
-# Prochaine étape : après la partie 9a
+# Prochaine étape : après la partie 9b
 
-Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Phase 9a » et « Points en suspens »).
+Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Phase 9a », « Phase 9b » et « Points en suspens »).
 
 ## 1. Où en est le projet
 
-- Les phases 1 à 8 sont terminées. Rapport Power BI de Nicolas : `bi/powerbi/indicateurs.pbip`.
-- **Partie 9a – Prévisions de vente** : faite sur la branche `phase-9a-previsions` (pull request à créer et fusionner par Nicolas) :
-  - app `previsions` : prévision à 8 semaines par produit × enseigne × semaine (moyenne pondérée des 4 dernières semaines de commandes, arrondie au colis de 12), promotions (jusqu'à ×3, avertissement si annoncée à moins de 6 semaines), corrections manuelles, versions figées `PRV-` chaque lundi à 5 h et à la demande ;
-  - fiabilité à S-1 dans l'écran **Prévisions**, le tableau de bord, la vue `bi.fact_forecast_accuracy`, Power Query et DAX ;
-  - historique de démonstration porté à 6 semaines (≈ 6 min), avec une promotion réalisée et une version figée chaque lundi.
-- **À faire par Nicolas après la fusion** :
-  - sa base locale n'a pas encore de version figée : la première arrivera lundi à 5 h (ou bouton « Figer une version »). Pour voir tout de suite l'historique de prévisions, repartir d'une base neuve (section 4) ;
-  - ajouter `fact_forecast_accuracy` et la mesure « Fiabilité prévisions » au rapport Power BI (README, section « Ouvrir le rapport Power BI existant »).
+- Les phases 1 à 8 sont terminées. Partie 9a (prévisions de vente) fusionnée (pull request #12).
+- **Partie 9b – Plan de production** : faite sur la branche `phase-9b-plan-production` (pull request à créer et fusionner par Nicolas) :
+  - `production/master_plan.py` : plan de la semaine S+1 (marque Brévanne sur stock avec stock de sécurité, MDD à la commande), arrondi au colis de 12, réparti du lundi au vendredi sur la première ligne compatible ;
+  - ajustements du brouillon (quantités, ligne, ajout d'un produit), charge des lignes ;
+  - gel à J-2 (samedi 12 h, Celery, ou bouton) : un OF planifié par produit et par jour ; écarts entre le plan figé et les OF ;
+  - champ « stock de sécurité (jours de demande) » sur l'article ;
+  - écran React **Plan de production** ; démo : plan de S+1 en brouillon.
+- **À faire par Nicolas après la fusion** : relancer `charger_donnees_demo` (rien n'est recréé, seul le plan de la semaine prochaine est calculé) ou cliquer sur « Calculer le plan » dans l'écran.
 
-## 2. Prochaine étape : partie 9b – Plan de production et besoins d'achat
+## 2. Prochaine étape : partie 9c – Calcul des besoins (MRP)
 
-Pour démarrer la 9b : lire la fiche entreprise (planification : plan hebdomadaire figé à J-2, MDD à la commande, marque Brévanne sur stock), puis présenter un plan avec les décisions métier à valider :
+Décisions déjà validées avec Nicolas (09/11/2026), à reprendre dans le plan détaillé :
 
-- plan de production hebdomadaire à partir de la prévision (dernière version figée) et des commandes reçues : marque Brévanne sur stock (prévision + stock de sécurité − stock), MDD à la commande ;
-- gel du plan à J-2 : qui fige, ce qui reste modifiable, lien avec les OF existants (`production/orders.py`, `production/planning.py`) et la capacité des lignes ;
-- calcul des besoins (MRP) : explosion des nomenclatures (pertes comprises), stock disponible, commandes fournisseurs en cours, délais fournisseurs, minimums de commande → propositions de commandes d'achat pour l'acheteur ;
-- données de démonstration et tests.
+- besoins bruts sur **8 semaines** : plan figé pour S+1, plan calculé depuis la prévision pour S+2 à S+8 (`master_plan.calculate`) ;
+- éclatement des nomenclatures à tous les niveaux (semi-finis compris), pertes comprises (`production.orders.theoretical_needs`), semaine par semaine ;
+- besoin net = besoin brut − stock disponible − commandes fournisseurs en cours (reste à recevoir) ;
+- propositions chez le fournisseur principal audité : date de commande = semaine du besoin − délai fournisseur ; quantité relevée au minimum de commande ; « en retard » si la date est passée ;
+- l'acheteur sélectionne des propositions → une commande **brouillon** par fournisseur (`achats`), qu'il vérifie puis envoie ;
+- écran « Besoins d'achat », démo (dont un emballage MDD à long délai), tests.
 
 ## 3. Autres pistes (plus tard)
 

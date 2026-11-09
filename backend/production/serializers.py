@@ -2,12 +2,14 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from previsions.forecast import week_label
 from qualite.services import compute_allergens
+from referentiel.choices import ArticleType
 from referentiel.models import Article, Location, ProductionLine, Site
 from stocks.models import Lot
 
 from . import orders
-from .models import ProductionDeclaration, ProductionOrder
+from .models import MasterPlan, ProductionDeclaration, ProductionOrder
 
 
 class ProductionOrderSerializer(serializers.ModelSerializer):
@@ -171,3 +173,54 @@ class DeclarationInputSerializer(serializers.Serializer):
     production_date = serializers.DateField(required=False)
     comment = serializers.CharField(required=False, allow_blank=True, default="")
     consumptions = ConsumptionInputSerializer(many=True)
+
+
+# --- Plan de production (phase 9b) -----------------------------------------------------
+
+
+class MasterPlanSerializer(serializers.ModelSerializer):
+    week_label = serializers.SerializerMethodField()
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    forecast_version_number = serializers.CharField(
+        source="forecast_version.number", read_only=True, default=None
+    )
+    frozen_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MasterPlan
+        fields = [
+            "id", "week", "week_label", "status", "status_label", "forecast_version_number",
+            "computed_at", "frozen_at", "frozen_by_name",
+        ]  # fmt: skip
+
+    def get_week_label(self, obj) -> str:
+        return week_label(obj.week)
+
+    def get_frozen_by_name(self, obj) -> str:
+        return obj.frozen_by.username if obj.frozen_by else ""
+
+
+class PlanComputeInputSerializer(serializers.Serializer):
+    week = serializers.DateField()
+
+
+def _finished_products():
+    return Article.objects.filter(article_type=ArticleType.FINISHED_PRODUCT)
+
+
+class PlanQuantityInputSerializer(serializers.Serializer):
+    article = serializers.PrimaryKeyRelatedField(queryset=_finished_products())
+    day = serializers.DateField()
+    quantity = serializers.DecimalField(max_digits=14, decimal_places=3)
+
+
+class PlanLineInputSerializer(serializers.Serializer):
+    article = serializers.PrimaryKeyRelatedField(queryset=_finished_products())
+    line = serializers.PrimaryKeyRelatedField(queryset=ProductionLine.objects.all())
+
+
+class PlanAddArticleInputSerializer(serializers.Serializer):
+    article = serializers.PrimaryKeyRelatedField(queryset=_finished_products())
+    line = serializers.PrimaryKeyRelatedField(
+        queryset=ProductionLine.objects.all(), required=False, allow_null=True
+    )

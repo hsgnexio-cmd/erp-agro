@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage'
 import { InventoriesPage } from './pages/InventoriesPage'
 import { InventoryDetailPage } from './pages/InventoryDetailPage'
 import { LoginPage } from './pages/LoginPage'
+import { MasterPlanPage } from './pages/MasterPlanPage'
 import { FefoPage } from './pages/FefoPage'
 import { ForecastPage } from './pages/ForecastPage'
 import { LotDetailPage } from './pages/LotDetailPage'
@@ -72,6 +73,7 @@ export function AppRoutes() {
         <Route path="production/:id" element={<ProductionOrderDetailPage />} />
         <Route path="production/:id/declaration" element={<DeclarationPage />} />
         <Route path="planning" element={<PlanningPage />} />
+        <Route path="plan-production" element={<MasterPlanPage />} />
         <Route path="ventes" element={<SalesOrdersPage />} />
         <Route path="ventes/nouvelle" element={<SalesOrderFormPage />} />
         <Route path="ventes/:id" element={<SalesOrderDetailPage />} />

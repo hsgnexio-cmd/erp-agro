@@ -153,6 +153,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "brand_code",
             "format_size",
             "shelf_life_days",
+            "safety_stock_days",
             "date_type",
             "storage_temperature_class",
             "technical_sheet",

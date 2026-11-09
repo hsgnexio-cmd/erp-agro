@@ -14,14 +14,20 @@ from rest_framework.views import APIView
 
 from comptes.permissions import WriteRolesPermission
 from comptes.roles import Role
+from previsions.forecast import week_label
 
-from . import orders, planning
-from .models import ProductionOrder
+from . import master_plan, orders, planning
+from .models import MasterPlan, ProductionOrder
 from .serializers import (
     DeclarationInputSerializer,
     DeclarationSerializer,
+    MasterPlanSerializer,
     OrderInputSerializer,
     OrderUpdateSerializer,
+    PlanAddArticleInputSerializer,
+    PlanComputeInputSerializer,
+    PlanLineInputSerializer,
+    PlanQuantityInputSerializer,
     ProductionOrderDetailSerializer,
     ProductionOrderSerializer,
 )
@@ -170,3 +176,120 @@ class PlanningView(APIView):
                 ],
             }
         )
+
+
+# --- Plan de production hebdomadaire (phase 9b) ------------------------------------------
+
+
+def _dec(value) -> str | None:
+    return None if value is None else str(value)
+
+
+def _plan_detail(plan: MasterPlan) -> dict:
+    items = plan.items.select_related("article", "line").prefetch_related(
+        "days__production_order__line"
+    )
+    return {
+        "id": plan.id,
+        "week": plan.week,
+        "week_label": week_label(plan.week),
+        "status": plan.status,
+        "status_label": plan.get_status_display(),
+        "forecast_version": plan.forecast_version.number if plan.forecast_version else None,
+        "computed_at": plan.computed_at,
+        "computed_by_name": plan.computed_by.username if plan.computed_by else "",
+        "frozen_at": plan.frozen_at,
+        "frozen_by_name": plan.frozen_by.username if plan.frozen_by else "",
+        "days": master_plan.work_days(plan.week),
+        "capacity_hours": str(planning.DAILY_CAPACITY_HOURS),
+        "items": [
+            {
+                "article": item.article_id,
+                "article_code": item.article.code,
+                "article_name": item.article.name,
+                "brand": "MDD" if item.article.brand_customer_id else "Brévanne",
+                "line": item.line_id,
+                "line_code": item.line.code,
+                "forecast_quantity": _dec(item.forecast_quantity),
+                "ordered_quantity": _dec(item.ordered_quantity),
+                "demand": _dec(item.demand),
+                "safety_days": _dec(item.safety_days),
+                "safety_stock": _dec(item.safety_stock),
+                "stock": _dec(item.stock),
+                "open_orders": _dec(item.open_orders),
+                "demand_before": _dec(item.demand_before),
+                "projected_stock": _dec(item.projected_stock),
+                "proposed_quantity": _dec(item.proposed_quantity),
+                "days": [
+                    {
+                        "day": entry.day,
+                        "quantity": _dec(entry.quantity),
+                        "production_order": entry.production_order_id,
+                        "production_order_number": (
+                            entry.production_order.number if entry.production_order else None
+                        ),
+                        "deviation": master_plan.deviation(entry),
+                    }
+                    for entry in sorted(item.days.all(), key=lambda value: value.day)
+                ],
+            }
+            for item in items
+        ],
+        "load": [
+            {
+                "line": row["line"].id,
+                "line_code": row["line"].code,
+                "cells": [
+                    {"day": cell["day"], "hours": str(cell["hours"]), "overload": cell["overload"]}
+                    for cell in row["cells"]
+                ],
+            }
+            for row in master_plan.line_load(plan)
+        ],
+    }
+
+
+class MasterPlanViewSet(viewsets.ReadOnlyModelViewSet):
+    """Plans de production hebdomadaires : calcul, ajustements, gel à J-2."""
+
+    queryset = MasterPlan.objects.select_related(
+        "forecast_version", "computed_by", "frozen_by"
+    ).order_by("-week")
+    serializer_class = MasterPlanSerializer
+    permission_classes = [WriteRolesPermission]
+    write_roles = PRODUCTION
+    filterset_fields = ["week", "status"]
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(_plan_detail(self.get_object()))
+
+    @action(detail=False, methods=["post"])
+    def compute(self, request):
+        data = PlanComputeInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        plan, skipped = master_plan.compute_plan(data.validated_data["week"], user=request.user)
+        return Response({**_plan_detail(plan), "skipped": skipped}, status=status.HTTP_201_CREATED)
+
+    def _apply(self, serializer_class, function):
+        data = serializer_class(data=self.request.data)
+        data.is_valid(raise_exception=True)
+        plan = self.get_object()
+        function(plan, **data.validated_data)
+        return Response(_plan_detail(plan))
+
+    @action(detail=True, methods=["post"], url_path="set-quantity")
+    def set_quantity(self, request, pk=None):
+        return self._apply(PlanQuantityInputSerializer, master_plan.set_quantity)
+
+    @action(detail=True, methods=["post"], url_path="set-line")
+    def set_line(self, request, pk=None):
+        return self._apply(PlanLineInputSerializer, master_plan.set_line)
+
+    @action(detail=True, methods=["post"], url_path="add-article")
+    def add_article(self, request, pk=None):
+        return self._apply(PlanAddArticleInputSerializer, master_plan.add_article)
+
+    @action(detail=True, methods=["post"])
+    def freeze(self, request, pk=None):
+        plan = master_plan.freeze_plan(self.get_object(), user=request.user)
+        return Response(_plan_detail(plan))
