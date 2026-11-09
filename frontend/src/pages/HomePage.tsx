@@ -11,6 +11,7 @@ const SECTIONS = [
   { to: '/commandes', title: 'Achats', text: 'Commandes fournisseurs et réceptions' },
   { to: '/production', title: 'Production', text: 'Ordres de fabrication, déclarations, rendements' },
   { to: '/planning', title: 'Planning', text: 'Charge des lignes, ordre des allergènes' },
+  { to: '/previsions', title: 'Prévisions', text: 'Demande à 8 semaines, promotions, fiabilité' },
   { to: '/ventes', title: 'Ventes', text: 'Commandes clients, tarifs de vente' },
   { to: '/edi', title: 'EDI', text: 'Messages de commande des enseignes' },
   { to: '/lots', title: 'Lots', text: 'Libération, blocage, transferts, historique' },

@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/production', label: 'Production' },
   { to: '/planning', label: 'Planning' },
   { to: '/lots', label: 'Lots' },
+  { to: '/previsions', label: 'Prévisions' },
   { to: '/ventes', label: 'Ventes' },
   { to: '/edi', label: 'EDI' },
   { to: '/expeditions', label: 'Expéditions' },

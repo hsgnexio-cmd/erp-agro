@@ -113,7 +113,7 @@ Remplir la base avec des données fictives cohérentes avec la fiche entreprise 
 docker compose exec backend python manage.py charger_donnees_demo
 ```
 
-La commande rejoue aussi **4 semaines d'historique**, jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes). C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
+La commande rejoue aussi **6 semaines d'historique**, jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables, et la prévision de vente figée chaque lundi. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes) et une promotion ×2 d'une enseigne. C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
 
 ```powershell
 docker compose exec backend python manage.py charger_donnees_demo --sans-historique
@@ -152,9 +152,10 @@ Menu **Tableau de bord** (tous les rôles) : les 9 indicateurs de la fiche entre
 | Rendement matière | Consommation théorique ÷ consommation réelle | ≥ 96 % |
 | Conformité réception | Lignes conformes ÷ lignes reçues | ≥ 97 % |
 | Délai de traçabilité | Durée d'un rappel « à blanc », mesurée à l'ouverture | ≤ 5 min |
-| TRS, fiabilité des prévisions | **Non disponibles** : l'ERP n'enregistre ni arrêts de ligne ni prévisions | — |
+| Fiabilité des prévisions | 1 − écart absolu ÷ quantités commandées, avec la prévision figée la semaine précédente (semaines terminées) | ≥ 80 % à S-1 |
+| TRS | **Non disponible** : l'ERP n'enregistre pas les arrêts de ligne | — |
 
-Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)). Le bouton **Exporter pour Excel (CSV)** télécharge les indicateurs et leur évolution par semaine, avec les filtres choisis.
+Filtres : la période (28 derniers jours par défaut), le site (rendement, couverture matières) et l'enseigne (taux de service, fiabilité des prévisions). Les chiffres viennent des vues SQL du schéma `bi`, les mêmes que celles de Power BI (voir [`bi/README.md`](bi/README.md)). Le bouton **Exporter pour Excel (CSV)** télécharge les indicateurs et leur évolution par semaine, avec les filtres choisis.
 
 ### Le parcours d'achat
 
@@ -180,6 +181,16 @@ Filtres : la période (28 derniers jours par défaut), le site (rendement, couve
 2. Elle **lance** l'OF, puis **déclare** ce qui a été produit : l'écran pré-remplit les lots à consommer dans l'ordre FEFO ; prendre un autre lot demande une justification.
 3. Chaque déclaration crée un lot fabriqué (en quarantaine) relié aux lots consommés. À la **clôture**, l'OF affiche son rendement matière (objectif 96 %).
 4. Le menu **Planning** montre la semaine ligne par ligne : charge en heures, surcharges, et ordre des allergènes à respecter.
+
+### Les prévisions de vente
+
+Menu **Prévisions** (consultation pour tous ; saisie par les rôles commercial et admin) :
+
+- **La grille** donne la demande prévue (quantités commandées) par produit et par enseigne pour les semaines **S+1 à S+8**. Calcul : moyenne pondérée des 4 dernières semaines (40 %, 30 %, 20 %, 10 %), hors effet des promotions, arrondie au colis de 12. En jaune : une promotion ; en bleu : une correction manuelle.
+- **Corriger** : cliquer sur une quantité, saisir la nouvelle quantité et un motif. La correction remplace le calcul ; elle n'est jamais modifiée (une nouvelle correction la remplace, « Revenir au calcul » rend la main au calcul).
+- **Promotions** : enseigne, produit, semaine(s), coefficient jusqu'à ×3. Une promotion annoncée moins de 6 semaines avant est acceptée mais signalée.
+- **Versions figées** : la prévision est figée chaque lundi à 5 h (Celery) et à la demande (« Figer une version »). Une version n'est jamais modifiée.
+- **Fiabilité à S-1** : pour chaque semaine, la dernière version figée avant son lundi comparée aux quantités commandées.
 
 ### Les ventes
 
@@ -241,7 +252,7 @@ erp-agro/
 ├── backend/          # Django : config/ (réglages), comptes/ (utilisateurs, rôles, connexion),
 │                     # referentiel/ (articles, nomenclatures…), une app par module
 ├── frontend/         # React + TypeScript (Vite)
-├── docs/             # fiche entreprise, décisions (decisions.md)
+├── docs/             # fiche entreprise, décisions (decisions.md), prochaine étape
 ├── data/             # scripts de données fictives (à venir)
 ├── bi/               # vues SQL « bi » (documentation), requêtes Power Query, mesures DAX
 ├── docker-compose.yml
@@ -299,6 +310,8 @@ En cas de message d'erreur :
 ### 3. Ouvrir le rapport Power BI existant
 
 Le rapport est dans `bi/powerbi/indicateurs.pbip` : double-clic pour l'ouvrir dans Power BI Desktop (Docker Desktop doit être lancé), puis **Actualiser**. Au premier lancement sur un PC, Power BI demande l'utilisateur `powerbi` et son mot de passe.
+
+**Ajouter les prévisions (phase 9a)** au rapport : **Accueil** → **Obtenir des données** → **Requête vide** → **Éditeur avancé**, coller [`bi/power-query/fact_forecast_accuracy.pq`](bi/power-query/fact_forecast_accuracy.pq) et renommer la requête `fact_forecast_accuracy` (idem pour `fact_forecast.pq` si besoin). Créer ensuite les relations avec `dim_date`, `dim_customer` et `dim_article`, puis la mesure **Fiabilité prévisions** (voir [`bi/mesures-dax.md`](bi/mesures-dax.md)).
 
 ### 4. Construire un rapport Power BI depuis zéro
 

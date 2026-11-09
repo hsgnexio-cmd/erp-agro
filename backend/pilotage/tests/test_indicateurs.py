@@ -105,9 +105,10 @@ def test_indicateurs_identiques_aux_calculs_metier_sur_la_demo(demo):
     assert kpi["traceability"].value < 2
 
     # Sans données dans l'ERP : « non disponible », pas de chiffre inventé
-    for code in ("oee", "forecast_accuracy"):
-        assert kpi[code].status == "indisponible"
-        assert kpi[code].value is None
+    assert kpi["oee"].status == "indisponible"
+    assert kpi["oee"].value is None
+    # Fiabilité des prévisions : calculable, mais aucune version figée sans l'historique
+    assert kpi["forecast_accuracy"].status == "sans_donnee"
 
 
 def test_couverture_produits_finis_stock_disponible_sur_sorties_moyennes(demo):
@@ -224,14 +225,19 @@ def test_api_reservee_aux_utilisateurs_connectes(client):
 
 
 def test_export_csv_des_indicateurs_pour_excel(demo, api_client_for):
+    # Période relative à aujourd'hui : les OF de la démo sont clôturés aujourd'hui
+    end = timezone.localdate()
+    start = end - timedelta(days=35)
     response = api_client_for("direction").get(
-        "/api/pilotage/indicators/export/?start=2026-10-01&end=2026-11-05"
+        f"/api/pilotage/indicators/export/?start={start}&end={end}"
     )
     assert response.status_code == 200
     assert response["Content-Type"] == "text/csv; charset=utf-8"
-    assert 'filename="indicateurs-20261001-20261105.csv"' in response["Content-Disposition"]
+    assert (
+        f'filename="indicateurs-{start:%Y%m%d}-{end:%Y%m%d}.csv"' in response["Content-Disposition"]
+    )
     content = response.content.decode("utf-8")
-    assert content.startswith("﻿Indicateurs du 01/10/2026 au 05/11/2026")
+    assert content.startswith(f"﻿Indicateurs du {start:%d/%m/%Y} au {end:%d/%m/%Y}")
     lines = content.splitlines()
     assert "Indicateur;Valeur;Unité;Objectif;Statut;Détail" in lines
     trs = next(line for line in lines if line.startswith("TRS;"))
@@ -240,4 +246,5 @@ def test_export_csv_des_indicateurs_pour_excel(demo, api_client_for):
     yield_line = next(line for line in lines if line.startswith("Rendement matière;"))
     assert "," in yield_line.split(";")[1]
     assert "Évolution par semaine" in lines
-    assert any(line.startswith("Indicateur;Unité;S40 (01/10)") for line in lines)
+    first_week = f"S{start.isocalendar().week:02d} ({start:%d/%m})"
+    assert any(line.startswith(f"Indicateur;Unité;{first_week}") for line in lines)

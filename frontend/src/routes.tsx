@@ -10,6 +10,7 @@ import { InventoriesPage } from './pages/InventoriesPage'
 import { InventoryDetailPage } from './pages/InventoryDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { FefoPage } from './pages/FefoPage'
+import { ForecastPage } from './pages/ForecastPage'
 import { LotDetailPage } from './pages/LotDetailPage'
 import { LotsPage } from './pages/LotsPage'
 import { StockPage } from './pages/StockPage'
@@ -80,6 +81,7 @@ export function AppRoutes() {
         <Route path="taux-de-service" element={<ServiceRatePage />} />
         <Route path="edi" element={<EdiPage />} />
         <Route path="tarifs-vente" element={<SalePricesPage />} />
+        <Route path="previsions" element={<ForecastPage />} />
         <Route path="*" element={<p>Page introuvable.</p>} />
       </Route>
     </Routes>
