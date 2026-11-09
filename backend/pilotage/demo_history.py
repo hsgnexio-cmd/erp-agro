@@ -14,6 +14,11 @@ Quelques incidents volontaires rendent les indicateurs réalistes : une panne de
 (ruptures), un transporteur en retard (livraisons hors délai), une fuite en cuisson
 (rendement faible), des réceptions non conformes, des invendables.
 
+TRS (phase 10) : chaque OF de produit fini a sa plage de marche sur la ligne (à partir de 5 h,
+les OF de la journée à la suite), avec des changements de série, des micro-arrêts, quelques
+pannes et manques matière, une cadence réelle un peu sous la cadence nominale et 0,3 à 2 % de
+rebuts. La panne de ligne arrête la production après une demi-heure.
+
 Prévisions (phase 9a) : la prévision est figée chaque lundi à 5 h, dès qu'il existe des
 commandes passées, pour mesurer la fiabilité à S-1. Une promotion annoncée 7 semaines
 avant double les commandes d'une enseigne pendant une semaine (production comprise).
@@ -33,7 +38,9 @@ from achats import services as purchasing
 from achats.models import SupplierPrice
 from previsions import forecast
 from previsions.models import Promotion
+from production import oee
 from production import orders as production
+from production.models import StopCategory
 from referentiel.choices import ArticleType, DateType, TemperatureClass
 from referentiel.models import (
     Article,
@@ -95,7 +102,11 @@ FACTORY_SUPPLY_DAYS = 3
 NON_COMPLIANT_RATE = 0.03
 
 # Incidents volontaires : (jour de l'historique, …)
-BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : pas de production")
+BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : production arrêtée après 30 min")
+# TRS (phase 10) : première équipe à 5 h ; la panne laisse 20 % de l'OF fabriqué
+SHIFT_START_HOUR = 5
+BREAKDOWN_SHARE = Decimal("0.2")
+BREAKDOWN_MINUTES = 300
 LATE_CARRIER = (16, "ENS3", "Translog Froid Ouest")
 LEAK = (22, "PF-GRA-GRADAU-BRE-1000", Decimal("1.075"), "Fuite sur la cuve de cuisson")
 # Promotion réalisée : (enseigne, produit, semaines avant la semaine courante, coefficient)
@@ -164,6 +175,10 @@ class History:
                 if sales.orderable_refusal(customer, article) is None:
                     self.buyers[code].append(customer)
         self.delayed: list[CustomerOrder] = []
+        # TRS : heure de disponibilité de chaque ligne dans la journée ; tirages séparés pour ne
+        # pas changer les autres données de l'historique
+        self.line_clock: dict[tuple[int, date], datetime] = {}
+        self.oee_rng = random.Random(SEED + 10)
         self.counts = {"commandes fournisseurs": 0, "OF": 0, "commandes clients": 0}
         self.counts["seconds fournisseurs référencés"] = self._second_sources()
         self.promotions = self._past_promotion()
@@ -401,7 +416,46 @@ class History:
         )
         return _round_up(quantity, Decimal("12")) if quantity > 0 else ZERO
 
-    def _declare(self, order, quantity: Decimal, factor: Decimal) -> None:
+    def _run(self, order, quantity: Decimal, day: date, breakdown: bool) -> dict:
+        """Plage de marche de l'OF sur sa ligne, arrêts compris, et rebuts (TRS)."""
+        line = order.line
+        key = (line.pk, day)
+        rng = self.oee_rng
+        start = self.line_clock.get(key, _at(day, SHIFT_START_HOUR))
+        cursor = start
+        stops = []
+
+        def stop(category, minutes):
+            nonlocal cursor
+            stops.append((cursor, cursor + timedelta(minutes=minutes), category))
+            cursor += timedelta(minutes=minutes)
+
+        if key in self.line_clock:
+            stop(StopCategory.CHANGEOVER, rng.randint(6, 12))
+        speed = Decimal(str(round(rng.uniform(0.82, 0.95), 3)))
+        minutes = float(quantity / (line.capacity_per_hour * speed) * 60)
+        if breakdown:
+            cursor += timedelta(minutes=30)
+            stop(StopCategory.BREAKDOWN, BREAKDOWN_MINUTES)
+            minutes = max(0.0, minutes - 30)
+        elif rng.random() < 0.08:
+            first = rng.uniform(0.2, 0.8) * minutes
+            cursor += timedelta(minutes=first)
+            stop(StopCategory.BREAKDOWN, rng.randint(20, 75))
+            minutes -= first
+        if rng.random() < 0.25:
+            stop(StopCategory.ADJUSTMENT, rng.randint(3, 8))
+        if rng.random() < 0.03:
+            stop(StopCategory.MATERIAL_SHORTAGE, rng.randint(15, 40))
+        cursor += timedelta(minutes=minutes)
+        end = cursor.replace(second=0, microsecond=0) + timedelta(minutes=1)
+        self.line_clock[key] = end
+        scrap = (quantity * Decimal(str(round(rng.uniform(0.003, 0.02), 4)))).to_integral_value()
+        reason = "Barquettes mal operculées" if scrap else ""
+        return {"run_start": start, "run_end": end, "scrap": scrap, "reason": reason,
+                "stops": stops}  # fmt: skip
+
+    def _declare(self, order, quantity: Decimal, factor: Decimal, run=None) -> None:
         """Déclaration avec les lots proposés par le FEFO ; `factor` simule les écarts matière."""
         consumptions = []
         for row in production.proposal(order, quantity):
@@ -415,11 +469,27 @@ class History:
                         {"lot": item["lot"], "location": item["location"], "quantity": take}
                     )
                     remaining -= take
-        production.declare_production(order, quantity=quantity, consumptions=consumptions)
+        if run is None:
+            production.declare_production(order, quantity=quantity, consumptions=consumptions)
+            return
+        # La saisie se fait après la marche : l'horloge simulée avance jusqu'à sa fin
+        with simulated_clock(max(timezone.now(), run["run_end"] + timedelta(minutes=1))):
+            production.declare_production(
+                order, quantity=quantity, consumptions=consumptions, run_start=run["run_start"],
+                run_end=run["run_end"], scrap_quantity=run["scrap"], scrap_reason=run["reason"],
+                require_run=True,
+            )  # fmt: skip
+            for started_at, ended_at, category in run["stops"]:
+                oee.record_stop(
+                    line=order.line, started_at=started_at, ended_at=ended_at,
+                    category=category, production_order=order,
+                )  # fmt: skip
+        self.counts["arrêts de ligne"] = self.counts.get("arrêts de ligne", 0) + len(run["stops"])
 
     def _make(
-        self, article: Article, quantity: Decimal, day: date, site: Site, factor=None, comment=""
-    ):
+        self, article: Article, quantity: Decimal, day: date, site: Site, factor=None, comment="",
+        breakdown: bool = False,
+    ):  # fmt: skip
         """Approvisionne, fabrique (OF lancé, déclaré, clôturé) et renvoie le lot fabriqué."""
         factor = factor or Decimal(str(round(self.rng.uniform(0.995, 1.035), 3)))
         for need in production.theoretical_needs(article, quantity):
@@ -442,7 +512,8 @@ class History:
             comment=comment,
         )
         production.launch_order(order)
-        self._declare(order, quantity, factor)
+        run = self._run(order, quantity, day, breakdown) if line else None
+        self._declare(order, quantity, factor, run)
         production.close_order(order)
         self.counts["OF"] += 1
         return order.declarations.get().lot
@@ -453,12 +524,10 @@ class History:
             if quantity <= 0:
                 continue
             if (offset, code) == BREAKDOWN[:2]:
-                # Panne : l'OF prévu est annulé, rien n'est fabriqué ce jour-là
-                order = production.create_order(
-                    article=article, planned_quantity=quantity, planned_date=day,
-                    line=self.lines[code], comment=BREAKDOWN[2],
-                )  # fmt: skip
-                production.cancel_order(order)
+                # Panne : la ligne s'arrête après 30 min, seule une petite partie est fabriquée
+                partial = _round_up(quantity * BREAKDOWN_SHARE, Decimal("12"))
+                site = self.lines[code].site
+                self._make(article, partial, day, site, comment=BREAKDOWN[2], breakdown=True)
                 continue
             factor, comment = None, ""
             if (offset, code) == LEAK[:2]:
