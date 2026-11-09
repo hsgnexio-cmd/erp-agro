@@ -12,6 +12,7 @@ const SECTIONS = [
   { to: '/besoins-achat', title: "Besoins d'achat", text: 'Calcul des besoins (MRP), propositions de commandes' },
   { to: '/production', title: 'Production', text: 'Ordres de fabrication, déclarations, rendements' },
   { to: '/plan-production', title: 'Plan de production', text: 'Plan de la semaine, figé à J-2' },
+  { to: '/trs', title: 'TRS des lignes', text: 'Arrêts, disponibilité, performance, qualité' },
   { to: '/planning', title: 'Planning', text: 'Charge des lignes, ordre des allergènes' },
   { to: '/previsions', title: 'Prévisions', text: 'Demande à 8 semaines, promotions, fiabilité' },
   { to: '/ventes', title: 'Ventes', text: 'Commandes clients, tarifs de vente' },

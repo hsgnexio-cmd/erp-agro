@@ -25,6 +25,11 @@ export function DeclarationPage() {
   const [taken, setTaken] = useState<Record<Key, string>>({})
   const [justifications, setJustifications] = useState<Record<Key, string>>({})
   const [comment, setComment] = useState('')
+  // TRS (phase 10) : plage de marche de la ligne et rebuts
+  const [runStart, setRunStart] = useState('')
+  const [runEnd, setRunEnd] = useState('')
+  const [scrap, setScrap] = useState('0')
+  const [scrapReason, setScrapReason] = useState('')
   const [errors, setErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -67,6 +72,9 @@ export function DeclarationPage() {
         quantity: proposalFor,
         comment,
         consumptions,
+        ...(o.line
+          ? { run_start: runStart || null, run_end: runEnd || null, scrap_quantity: scrap || '0', scrap_reason: scrapReason }
+          : {}),
       })
       navigate(`/production/${id}`)
     } catch (error) {
@@ -185,6 +193,33 @@ export function DeclarationPage() {
               )}
             </fieldset>
           ))}
+          {o.line && (
+            <fieldset>
+              <legend>Marche de la ligne {o.line_code} (calcul du TRS)</legend>
+              <div className="form-grid">
+                <label className="stacked">
+                  Début de marche
+                  <input type="datetime-local" value={runStart} onChange={(e) => setRunStart(e.target.value)} required />
+                </label>
+                <label className="stacked">
+                  Fin de marche
+                  <input type="datetime-local" value={runEnd} onChange={(e) => setRunEnd(e.target.value)} required />
+                </label>
+                <label className="stacked">
+                  Quantité rebutée ({o.unit})
+                  <input type="number" min="0" className="qty" value={scrap} onChange={(e) => setScrap(e.target.value)} />
+                </label>
+                <label className="stacked">
+                  Motif du rebut
+                  <input value={scrapReason} onChange={(e) => setScrapReason(e.target.value)} />
+                </label>
+              </div>
+              <p className="hint">
+                Plage de marche de l'OF sur la ligne, arrêts compris (saisis dans « TRS des lignes »). Les
+                unités rebutées ne vont pas en stock.
+              </p>
+            </fieldset>
+          )}
           <label className="stacked">
             Commentaire
             <input value={comment} onChange={(e) => setComment(e.target.value)} />
