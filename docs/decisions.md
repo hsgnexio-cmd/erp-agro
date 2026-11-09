@@ -324,6 +324,29 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Calculer, ajuster, figer le plan de production | `admin`, `production` |
 | Consulter les plans | tous les rôles |
 
+## Phase 9c – Calcul des besoins (MRP)
+
+| Décision | Raison |
+| --- | --- |
+| Calcul **à la demande**, rien n'est enregistré (`achats/mrp.py`, `/api/achats/mrp/`) | Toujours à jour (prévisions, plan, stock, commandes). La trace durable est la commande fournisseur créée par l'acheteur. Moins d'une seconde sur la démo. |
+| Horizon : semaine en cours + 8 semaines, par semaine | Validé. Les emballages ont 3 à 6 semaines de délai : un horizon plus court les commanderait trop tard. |
+| Production prévue : OF planifiés ou lancés (reste à fabriquer), puis plan brouillon de la semaine, sinon prévision de la semaine | Validé. Une semaine au plan figé est couverte par ses OF ; pas de double comptage. |
+| Éclatement à tous les niveaux, pertes comprises ; semi-finis diminués de leur stock avant d'être éclatés | Validé. Même calcul que les besoins d'un OF (`production.orders.theoretical_needs`). |
+| Besoin net = stock disponible (libéré ou en quarantaine, non périmé) + commandes en cours − besoins bruts cumulés | Validé. Les commandes **brouillon** comptent aussi : sinon, recalculer juste après avoir créé les commandes proposerait les mêmes achats. Une livraison en retard compte dans la semaine en cours. |
+| Proposition : fournisseur principal audité (sinon un autre fournisseur audité, le plus rapide) ; date de commande = lundi du besoin (ou aujourd'hui) − délai ; « en retard » si elle est passée | Validé. Jamais de proposition chez un fournisseur non audité. |
+| Quantité relevée au minimum de commande ; emballages (unités) arrondis à l'unité supérieure | Validé pour le minimum. L'arrondi évite de proposer 4 337,479 cartons. |
+| Une commande **brouillon par fournisseur et par semaine de besoin**, livraison prévue la semaine du besoin (au plus tôt après le délai du fournisseur) | Une commande ne peut avoir qu'une ligne par article : un article commandé pour plusieurs semaines donne plusieurs livraisons, chacune comptée dans la bonne semaine au calcul suivant. Toutes les règles d'achat s'appliquent (audit, tarif, minimum). |
+| Écran **Besoins d'achat** : propositions « d'ici 7 jours et en retard » par défaut, filtre fournisseur, quantité modifiable, détail semaine par semaine d'un article | L'acheteur choisit ; il vérifie puis envoie les commandes créées comme d'habitude. |
+| Pas de données de démo dédiées | Le calcul s'appuie sur les prévisions, le plan brouillon et le stock de la démo. Exemple visible : étiquette MDD `EM-ETIQ-ENS2` (21 jours de délai, minimum 5 000) en retard et relevée au minimum. |
+| Limites connues | Semaine entière d'un coup même pour le frais à DLC courte (l'acheteur peut fractionner) ; les OF de semi-finis déjà prévus ne diminuent pas le besoin en semi-finis des produits finis. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Transformer des propositions en commandes brouillon | `admin`, `acheteur` |
+| Consulter le calcul des besoins | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -350,13 +373,12 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| Suite de la feuille de route | Phases 9a (prévisions) et 9b (plan de production figé à J-2) faites ; 9c (MRP) à suivre ; autres pistes dans ce tableau (TRS…) | 9c, puis à décider avec Nicolas |
+| Suite de la feuille de route | Phase 9 terminée (prévisions, plan de production figé à J-2, MRP) ; autres pistes dans ce tableau (TRS…) | À décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
 | Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |
 | TRS | « Non disponible » : pas de saisie des arrêts de ligne (la fiabilité des prévisions est disponible depuis la 9a) | Phase complémentaire possible |
 | Durée du chargement de l'historique de démo (≈ 6 min, 6 semaines depuis la 9a) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
-| Calcul des besoins (MRP) et propositions d'achat | Prévisions (9a) et plan de production figé (9b) faits | Phase 9c |
 | Saisonnalité et événements calendaires dans les prévisions | La moyenne pondérée ne connaît que les 4 dernières semaines ; le commercial corrige à la main | Si besoin, quand l'historique sera plus long |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
 | « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
