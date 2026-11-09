@@ -9,6 +9,7 @@ const SECTIONS = [
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },
   { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
   { to: '/commandes', title: 'Achats', text: 'Commandes fournisseurs et réceptions' },
+  { to: '/besoins-achat', title: "Besoins d'achat", text: 'Calcul des besoins (MRP), propositions de commandes' },
   { to: '/production', title: 'Production', text: 'Ordres de fabrication, déclarations, rendements' },
   { to: '/plan-production', title: 'Plan de production', text: 'Plan de la semaine, figé à J-2' },
   { to: '/planning', title: 'Planning', text: 'Charge des lignes, ordre des allergènes' },

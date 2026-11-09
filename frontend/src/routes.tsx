@@ -10,6 +10,7 @@ import { InventoriesPage } from './pages/InventoriesPage'
 import { InventoryDetailPage } from './pages/InventoryDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { MasterPlanPage } from './pages/MasterPlanPage'
+import { MrpPage } from './pages/MrpPage'
 import { FefoPage } from './pages/FefoPage'
 import { ForecastPage } from './pages/ForecastPage'
 import { LotDetailPage } from './pages/LotDetailPage'
@@ -54,6 +55,7 @@ export function AppRoutes() {
         <Route path="sites" element={<SitesPage />} />
         <Route path="commandes" element={<PurchaseOrdersPage />} />
         <Route path="commandes/nouvelle" element={<PurchaseOrderFormPage />} />
+        <Route path="besoins-achat" element={<MrpPage />} />
         <Route path="commandes/:id" element={<PurchaseOrderDetailPage />} />
         <Route path="commandes/:id/reception" element={<ReceptionFormPage />} />
         <Route path="lots" element={<LotsPage />} />
