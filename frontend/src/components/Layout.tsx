@@ -11,6 +11,7 @@ const LINKS = [
   { to: '/clients', label: 'Clients' },
   { to: '/sites', label: 'Sites' },
   { to: '/commandes', label: 'Achats' },
+  { to: '/besoins-achat', label: "Besoins d'achat" },
   { to: '/production', label: 'Production' },
   { to: '/plan-production', label: 'Plan de production' },
   { to: '/planning', label: 'Planning' },

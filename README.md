@@ -206,6 +206,15 @@ Figer tout de suite le plan de la semaine prochaine (comme le ferait la tâche d
 docker compose exec backend python manage.py shell -c "from production.master_plan import freeze_next_week; print(freeze_next_week())"
 ```
 
+### Les besoins d'achat (MRP)
+
+Menu **Besoins d'achat** (consultation pour tous ; création des commandes par les rôles acheteur et admin) :
+
+- La production prévue de la semaine en cours et des 8 suivantes (OF, plan de production, prévision de vente) est éclatée en matières et emballages, pertes comprises, puis comparée au stock disponible et aux commandes fournisseurs en cours (brouillons compris).
+- Chaque manque devient une **proposition** chez le fournisseur audité : date de commande = besoin − délai du fournisseur (« en retard » en rouge si elle est passée), quantité relevée au minimum de commande.
+- Par défaut, l'écran montre ce qu'il faut commander d'ici 7 jours (et les retards). Cliquer sur un article affiche son calcul semaine par semaine.
+- L'acheteur coche des propositions, ajuste les quantités et clique sur **Créer les commandes brouillon** : une commande par fournisseur et par semaine de besoin, à vérifier puis envoyer depuis le menu **Achats**.
+
 ### Les ventes
 
 - Chaque jour de semaine à 9 h 30, Celery simule les **commandes EDI** des 6 enseignes (menu **EDI**) : chaque message devient une commande client, ou est rejeté avec ses motifs (heure limite 11 h, produit MDD d'une autre enseigne, article inconnu…).

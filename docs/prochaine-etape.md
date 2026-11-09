@@ -1,30 +1,21 @@
-# Prochaine étape : après la partie 9b
+# Prochaine étape : après la phase 9
 
-Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Phase 9a », « Phase 9b » et « Points en suspens »).
+Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Phase 9a », « Phase 9b », « Phase 9c » et « Points en suspens »).
 
 ## 1. Où en est le projet
 
-- Les phases 1 à 8 sont terminées. Partie 9a (prévisions de vente) fusionnée (pull request #12).
-- **Partie 9b – Plan de production** : faite sur la branche `phase-9b-plan-production` (pull request à créer et fusionner par Nicolas) :
-  - `production/master_plan.py` : plan de la semaine S+1 (marque Brévanne sur stock avec stock de sécurité, MDD à la commande), arrondi au colis de 12, réparti du lundi au vendredi sur la première ligne compatible ;
-  - ajustements du brouillon (quantités, ligne, ajout d'un produit), charge des lignes ;
-  - gel à J-2 (samedi 12 h, Celery, ou bouton) : un OF planifié par produit et par jour ; écarts entre le plan figé et les OF ;
-  - champ « stock de sécurité (jours de demande) » sur l'article ;
-  - écran React **Plan de production** ; démo : plan de S+1 en brouillon.
-- **À faire par Nicolas après la fusion** : relancer `charger_donnees_demo` (rien n'est recréé, seul le plan de la semaine prochaine est calculé) ou cliquer sur « Calculer le plan » dans l'écran.
+- Les phases 1 à 8 sont terminées, ainsi que 9a (prévisions, pull request #12) et 9b (plan de production, pull request #13).
+- **Partie 9c – Calcul des besoins (MRP)** : faite sur la branche `phase-9c-mrp` (pull request à créer et fusionner par Nicolas) :
+  - `achats/mrp.py` : besoins bruts sur 9 semaines (OF, plan brouillon, prévision), éclatement multiniveau, besoin net (stock, commandes en cours brouillons compris), propositions datées avec le délai fournisseur, minimum de commande, retards ;
+  - création des commandes brouillon par fournisseur et par semaine de besoin ;
+  - écran React **Besoins d'achat**.
+- Avec la 9c, **la phase 9 est terminée**.
 
-## 2. Prochaine étape : partie 9c – Calcul des besoins (MRP)
+## 2. Prochaine étape : à choisir avec Nicolas
 
-Décisions déjà validées avec Nicolas (09/11/2026), à reprendre dans le plan détaillé :
+Pistes ci-dessous ; présenter un plan et les décisions métier avant de coder.
 
-- besoins bruts sur **8 semaines** : plan figé pour S+1, plan calculé depuis la prévision pour S+2 à S+8 (`master_plan.calculate`) ;
-- éclatement des nomenclatures à tous les niveaux (semi-finis compris), pertes comprises (`production.orders.theoretical_needs`), semaine par semaine ;
-- besoin net = besoin brut − stock disponible − commandes fournisseurs en cours (reste à recevoir) ;
-- propositions chez le fournisseur principal audité : date de commande = semaine du besoin − délai fournisseur ; quantité relevée au minimum de commande ; « en retard » si la date est passée ;
-- l'acheteur sélectionne des propositions → une commande **brouillon** par fournisseur (`achats`), qu'il vérifie puis envoie ;
-- écran « Besoins d'achat », démo (dont un emballage MDD à long délai), tests.
-
-## 3. Autres pistes (plus tard)
+## 3. Pistes
 
 Tirées des « Points en suspens » de `docs/decisions.md` :
 

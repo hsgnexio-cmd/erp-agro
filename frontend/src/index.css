@@ -824,3 +824,7 @@ button.cell-button:hover {
 .master-plan input.qty {
   width: 6em;
 }
+
+tr.late td {
+  background: #fdf3f3;
+}
