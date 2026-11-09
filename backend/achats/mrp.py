@@ -22,7 +22,7 @@ Horizon : la semaine en cours et les 8 suivantes, semaine par semaine (le lundi)
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -33,7 +33,7 @@ from previsions.forecast import current_week, week_label
 from production import master_plan
 from production.models import MasterPlan, MasterPlanDay, OrderStatus, PlanStatus, ProductionOrder
 from production.orders import produced_quantity, theoretical_needs
-from referentiel.choices import ArticleType, SiteType
+from referentiel.choices import ArticleType, SiteType, Unit
 from referentiel.models import Article, Site, SupplierArticle
 from stocks.choices import LotStatus
 from stocks.models import StockMovement
@@ -303,7 +303,13 @@ def compute(today: date | None = None) -> MrpResult:
             if projected < 0:
                 net = -projected
                 minimum = link.min_order_quantity if link else None
-                quantity = max(net, minimum or ZERO)
+                # Un article compté à l'unité (emballages) se commande en unités entières
+                rounded = (
+                    net.to_integral_value(rounding=ROUND_CEILING)
+                    if article.unit == Unit.UNIT
+                    else net
+                )
+                quantity = max(rounded, minimum or ZERO)
                 need_date = max(today, week)
                 order_date = (
                     need_date - timedelta(days=link.supplier.lead_time_days) if link else None
@@ -319,7 +325,7 @@ def compute(today: date | None = None) -> MrpResult:
                         late=order_date is not None and order_date < today,
                         net=net,
                         quantity=quantity,
-                        raised_to_minimum=quantity > net,
+                        raised_to_minimum=quantity > rounded,
                         unit_price=price.unit_price if price else None,
                     )
                 )

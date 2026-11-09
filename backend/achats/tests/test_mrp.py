@@ -261,3 +261,19 @@ def test_api_tous_consultent_seul_l_acheteur_cree(world, api_client_for):
     )
     assert response.status_code == 201, response.json()
     assert response.json()[0]["number"].startswith("CA-")
+
+
+def test_emballage_commande_en_unites_entieres(world):
+    # Une prévision figée ne se modifie pas : on passe par un OF de la semaine en cours
+    production.create_order(
+        article=world["lasagna"], planned_quantity=D("2000.5"), planned_date=TODAY(),
+        line=world["line"],
+    )  # fmt: skip
+    tray = proposals_of(mrp.compute(), world["tray"])[0]
+    assert tray.week == week(0)
+    assert tray.net == D("2000.500")
+    assert tray.quantity == D("5000")  # minimum de commande
+    world["tray"].supplier_links.update(min_order_quantity=None)
+    tray = proposals_of(mrp.compute(), world["tray"])[0]
+    assert tray.quantity == D("2001")
+    assert tray.raised_to_minimum is False  # simple arrondi à l'unité
