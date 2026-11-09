@@ -360,7 +360,7 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Rebuts : « quantité rebutée » et motif à la déclaration, hors stock | Validé. Quantité produite = lot + rebut ; quantité bonne = lot. |
 | Vues `bi.fact_line_stop` et `bi.fact_line_time` (migration `pilotage/0005`) ; tuile TRS activée (filtres période et site), dans l'évolution par semaine et l'export CSV | Même chemin que les autres indicateurs. |
 | Écran **TRS des lignes** : TRS et ses trois taux, tableau par ligne, Pareto des arrêts, saisie et annulation des arrêts | Saisie par `production` et `admin`, consultation pour tous. |
-| Démo : plages à partir de 5 h, OF de la journée à la suite ; changements de série (6 à 12 min), micro-arrêts, pannes (8 % des OF), manques matière, cadence réelle à 82–95 % ; 0,3 à 2 % de rebuts | Validé. La panne de ligne de l'historique arrête désormais la production après 30 min (20 % de l'OF fabriqué, 5 h de panne) au lieu d'annuler l'OF : elle pèse sur le TRS et crée toujours des ruptures. Tirages aléatoires séparés, pour ne pas changer le reste de l'historique. |
+| Démo : plages à partir de 5 h, OF de la journée à la suite ; changements de série (3 à 7 min), micro-arrêts, pannes (8 % des OF), manques matière, cadence réelle à 85–97 % ; 0,3 à 2 % de rebuts | Validé. La panne de ligne de l'historique arrête désormais la production après 30 min (20 % de l'OF fabriqué, 5 h de panne) au lieu d'annuler l'OF : elle pèse sur le TRS et crée toujours des ruptures. Tirages aléatoires séparés, pour ne pas changer le reste de l'historique. |
 
 ### Droits
 

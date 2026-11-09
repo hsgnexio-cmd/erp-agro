@@ -431,8 +431,8 @@ class History:
             cursor += timedelta(minutes=minutes)
 
         if key in self.line_clock:
-            stop(StopCategory.CHANGEOVER, rng.randint(6, 12))
-        speed = Decimal(str(round(rng.uniform(0.82, 0.95), 3)))
+            stop(StopCategory.CHANGEOVER, rng.randint(3, 7))
+        speed = Decimal(str(round(rng.uniform(0.85, 0.97), 3)))
         minutes = float(quantity / (line.capacity_per_hour * speed) * 60)
         if breakdown:
             cursor += timedelta(minutes=30)
