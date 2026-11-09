@@ -16,11 +16,13 @@ from comptes.permissions import WriteRolesPermission
 from comptes.roles import Role
 from previsions.forecast import week_label
 
-from . import master_plan, orders, planning
-from .models import MasterPlan, ProductionOrder
+from . import master_plan, oee, orders, planning
+from .models import LineStop, MasterPlan, ProductionOrder
 from .serializers import (
     DeclarationInputSerializer,
     DeclarationSerializer,
+    LineStopInputSerializer,
+    LineStopSerializer,
     MasterPlanSerializer,
     OrderInputSerializer,
     OrderUpdateSerializer,
@@ -30,6 +32,7 @@ from .serializers import (
     PlanQuantityInputSerializer,
     ProductionOrderDetailSerializer,
     ProductionOrderSerializer,
+    StopCancelInputSerializer,
 )
 
 PRODUCTION = [Role.ADMIN, Role.PRODUCTION]
@@ -122,8 +125,9 @@ class ProductionOrderViewSet(
     def declare(self, request, pk=None):
         data = DeclarationInputSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        # Dans l'application, la plage de marche est obligatoire pour un produit fini (TRS)
         declaration = orders.declare_production(
-            self.get_object(), user=request.user, **data.validated_data
+            self.get_object(), user=request.user, require_run=True, **data.validated_data
         )
         return Response(DeclarationSerializer(declaration).data, status=status.HTTP_201_CREATED)
 
@@ -293,3 +297,104 @@ class MasterPlanViewSet(viewsets.ReadOnlyModelViewSet):
     def freeze(self, request, pk=None):
         plan = master_plan.freeze_plan(self.get_object(), user=request.user)
         return Response(_plan_detail(plan))
+
+
+# --- Arrêts de ligne et TRS (phase 10) -------------------------------------------------
+
+
+def _period(request: Request):
+    today = timezone.localdate()
+    end = parse_date(request.query_params.get("end", "")) or today
+    start = parse_date(request.query_params.get("start", "")) or end - timedelta(days=27)
+    if start > end:
+        raise ValidationError({"start": ["La date de début est après la date de fin."]})
+    site = request.query_params.get("site") or None
+    if site is not None and not site.isdigit():
+        raise ValidationError({"site": ["Site invalide."]})
+    return start, end, int(site) if site else None
+
+
+class LineStopViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    """Arrêts de ligne : saisie et annulation par la production, consultation pour tous."""
+
+    queryset = LineStop.objects.select_related(
+        "line", "production_order", "created_by", "cancelled_by"
+    )
+    serializer_class = LineStopSerializer
+    permission_classes = [WriteRolesPermission]
+    write_roles = PRODUCTION
+    filterset_fields = ["line", "category", "production_order"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == "list":
+            start, end, site = _period(self.request)
+            queryset = oee.recent_stops(start, end, site)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        data = LineStopInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stop = oee.record_stop(user=request.user, **data.validated_data)
+        return Response(LineStopSerializer(stop).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        data = StopCancelInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stop = oee.cancel_stop(
+            self.get_object(), reason=data.validated_data["reason"], user=request.user
+        )
+        return Response(LineStopSerializer(stop).data)
+
+
+def _rates(value: oee.Rates) -> dict:
+    return {
+        "oee": _dec(value.oee),
+        "availability": _dec(value.availability),
+        "performance": _dec(value.performance),
+        "quality": _dec(value.quality),
+    }
+
+
+def _hours(value) -> str:
+    return str(value.quantize(Decimal("0.01")))
+
+
+class OeeView(APIView):
+    """TRS par ligne sur une période : /api/production/oee/?start=…&end=…&site=…"""
+
+    permission_classes = [WriteRolesPermission]
+
+    def get(self, request: Request) -> Response:
+        start, end, site = _period(request)
+        result = oee.report(start, end, site)
+        return Response(
+            {
+                "start": start,
+                "end": end,
+                "target": str(oee.OEE_TARGET),
+                "total": _rates(result["total"]),
+                "lines": [
+                    {
+                        "line": item["row"].line.id,
+                        "line_code": item["row"].line.code,
+                        "line_name": item["row"].line.name,
+                        "site_code": item["row"].line.site.code,
+                        "capacity_per_hour": item["row"].line.capacity_per_hour,
+                        "opening_hours": _hours(item["row"].opening),
+                        "planned_stop_hours": _hours(item["row"].planned_stops),
+                        "unplanned_stop_hours": _hours(item["row"].unplanned_stops),
+                        "required_hours": _hours(item["row"].required),
+                        "produced": str(item["row"].produced),
+                        "scrap": str(item["row"].scrap),
+                        **_rates(item["rates"]),
+                    }
+                    for item in result["lines"]
+                ],
+                "pareto": [
+                    {**row, "hours": str(row["hours"]), "share": _dec(row["share"])}
+                    for row in result["pareto"]
+                ],
+            }
+        )

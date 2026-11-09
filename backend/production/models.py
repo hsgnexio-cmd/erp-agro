@@ -110,6 +110,18 @@ class ProductionDeclaration(models.Model):
     comment = models.TextField("commentaire", blank=True)
     # Règle 4 : lots consommés hors ordre FEFO, avec leur justification
     fefo_deviations = models.JSONField("écarts au FEFO", default=list, blank=True)
+    # Phase 10 (TRS) : plage de marche de l'OF sur la ligne, arrêts compris, et rebuts
+    run_start = models.DateTimeField("début de marche", null=True, blank=True)
+    run_end = models.DateTimeField("fin de marche", null=True, blank=True)
+    scrap_quantity = models.DecimalField(
+        "quantité rebutée",
+        max_digits=14,
+        decimal_places=3,
+        default=Decimal("0"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Unités jetées pendant la fabrication (non mises en stock).",
+    )
+    scrap_reason = models.CharField("motif du rebut", max_length=200, blank=True)
 
     class Meta:
         ordering = ["declared_at", "id"]
@@ -249,3 +261,76 @@ class MasterPlanDay(models.Model):
 
     def __str__(self) -> str:
         return f"{self.item.article.code} – {self.day} : {self.quantity}"
+
+
+# --- Arrêts de ligne (phase 10, TRS) -------------------------------------------------------
+
+
+class StopCategory(models.TextChoices):
+    BREAKDOWN = "panne", "Panne"
+    CHANGEOVER = "changement_serie", "Changement de série"
+    MATERIAL_SHORTAGE = "manque_matiere", "Manque matière ou emballage"
+    STAFF_SHORTAGE = "manque_personnel", "Manque de personnel"
+    ADJUSTMENT = "reglage", "Réglage, micro-arrêt"
+    PREVENTIVE_MAINTENANCE = "maintenance_preventive", "Maintenance préventive (planifiée)"
+    PLANNED_CLEANING = "nettoyage_planifie", "Nettoyage planifié"
+
+
+# Arrêts planifiés : retirés du temps requis (norme NF E60-182), pas comptés en disponibilité
+PLANNED_STOP_CATEGORIES = [StopCategory.PREVENTIVE_MAINTENANCE, StopCategory.PLANNED_CLEANING]
+
+
+class LineStop(models.Model):
+    """Arrêt d'une ligne pendant une plage de marche. Jamais modifié : on l'annule avec un motif."""
+
+    line = models.ForeignKey(
+        ProductionLine, on_delete=models.PROTECT, related_name="stops", verbose_name="ligne"
+    )
+    started_at = models.DateTimeField("début")
+    ended_at = models.DateTimeField("fin")
+    category = models.CharField("cause", max_length=30, choices=StopCategory.choices)
+    production_order = models.ForeignKey(
+        ProductionOrder,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="stops",
+        verbose_name="OF concerné",
+    )
+    comment = models.TextField("commentaire", blank=True)
+    created_at = models.DateTimeField("saisi le")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="line_stops",
+        null=True,
+        blank=True,
+        verbose_name="saisi par",
+    )
+    cancelled_at = models.DateTimeField("annulé le", null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="cancelled_line_stops",
+        null=True,
+        blank=True,
+        verbose_name="annulé par",
+    )
+    cancel_reason = models.TextField("motif de l'annulation", blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-started_at", "-id"]
+        verbose_name = "arrêt de ligne"
+        verbose_name_plural = "arrêts de ligne"
+
+    def __str__(self) -> str:
+        return f"{self.line.code} – {self.get_category_display()} ({self.started_at:%d/%m %H:%M})"
+
+    @property
+    def is_planned(self) -> bool:
+        return self.category in PLANNED_STOP_CATEGORIES
+
+    @property
+    def minutes(self) -> int:
+        return int((self.ended_at - self.started_at).total_seconds() // 60)
