@@ -471,6 +471,16 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Le test de l'utilisateur Power BI prend un nom de rôle par processus (`powerbi_test_gw0`…) | Un rôle PostgreSQL vaut pour tout le serveur. |
 | Pas de chargement partagé des données de démonstration entre tests | Gain de quelques secondes seulement, au prix de tests qui dépendraient les uns des autres. Le temps restant est surtout fixe : création des bases (≈ 20 s) et test de l'historique (≈ 30 s). |
 
+## Publication (finition, 10/11/2026)
+
+| Sujet | Décision | Pourquoi |
+| --- | --- | --- |
+| Licence | PolyForm Noncommercial 1.0.0 (`LICENSE.md`), avis « Required Notice » au nom de Nicolas | Choix de Nicolas : code lisible et réutilisable pour apprendre, mais pas d'usage commercial sans licence séparée (garder la possibilité de vendre). MIT écartée. |
+| Rappel produit dans la démo | Dernier jour de l'historique, 20 h : rappel du plus récent lot de crème `MP-LAI-CREME35` déjà consommé et reçu au moins 6 jours plus tôt (`pilotage/demo_history.py`, `_recall`) | Le scénario de référence se voit dans la démo (menu Rappels, vue `bi.fact_recall`) ; les produits finis encore en stock sont bloqués, comme dans la réalité. |
+| Captures d'écran du README | `docs/captures/`, prises sur une démo neuve (compte de la direction), 1440 × 900 | Montrer l'ERP sans avoir à l'installer. |
+| Audit de cohérence avant publication | 16 contrôles sur les données de démo (stock jamais négatif, consommation / expédition seulement si libéré, DLC calculées, DLC minimale enseigne, traçabilité complète, alertes de température, vues `bi`) : tous bons ; 38 écrans ouverts sans erreur | Vérifier les règles métier sur des données réelles, pas seulement dans les tests. |
+| Historique Git | Aucun secret : `.env` jamais commité, seuls des mots de passe d'exemple dans `.env.example` et le README | Préalable au passage du dépôt en public. |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -504,10 +514,12 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Durée du chargement de l'historique de démo (≈ 6 min, 6 semaines depuis la 9a) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
 | Saisonnalité et événements calendaires dans les prévisions | La moyenne pondérée ne connaît que les 4 dernières semaines ; le commercial corrige à la main | Si besoin, quand l'historique sera plus long |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
+| Facturation et comptabilité (factures, avoirs, TVA, export comptable) | Hors périmètre : l'ERP s'arrête à l'expédition | Indispensable avant tout usage réel |
+| Coût de revient des recettes | Prix d'achat et de vente connus, pas de calcul du coût de revient | Si besoin |
 | « Refus à quai » à la réception | Une ligne non conforme crée un lot bloqué | Si besoin |
 | Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |
 | Réservation de stock (OF, préparation) | Pas de réservation ; contrôle du stock au moment de l'opération | Si besoin |
 | Formulaires React du référentiel | Saisie dans l'administration Django | Si besoin |
-| Durée de la suite de tests back-end (≈ 5 min en local) | Due surtout aux tests qui rechargent toutes les données de démo | À optimiser (données de démo partagées entre tests) |
+| Durée de la suite de tests back-end | Résolu : ≈ 2 min 30 en parallèle (pytest-xdist, voir « Accélération des tests ») | — |
 | Expéditions de démonstration de la phase 5 | Non rattachées à des commandes clients (numéros `EXP-`) : elles ne comptent pas dans le taux de service | À garder en tête en phase 8 |
 | Base locale de Nicolas modifiée par les vérifications | Commande CA-2026-00011 et lot de crème bloqué (5,2 °C), lot de lait libéré et transféré, message EDI `ENS4-…-ERR`, commande CC-2026-00019 préparée et expédiée en 7b (BL-2026-00005, 54 lasagnes), compte `test-verif` désactivé | Repartir d'une base neuve si besoin (procédure dans `docs/prochaine-etape.md`) |

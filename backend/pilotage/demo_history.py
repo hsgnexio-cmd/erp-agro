@@ -49,6 +49,7 @@ from previsions.models import Promotion
 from production import oee
 from production import orders as production
 from production.models import StopCategory
+from qualite import services as quality
 from referentiel import calendar
 from referentiel.calendar import Activity
 from referentiel.choices import ArticleType, DateType, TemperatureClass
@@ -63,7 +64,7 @@ from referentiel.models import (
 )
 from referentiel.services import line_accepts
 from stocks import services as stock_services
-from stocks.choices import LotStatus, UnsoldDestination
+from stocks.choices import LotStatus, MovementType, UnsoldDestination
 from stocks.models import Lot
 from ventes import orders as sales
 from ventes import shipping
@@ -124,6 +125,10 @@ LEAK = (22, "PF-GRA-GRADAU-BRE-1000", Decimal("1.075"), "Fuite sur la cuve de cu
 # Promotion réalisée : (enseigne, produit, semaines avant la semaine courante, coefficient)
 PAST_PROMOTION = ("ENS2", "PF-PAT-LASBOL-BRE-300", 2, Decimal("2"))
 PROMOTION_NOTICE_DAYS = 49
+# Rappel produit (scénario de référence) : la veille, la crèmerie signale un lot contaminé ;
+# on prend le plus récent lot de crème déjà consommé, reçu au moins 6 jours plus tôt
+RECALL = ("MP-LAI-CREME35", "Contamination signalée par le fournisseur (Listeria)")
+RECALL_LOT_MIN_AGE_DAYS = 6
 FORECAST_HOUR = 5
 
 STORAGE = {
@@ -352,7 +357,30 @@ class History:
             with simulated_clock(_at(day, 19)):
                 self._dispose_unsellable(day)
                 self._destroy_expired_materials(day)
+        self._recall()
         return self.counts
+
+    def _recall(self) -> None:
+        """Dernier jour de l'historique, 20 h : rappel d'un lot de crème déjà utilisé en
+        production. Les produits finis encore en stock sont bloqués (règle 9)."""
+        code, reason = RECALL
+        day = self.today - timedelta(days=1)
+        lot = (
+            Lot.objects.filter(
+                article__code=code,
+                reception_date__lte=day - timedelta(days=RECALL_LOT_MIN_AGE_DAYS),
+                movements__movement_type=MovementType.CONSUMPTION,
+            )
+            .distinct()
+            .order_by("-reception_date", "-number")
+            .first()
+        )
+        if lot is None:
+            return  # historique trop court (tests)
+        with simulated_clock(_at(day, 20)):
+            recall = quality.launch_recall(lot, reason=reason)
+        self.counts["rappels produit"] = 1
+        self.counts["lots bloqués par le rappel"] = recall.blocked_lots.count()
 
     # --- Achats et approvisionnement des usines -------------------------------------------
 

@@ -1,7 +1,44 @@
 # ERP Brévanne Traiteur
 
-ERP agroalimentaire pour Brévanne Traiteur SAS (entreprise fictive de plats cuisinés frais), développé dans le cadre d'une formation.
-Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-entreprise.md) et les règles du projet dans [`CLAUDE.md`](CLAUDE.md).
+ERP agroalimentaire complet pour **Brévanne Traiteur SAS**, une entreprise fictive de plats cuisinés frais : 520 salariés, 165 M€ de chiffre d'affaires, deux usines (plats chauds près de Nantes, traiteur froid près de Rennes), des ventes en grande distribution sous sa marque et en marque distributeur. Projet réalisé dans le cadre d'une formation.
+
+Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-entreprise.md), les règles du projet dans [`CLAUDE.md`](CLAUDE.md) et les choix faits en cours de route dans [`docs/decisions.md`](docs/decisions.md).
+
+![Tableau de bord de la direction](docs/captures/tableau-de-bord.png)
+
+## Ce que fait l'ERP
+
+Tout le cycle d'un industriel du frais, de la commande de matières jusqu'à la livraison des enseignes :
+
+- **Achats et réceptions** : commandes fournisseurs, contrôles à réception (température, durée de vie restante), lots créés en quarantaine.
+- **Stocks par lot** : DLC / DDM, FEFO, statuts (libéré, bloqué, quarantaine, détruit), chaîne du froid, inventaires ; aucun stock ne change sans mouvement enregistré.
+- **Production** : ordres de fabrication, consommations, rendements, arrêts de ligne et TRS.
+- **Ventes** : commandes EDI simulées des enseignes, DLC minimale par enseigne, préparation FEFO, palettes SSCC, expédition, taux de service.
+- **Prévisions et planification** : prévisions de vente à 8 semaines avec promotions, plan de production figé à J-2, calcul des besoins (MRP) et propositions d'achat.
+- **Qualité** : traçabilité amont et aval en une requête, rappel produit, allergènes calculés à partir des recettes.
+- **Pilotage** : 9 indicateurs par rôle, connexion Excel et Power BI en lecture seule.
+
+Les **12 règles métier** (traçabilité totale, FEFO, DLC minimale client, statuts de lot…) sont appliquées par le serveur, pas seulement par l'écran, et couvertes par plus de 470 tests automatiques.
+
+| Rappel d'un lot de crème contaminé | Traçabilité aval d'un lot |
+| --- | --- |
+| ![Rappel produit](docs/captures/rappel.png) | ![Traçabilité](docs/captures/tracabilite.png) |
+| **Plan de production de la semaine** | **TRS des lignes** |
+| ![Plan de production](docs/captures/plan-production.png) | ![TRS](docs/captures/trs.png) |
+
+## Essayer la démo en 5 minutes
+
+Une fois l'application lancée (voir [Premier lancement](#premier-lancement)), les données de démonstration rejouent 6 semaines d'activité. Pour en faire le tour :
+
+1. Se connecter avec `helene.morvan` (directrice générale) et le mot de passe de démonstration : le **tableau de bord** montre les 9 indicateurs et leur évolution semaine par semaine.
+2. Menu **Rappels** : la veille, la crèmerie a signalé un lot de crème contaminé. Le rappel liste les produits finis fabriqués avec, les stocks bloqués et les enseignes livrées, avec les quantités.
+3. Cliquer sur le lot d'origine, puis **Voir la traçabilité de ce lot** : l'arbre va de la crème jusqu'aux entrepôts des enseignes.
+4. Se déconnecter, puis se reconnecter avec `claire.lebihan` (qualité) ou `thomas.riou` (commercial) : chaque rôle ne voit que les écrans et les indicateurs de son métier.
+5. **Plan de production**, **Prévisions**, **Taux de service** et **TRS** montrent la planification et ses résultats.
+
+## Licence
+
+Code source sous licence [**PolyForm Noncommercial 1.0.0**](LICENSE.md) : libre pour apprendre, étudier ou tester, à titre personnel ou dans un cadre d'enseignement. **L'utilisation commerciale**, notamment pour faire tourner une entreprise, n'est pas autorisée par cette licence : il faut une licence commerciale séparée, à demander à l'auteur (via son profil GitHub). Le texte de [`LICENSE.md`](LICENSE.md), en anglais, fait foi.
 
 ## Technologies
 
@@ -141,7 +178,7 @@ Remplir la base avec des données fictives cohérentes avec la fiche entreprise 
 docker compose exec backend python manage.py charger_donnees_demo
 ```
 
-La commande rejoue aussi **6 semaines d'historique** sur le vrai calendrier (commandes et expéditions du lundi au samedi, production du lundi au vendredi, jours fériés), jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables, et la prévision de vente figée chaque lundi. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes) et une promotion ×2 d'une enseigne. C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
+La commande rejoue aussi **6 semaines d'historique** sur le vrai calendrier (commandes et expéditions du lundi au samedi, production du lundi au vendredi, jours fériés), jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables, et la prévision de vente figée chaque lundi. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes), une promotion ×2 d'une enseigne et, la veille, le **rappel d'un lot de crème** signalé contaminé par le fournisseur (le scénario de référence du projet). C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
 
 ```powershell
 docker compose exec backend python manage.py charger_donnees_demo --sans-historique
