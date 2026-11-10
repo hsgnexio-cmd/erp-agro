@@ -163,6 +163,58 @@
             "width": 234
           },
           "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2718.2281978607607,
+            "y": 409.42426693766492
+          },
+          "nodeIndex": "fact_forecast",
+          "nodeLineageTag": "f9fc81b0-992a-4133-b8d5-768e5ad2ec14",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3002.2281978607607,
+            "y": 411.42426693766492
+          },
+          "nodeIndex": "fact_forecast_accuracy",
+          "nodeLineageTag": "3b1ced2f-3820-4468-88b0-b79e88c35653",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3286.2281978607607,
+            "y": 411.42426693766492
+          },
+          "nodeIndex": "fact_line_stop",
+          "nodeLineageTag": "d70fa14a-c593-4864-92e0-1cc0b06c3cce",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3570.2281978607607,
+            "y": 409.42426693766492
+          },
+          "nodeIndex": "fact_line_time",
+          "nodeLineageTag": "f086a68b-8836-49e7-91e9-2b87a1933d30",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
         }
       ],
       "name": "Toutes les tables",
