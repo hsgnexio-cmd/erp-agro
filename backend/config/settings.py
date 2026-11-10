@@ -134,6 +134,8 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
 # Utilisateur PostgreSQL en lecture seule pour Power BI / Excel (commande creer_utilisateur_bi)
 BI_DB_USER = env("BI_DB_USER", default="powerbi")
 BI_DB_PASSWORD = env("BI_DB_PASSWORD", default="")
+# Mot de passe commun des comptes de l'équipe de démonstration (comptes de test uniquement)
+DEMO_USERS_PASSWORD = env("DEMO_USERS_PASSWORD", default="")
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]

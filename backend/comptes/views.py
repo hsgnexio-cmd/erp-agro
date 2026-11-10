@@ -15,6 +15,7 @@ def serialize_user(user) -> dict:
         "id": user.id,
         "username": user.username,
         "first_name": user.first_name,
+        "job_title": user.job_title,
         "last_name": user.last_name,
         "is_superuser": user.is_superuser,
         "roles": sorted(user.groups.values_list("name", flat=True)),
