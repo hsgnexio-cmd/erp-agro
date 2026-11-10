@@ -124,7 +124,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 
 - Une branche par phase ou partie de phase (`phase-7b-expedition`…), petits commits, envoi sur GitHub, puis **Nicolas** crée et fusionne la pull request (rappeler de cliquer deux fois sur « Create pull request »). Ensuite : mettre `main` à jour en local et supprimer la branche fusionnée.
 - Une phase trop grosse se découpe en deux parties (4a/4b, 7a/7b), chacune avec sa pull request.
-- Tests : `docker compose exec backend pytest` (≈ 5 min) et `docker compose exec frontend npm test` ; lint `ruff` et `npm run lint` ; GitHub Actions relance tout à chaque envoi.
+- Tests : `docker compose exec backend pytest` (≈ 2 min 30, en parallèle sur tous les cœurs avec pytest-xdist ; `-n 0` pour un seul processus) et `docker compose exec frontend npm test` ; lint `ruff` et `npm run lint` ; GitHub Actions relance tout à chaque envoi.
 - Vérification dans le navigateur : Nicolas est souvent connecté avec son propre compte ; ne jamais le déconnecter ni agir avec son compte. Pour agir, utiliser le compte de test `test-verif` (le réactiver avec un mot de passe aléatoire, puis le désactiver ; il ne peut pas être supprimé car il a fait des mouvements de stock).
 
 ## 8. Phases du projet

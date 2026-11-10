@@ -462,6 +462,15 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | `check --deploy` : réglages HTTPS absents, `DEBUG` actif | Normal pour une application locale de développement ; section « Limites » du README. |
 | `npm audit` : 0 faille dans l'application ; faille modérée de `minimatch` dans l'outil de lint seulement | Pas de correction : la seule proposée revient à une ancienne version d'eslint. |
 
+## Accélération des tests (finition, 10/11/2026)
+
+| Décision | Raison |
+| --- | --- |
+| **pytest-xdist** (`-n auto` dans `pyproject.toml`) : tests répartis sur tous les cœurs, une base de test par processus | Suite complète de 7 min 19 à 2 min 25 sur le PC de Nicolas (16 cœurs) ; plus rapide aussi sur GitHub Actions (4 cœurs). Petite dépendance de développement, sans effet sur l'application. |
+| Les bases de test (« test_… ») ne redonnent pas ses droits à l'utilisateur `powerbi` après `migrate` | Power BI ne s'y connecte pas, et 16 bases créées en même temps modifiaient ce rôle commun au serveur (« tuple concurrently updated »). |
+| Le test de l'utilisateur Power BI prend un nom de rôle par processus (`powerbi_test_gw0`…) | Un rôle PostgreSQL vaut pour tout le serveur. |
+| Pas de chargement partagé des données de démonstration entre tests | Gain de quelques secondes seulement, au prix de tests qui dépendraient les uns des autres. Le temps restant est surtout fixe : création des bases (≈ 20 s) et test de l'historique (≈ 30 s). |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.

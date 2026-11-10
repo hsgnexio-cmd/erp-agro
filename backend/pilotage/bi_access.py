@@ -68,6 +68,12 @@ def create_or_update_user(name: str, password: str) -> bool:
 
 
 def refresh_grants(**kwargs) -> None:
-    """Après chaque migrate : les vues recréées retrouvent leur droit de lecture."""
+    """Après chaque migrate : les vues recréées retrouvent leur droit de lecture.
+
+    Sauf dans les bases de test (« test_… ») : Power BI ne s'y connecte pas, et les bases
+    créées en parallèle (pytest-xdist) modifieraient en même temps ce rôle commun au serveur.
+    """
+    if connection.settings_dict["NAME"].startswith("test_"):
+        return
     if connection.vendor == "postgresql" and role_exists(settings.BI_DB_USER):
         grant_read_access(settings.BI_DB_USER)

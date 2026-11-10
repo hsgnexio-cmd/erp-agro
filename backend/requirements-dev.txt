@@ -2,4 +2,6 @@
 -r requirements.txt
 pytest==9.2.0
 pytest-django==4.14.0
+# Lance les tests en parallèle sur tous les cœurs du processeur (une base de test par cœur)
+pytest-xdist==3.8.0
 ruff==0.17.3

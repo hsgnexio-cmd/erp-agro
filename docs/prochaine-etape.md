@@ -15,7 +15,7 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 2. ✅ **GitHub Actions** : vert (capture de Nicolas, 10/11/2026).
 3. ✅ **Test « comme un inconnu »** : dépôt cloné dans un dossier vierge (projet Docker `erp-inconnu`, ports 18000 / 15173 / 15432 via un `docker-compose.override.yml` local), README suivi à la lettre : tout démarre, démo chargée (≈ 4 min 30), tests verts. Corrigé : étape `git clone`, chemin générique, lancement en arrière-plan, `BI_DB_PASSWORD` à remplacer, création de l'administrateur, chargement de la démo et première connexion intégrés au premier lancement ; `creer_utilisateur_bi` refuse le mot de passe d'exemple.
 4. ✅ **Relecture générale du code** : voir `docs/decisions.md`, section « Relecture générale du code ».
-5. **Accélérer les tests** (≈ 9 min en local).
+5. ✅ **Accélérer les tests** : pytest-xdist, 7 min 19 → 2 min 25 (voir `docs/decisions.md`). ⚠️ Après la fusion, reconstruire l'image du back-end (`docker compose up -d --build`), sinon pytest ne connaît pas l'option `-n`.
 
 Ensuite : **publication** (README d'accueil avec captures d'écran et parcours de démonstration, licence, passage du dépôt en public guidé pas à pas).
 
@@ -23,7 +23,7 @@ Ensuite : **publication** (README d'accueil avec captures d'écran et parcours d
 
 Tirées des « Points en suspens » de `docs/decisions.md` :
 
-1. **Accélérer la suite de tests** (≈ 9 min) et le chargement de l'historique (≈ 6 min).
+1. Accélérer le chargement de l'historique de démonstration (≈ 4 à 6 min).
 2. Saisonnalité dans les prévisions (quand l'historique sera plus long).
 3. Formulaires React du référentiel, réservation de stock, envoi d'e-mails, « refus à quai ».
 
