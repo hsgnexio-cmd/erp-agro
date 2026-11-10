@@ -420,7 +420,7 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 
 | Décision | Raison |
 | --- | --- |
-| Chaque rôle ne **voit** que les domaines utiles à son métier ; matrice centrale `comptes/access.py` (`READ_AREAS`) | Demande de Nicolas (11/11/2026) : principe du moindre privilège, comme dans un vrai ERP. Remplace la règle « tous les rôles consultent tout » des débuts. |
+| Chaque rôle ne **voit** que les domaines utiles à son métier ; matrice centrale `comptes/access.py` (`READ_AREAS`) | Demande de Nicolas (10/11/2026) : principe du moindre privilège, comme dans un vrai ERP. Remplace la règle « tous les rôles consultent tout » des débuts. |
 | Appliquée **par le serveur** (attribut `read_area` des vues, contrôlé par `WriteRolesPermission`) ; le menu, l'accueil et les pages suivent la même matrice (`/api/auth/me/` renvoie les domaines, `auth/roles.ts`) | Cacher un écran ne suffit pas : les données d'un autre domaine sont refusées (403). Un écran hors du rôle affiche « Accès réservé ». |
 | Socle commun à tous : référentiel, lots et stocks, traçabilité et rappels | Tout le monde a besoin de l'état des lots ; un rappel produit concerne toute l'entreprise. |
 | **Prix masqués** : prix d'achat réservés à achats et direction, prix de vente à ventes et direction ; les autres voient les commandes sans les montants | Le quai réceptionne et expédie sans avoir à connaître les prix. |
