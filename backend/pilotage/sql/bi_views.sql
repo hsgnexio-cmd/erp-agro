@@ -199,17 +199,19 @@ SELECT o.id AS order_id,
        o.number AS order_number,
        o.customer_id,
        o.requested_delivery_date,
-       o.requested_delivery_date - 1 AS on_time_limit,
+       COALESCE(o.ship_by_date, o.requested_delivery_date - 1) AS on_time_limit,
        sh.shipped_date,
-       (sh.order_id IS NOT NULL OR current_date > o.requested_delivery_date - 1) AS is_counted,
-       (sh.shipped_date IS NOT NULL AND sh.shipped_date <= o.requested_delivery_date - 1)
+       (sh.order_id IS NOT NULL
+        OR current_date > COALESCE(o.ship_by_date, o.requested_delivery_date - 1)) AS is_counted,
+       (sh.shipped_date IS NOT NULL
+        AND sh.shipped_date <= COALESCE(o.ship_by_date, o.requested_delivery_date - 1))
            AS is_on_time,
        lines.ordered,
        lines.delivered,
-       CASE WHEN sh.shipped_date <= o.requested_delivery_date - 1 THEN lines.delivered
-            ELSE 0 END AS delivered_on_time,
-       CASE WHEN sh.shipped_date > o.requested_delivery_date - 1 THEN lines.delivered
-            ELSE 0 END AS delivered_late,
+       CASE WHEN sh.shipped_date <= COALESCE(o.ship_by_date, o.requested_delivery_date - 1)
+            THEN lines.delivered ELSE 0 END AS delivered_on_time,
+       CASE WHEN sh.shipped_date > COALESCE(o.ship_by_date, o.requested_delivery_date - 1)
+            THEN lines.delivered ELSE 0 END AS delivered_late,
        lines.ordered - lines.delivered AS missing
   FROM ventes_customerorder o
   JOIN lines ON lines.order_id = o.id

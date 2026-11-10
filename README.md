@@ -192,6 +192,17 @@ Menu **Prévisions** (consultation pour tous ; saisie par les rôles commercial 
 - **Versions figées** : la prévision est figée chaque lundi à 5 h (Celery) et à la demande (« Figer une version »). Une version n'est jamais modifiée.
 - **Fiabilité à S-1** : pour chaque semaine, la dernière version figée avant son lundi comparée aux quantités commandées.
 
+### Le calendrier
+
+Menu **Calendrier** : qui travaille quand (usines du lundi au vendredi, expéditions et livraisons du lundi au samedi, réceptions du lundi au vendredi), les 11 jours fériés de l'année (calculés automatiquement) et les **fermetures exceptionnelles** des sites, saisies dans l'administration (rôle admin).
+
+Ce calendrier s'applique partout :
+
+- **heure limite** : une commande reçue avant 11 h est livrable le prochain jour de livraison (le samedi compte, pas le dimanche ni les jours fériés) ; une livraison un dimanche ou un jour férié est refusée ;
+- **taux de service** : « à l'heure » = expédiée au plus tard le jour d'expédition précédent la livraison (le samedi pour un lundi) ;
+- **plan de production** et **planning** : les jours non ouvrés sont grisés, le plan n'y prévoit rien ;
+- **achats** : les délais fournisseurs sont comptés en jours ouvrés de réception.
+
 ### Le TRS des lignes
 
 - À la **déclaration de production** d'un produit fini, l'opérateur saisit la **plage de marche** de la ligne (début et fin, arrêts compris) et la **quantité rebutée** avec son motif (hors stock).

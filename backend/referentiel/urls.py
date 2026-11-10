@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
@@ -18,4 +19,7 @@ router.register("suppliers", views.SupplierViewSet)
 router.register("supplier-articles", views.SupplierArticleViewSet)
 router.register("production-lines", views.ProductionLineViewSet)
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("calendar/", views.CalendarView.as_view(), name="calendar"),
+    *router.urls,
+]

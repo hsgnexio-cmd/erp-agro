@@ -7,6 +7,7 @@ const SECTIONS = [
   { to: '/articles', title: 'Articles', text: 'Matières, semi-finis, produits finis, emballages' },
   { to: '/fournisseurs', title: 'Fournisseurs', text: 'Coordonnées, délais, audits' },
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },
+  { to: '/calendrier', title: 'Calendrier', text: 'Jours fériés, fermetures, jours travaillés' },
   { to: '/sites', title: 'Sites', text: 'Usines, plateforme, entrepôt et emplacements' },
   { to: '/commandes', title: 'Achats', text: 'Commandes fournisseurs et réceptions' },
   { to: '/besoins-achat', title: "Besoins d'achat", text: 'Calcul des besoins (MRP), propositions de commandes' },

@@ -33,6 +33,8 @@ from previsions.forecast import current_week, week_label
 from production import master_plan
 from production.models import MasterPlan, MasterPlanDay, OrderStatus, PlanStatus, ProductionOrder
 from production.orders import produced_quantity, theoretical_needs
+from referentiel import calendar
+from referentiel.calendar import Activity
 from referentiel.choices import ArticleType, SiteType, Unit
 from referentiel.models import Article, Site, SupplierArticle
 from stocks.choices import LotStatus
@@ -310,9 +312,14 @@ def compute(today: date | None = None) -> MrpResult:
                     else net
                 )
                 quantity = max(rounded, minimum or ZERO)
-                need_date = max(today, week)
+                # Phase 11 : livraison un jour de réception de l'entrepôt ; délai en jours ouvrés
+                need_date = calendar.next_open_day(max(today, week), Activity.RECEIVING)
                 order_date = (
-                    need_date - timedelta(days=link.supplier.lead_time_days) if link else None
+                    calendar.add_open_days(
+                        need_date, -link.supplier.lead_time_days, Activity.RECEIVING
+                    )
+                    if link
+                    else None
                 )
                 price = current_price(link, today) if link else None
                 proposals.append(
@@ -390,13 +397,15 @@ def create_orders(selections: list[dict], *, user=None) -> list:
         groups.items(), key=lambda item: (item[0][1], suppliers[item[0][0]].code)
     ):
         supplier = suppliers[supplier_id]
-        earliest = today + timedelta(days=supplier.lead_time_days)
+        earliest = calendar.add_open_days(today, supplier.lead_time_days, Activity.RECEIVING)
         created.append(
             create_purchase_order(
                 supplier=supplier,
                 delivery_site=site,
                 order_date=today,
-                expected_delivery_date=max(earliest, week),
+                expected_delivery_date=max(
+                    earliest, calendar.next_open_day(week, Activity.RECEIVING)
+                ),
                 comment=f"{COMMENT}, besoin de la semaine {week_label(week)}",
                 lines=lines,
                 user=user if user is not None and user.is_authenticated else None,

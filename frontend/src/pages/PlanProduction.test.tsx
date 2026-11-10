@@ -47,6 +47,7 @@ function plan(overrides: Partial<MasterPlan> = {}): MasterPlan {
           production_order: null,
           production_order_number: null,
           deviation: '',
+          closed: '',
         })),
       },
     ],
@@ -54,7 +55,12 @@ function plan(overrides: Partial<MasterPlan> = {}): MasterPlan {
       {
         line: 1,
         line_code: 'L1',
-        cells: DAYS.map((day, index) => ({ day, hours: index === 0 ? '17.0' : '0.7', overload: index === 0 })),
+        cells: DAYS.map((day, index) => ({
+          day,
+          hours: index === 0 ? '17.0' : '0.7',
+          overload: index === 0,
+          closed: '',
+        })),
       },
     ],
     ...overrides,
@@ -137,6 +143,17 @@ describe('Plan de production', () => {
     await screen.findByText('PF-PAT-LASBOL-BRE-300')
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Recalculer' })).not.toBeInTheDocument()
+  })
+
+  it('grise un jour férié et n’y propose pas de saisie', async () => {
+    const holiday = plan()
+    holiday.items[0].days[2] = { ...holiday.items[0].days[2], quantity: '0.000', closed: 'férié (Armistice 1918)' }
+    mockPlan(PRODUCTION, holiday)
+    renderApp('/plan-production')
+    const label = await screen.findByText('férié (Armistice 1918)')
+    expect(label.closest('td')).toHaveClass('closed-day')
+    expect(screen.queryByLabelText('PF-PAT-LASBOL-BRE-300 2026-11-18')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('PF-PAT-LASBOL-BRE-300 2026-11-17')).toBeInTheDocument()
   })
 
   it('propose de calculer quand la semaine n’a pas encore de plan', async () => {

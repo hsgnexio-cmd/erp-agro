@@ -253,8 +253,14 @@ function PlanTable(props: {
               </td>
               <td className="num">{formatDecimal(item.proposed_quantity)}</td>
               {item.days.map((entry) => (
-                <td key={entry.day} className="num">
-                  {editable ? (
+                <td
+                  key={entry.day}
+                  className={`num${entry.closed ? ' closed-day' : ''}`}
+                  title={entry.closed ? `Usine fermée : ${entry.closed}` : undefined}
+                >
+                  {entry.closed && Number(entry.quantity) === 0 ? (
+                    <small className="closed-label">{entry.closed}</small>
+                  ) : editable ? (
                     <input
                       key={`${entry.day}-${entry.quantity}`}
                       type="number"
@@ -391,8 +397,10 @@ function LoadTable({ plan }: { plan: MasterPlan }) {
               <tr key={row.line}>
                 <td>{row.line_code}</td>
                 {row.cells.map((cell) => (
-                  <td key={cell.day} className="num">
-                    {cell.overload ? (
+                  <td key={cell.day} className={`num${cell.closed ? ' closed-day' : ''}`}>
+                    {cell.closed && cell.hours === '0.0' ? (
+                      <small className="closed-label">fermé</small>
+                    ) : cell.overload ? (
                       <span className="badge badge-danger" title="Surcharge">
                         {formatDecimal(cell.hours)} h
                       </span>

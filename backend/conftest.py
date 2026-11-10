@@ -18,6 +18,21 @@ from referentiel.models import (
 )
 
 
+@pytest.fixture(autouse=True)
+def seven_day_calendar(request, monkeypatch):
+    """Calendrier 7 jours sur 7, sans jour férié, pour les tests (phase 11).
+
+    Les tests des autres règles utilisent des dates relatives (« demain », « dans 2 jours ») :
+    sans cela, ils échoueraient la veille d'un week-end ou d'un jour férié. Les tests du
+    calendrier lui-même portent la marque `@pytest.mark.calendrier`.
+    """
+    if request.node.get_closest_marker("calendrier"):
+        return
+    from referentiel import calendar
+
+    monkeypatch.setattr(calendar, "closed_reason", lambda day, activity, site=None: "")
+
+
 @pytest.fixture
 def make_user(db):
     """Crée un utilisateur avec un rôle : make_user("qualite")."""

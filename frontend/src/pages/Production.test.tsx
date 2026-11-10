@@ -201,6 +201,7 @@ describe('Planning', () => {
           cells: [
             {
               date: '2026-11-02',
+              closed: '',
               hours: '16.0',
               warnings: ['Surcharge : 16.0 h prévues pour 15 h disponibles.'],
               orders: [
@@ -219,6 +220,7 @@ describe('Planning', () => {
             },
             ...['03', '04', '05', '06', '07', '08'].map((day) => ({
               date: `2026-11-${day}`,
+              closed: ['07', '08'].includes(day) ? 'week-end' : '',
               hours: '0',
               warnings: [],
               orders: [],

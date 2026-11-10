@@ -68,8 +68,10 @@ export function PlanningPage() {
                     {line.cells.map((cell) => (
                       <td
                         key={cell.date}
-                        className={`planning-cell ${cell.warnings.length > 0 ? 'has-warning' : ''}`}
+                        className={`planning-cell ${cell.warnings.length > 0 ? 'has-warning' : ''} ${cell.closed ? 'closed-day' : ''}`}
+                        title={cell.closed ? `Usine fermée : ${cell.closed}` : undefined}
                       >
+                        {cell.closed && cell.orders.length === 0 && <small className="closed-label">{cell.closed}</small>}
                         {cell.orders.map((order) => (
                           <div key={order.id} className="planning-order">
                             <Link to={`/production/${order.id}`}>{order.number}</Link>{' '}

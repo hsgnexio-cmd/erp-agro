@@ -120,6 +120,8 @@ export interface PlanningOrder {
 
 export interface PlanningCell {
   date: string
+  /** Jour non ouvré de l'usine (« week-end », « férié (Noël) »…) ; vide si ouvré */
+  closed: string
   hours: string
   warnings: string[]
   orders: PlanningOrder[]
@@ -148,6 +150,8 @@ export interface MasterPlanDay {
   production_order_number: string | null
   /** Écart entre le plan figé et l'OF actuel (vide si aucun) */
   deviation: string
+  /** Jour non ouvré de l'usine de la ligne ; vide si ouvré */
+  closed: string
 }
 
 export interface MasterPlanItem {
@@ -196,7 +200,11 @@ export interface MasterPlan {
   days: string[]
   capacity_hours: string
   items: MasterPlanItem[]
-  load: { line: number; line_code: string; cells: { day: string; hours: string; overload: boolean }[] }[]
+  load: {
+    line: number
+    line_code: string
+    cells: { day: string; hours: string; overload: boolean; closed: string }[]
+  }[]
   /** Produits écartés du calcul (renvoyé seulement après un calcul) */
   skipped?: string[]
 }
