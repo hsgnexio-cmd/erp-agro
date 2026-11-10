@@ -40,7 +40,9 @@ def test_le_cookie_csrf_est_depose(db):
 
 
 def test_connexion_depuis_le_front_end_avec_protection_csrf(make_user):
-    """Le navigateur envoie l'origine http://localhost:5173 : elle doit être acceptée."""
+    """Le navigateur envoie l'adresse du front-end (DJANGO_CSRF_TRUSTED_ORIGINS du .env,
+    http://localhost:5173 par défaut) : elle doit être acceptée."""
+    from django.conf import settings
     from django.test import Client
 
     make_user(username="claire")
@@ -52,7 +54,7 @@ def test_connexion_depuis_le_front_end_avec_protection_csrf(make_user):
         content_type="application/json",
         headers={
             "X-CSRFToken": client.cookies["csrftoken"].value,
-            "Origin": "http://localhost:5173",
+            "Origin": settings.CSRF_TRUSTED_ORIGINS[0],
         },
     )
     assert response.status_code == 200

@@ -68,6 +68,8 @@ def test_relancer_change_le_mot_de_passe_sans_doublon(bi_role):
 def test_mot_de_passe_obligatoire(db):
     with pytest.raises(ValidationError, match="au moins 12 caractères"):
         create_or_update_user(ROLE, "court")
+    with pytest.raises(ValidationError, match="valeur d'exemple"):
+        create_or_update_user(ROLE, "change-moi-aussi")
     with override_settings(BI_DB_USER=ROLE, BI_DB_PASSWORD=""):
         with pytest.raises(CommandError, match="BI_DB_PASSWORD"):
             call_command("creer_utilisateur_bi")

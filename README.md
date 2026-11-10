@@ -34,13 +34,23 @@ Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-ent
 
 ## Premier lancement
 
-Toutes les commandes se tapent dans **PowerShell**, depuis le dossier du projet.
+Toutes les commandes se tapent dans **PowerShell**. Compter environ 15 minutes la première fois (téléchargements et données de démonstration).
 
-1. Se placer dans le dossier du projet :
+1. Télécharger le projet, puis entrer dans son dossier (ici dans `Documents`, n'importe quel dossier convient) :
 
    ```powershell
-   cd C:\Users\nicol\Projets\erp-agro
+   cd $HOME\Documents
    ```
+
+   ```powershell
+   git clone https://github.com/hsgnexio-cmd/erp-agro.git
+   ```
+
+   ```powershell
+   cd erp-agro
+   ```
+
+   Toutes les commandes suivantes se lancent depuis ce dossier `erp-agro`.
 
 2. Créer le fichier `.env` à partir du modèle (à faire une seule fois) :
 
@@ -48,19 +58,37 @@ Toutes les commandes se tapent dans **PowerShell**, depuis le dossier du projet.
    Copy-Item .env.example .env
    ```
 
-3. Ouvrir `.env` et remplacer `DJANGO_SECRET_KEY` et `POSTGRES_PASSWORD` par des valeurs aléatoires. Cette commande génère une chaîne aléatoire à copier-coller :
+3. Ouvrir `.env` (par exemple avec `notepad .env`) et remplacer les trois valeurs qui commencent par `change-moi` : `POSTGRES_PASSWORD`, `BI_DB_PASSWORD` et `DJANGO_SECRET_KEY`. Cette commande génère une chaîne aléatoire à copier-coller (la relancer pour chaque valeur) :
 
    ```powershell
    -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 50 | ForEach-Object { [char]$_ })
    ```
 
-4. Construire et lancer tous les conteneurs :
+   `DEMO_USERS_PASSWORD` (mot de passe des comptes de démonstration) peut rester tel quel.
+
+4. Construire et lancer tous les conteneurs en arrière-plan (Docker Desktop doit être ouvert) :
 
    ```powershell
-   docker compose up --build
+   docker compose up -d --build
    ```
 
-   Le premier lancement prend quelques minutes. Les logs de tous les services s'affichent dans la fenêtre. Pour arrêter, appuie sur `Ctrl + C`.
+   Le premier lancement prend quelques minutes. Attendre ensuite une trentaine de secondes que la base soit prête : `docker compose ps` doit afficher les 6 services `running`.
+
+5. Créer le compte administrateur (Django demande un nom, un e-mail facultatif et un mot de passe ; rien ne s'affiche pendant la saisie du mot de passe, c'est normal) :
+
+   ```powershell
+   docker compose exec backend python manage.py createsuperuser
+   ```
+
+6. Charger les données de démonstration et l'équipe fictive (environ 6 minutes) :
+
+   ```powershell
+   docker compose exec backend python manage.py charger_donnees_demo
+   ```
+
+7. Ouvrir http://localhost:5173 et se connecter, par exemple avec `helene.morvan` (directrice générale) et le mot de passe `DEMO_USERS_PASSWORD` du fichier `.env`. Les autres comptes sont présentés plus bas (« L'équipe de démonstration »).
+
+Si une commande répond qu'un port est déjà utilisé (5432, 8000 ou 5173), un autre logiciel l'occupe : pour la base, changer `POSTGRES_HOST_PORT` dans `.env` ; pour les autres, fermer le logiciel concerné.
 
 ## Utilisation au quotidien
 
@@ -96,7 +124,7 @@ docker compose up -d --build --renew-anon-volumes
 
 ## Compte administrateur
 
-Créer un compte administrateur Django (à faire une fois) :
+Créé à l'étape 5 du premier lancement. Pour en créer un autre :
 
 ```powershell
 docker compose exec backend python manage.py createsuperuser
