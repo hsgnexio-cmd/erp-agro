@@ -1,0 +1,97 @@
+table fact_line_stop
+	lineageTag: d70fa14a-c593-4864-92e0-1cc0b06c3cce
+
+	column stop_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 392c349e-9c2a-49dc-b180-4dc94c10d061
+		summarizeBy: none
+		sourceColumn: stop_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: a2b5605c-cbbf-4e75-8160-602834c733a0
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column line_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 333e5659-43e5-4340-bb20-51ba26878ec1
+		summarizeBy: none
+		sourceColumn: line_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column line_code
+		dataType: string
+		lineageTag: 27b9d35d-e8f6-4862-897f-fd1f2abf75ad
+		summarizeBy: none
+		sourceColumn: line_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: ba21fd56-5409-49b8-a634-11546c8e1dd5
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: 324605ec-8bf1-4291-8f16-3888529ab475
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_planned
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 120edd91-1f3c-4903-b0d2-a61bc9b329c8
+		summarizeBy: none
+		sourceColumn: is_planned
+
+		annotation SummarizationSetBy = Automatic
+
+	column duration_hours
+		dataType: double
+		lineageTag: 0cce7034-aaf1-4843-9014-a3d29455ca67
+		summarizeBy: sum
+		sourceColumn: duration_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column production_order_number
+		dataType: string
+		lineageTag: 9b7f3929-6061-42cd-90fa-a3a61ba40d2e
+		summarizeBy: none
+		sourceColumn: production_order_number
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_line_stop = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_line_stop = Source{[Schema="bi",Item="fact_line_stop"]}[Data]
+				in
+				    bi_fact_line_stop
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

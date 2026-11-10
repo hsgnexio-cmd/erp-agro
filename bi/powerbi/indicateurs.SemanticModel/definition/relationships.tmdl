@@ -87,3 +87,42 @@ relationship 540b37ce-9b8a-f0ed-5214-65bde47d46ba
 	fromColumn: fact_recall.date
 	toColumn: dim_date.date
 
+relationship 42aeb430-0644-49f6-a0e0-ff7168182ab2
+	fromColumn: fact_forecast_accuracy.week_start
+	toColumn: dim_date.date
+
+relationship f1ff3fcf-b8b8-4c1d-bb00-f24bb360d1d8
+	fromColumn: fact_forecast_accuracy.customer_id
+	toColumn: dim_customer.customer_id
+
+relationship 60a7fcae-8c1a-4f80-a4d9-f3fe3937e458
+	fromColumn: fact_forecast_accuracy.article_id
+	toColumn: dim_article.article_id
+
+relationship 5924c61c-4147-4523-8682-fd5cd4a20afb
+	fromColumn: fact_forecast.week_start
+	toColumn: dim_date.date
+
+relationship 8512d94c-712a-4377-bb1f-e2c2f1a717d4
+	fromColumn: fact_forecast.customer_id
+	toColumn: dim_customer.customer_id
+
+relationship 9a2e5d22-bd92-44fc-b775-7b38153daf2a
+	fromColumn: fact_forecast.article_id
+	toColumn: dim_article.article_id
+
+relationship 8aedd3e8-8049-41b4-9ee9-8908c361e8cb
+	fromColumn: fact_line_time.date
+	toColumn: dim_date.date
+
+relationship cdbcb9bb-26cc-4a8b-aeb1-2e575f471530
+	fromColumn: fact_line_time.site_id
+	toColumn: dim_site.site_id
+
+relationship 7bb12a0e-1a1c-43f6-86ca-5fa8172c86a0
+	fromColumn: fact_line_stop.date
+	toColumn: dim_date.date
+
+relationship 6966aaf8-c885-400f-93ed-02d241b75c2d
+	fromColumn: fact_line_stop.site_id
+	toColumn: dim_site.site_id

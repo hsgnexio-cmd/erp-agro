@@ -1,0 +1,128 @@
+table fact_forecast
+	lineageTag: f9fc81b0-992a-4133-b8d5-768e5ad2ec14
+
+	column forecast_line_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 21c426da-d190-4500-80a7-0ee68a55a4c7
+		summarizeBy: none
+		sourceColumn: forecast_line_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column version_number
+		dataType: string
+		lineageTag: 65105849-a365-4a3f-bbc3-e33d0ae31760
+		summarizeBy: none
+		sourceColumn: version_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column version_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 6f42c5b8-c0db-4c81-add8-e257604a24cb
+		summarizeBy: none
+		sourceColumn: version_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column version_source
+		dataType: string
+		lineageTag: 4ae50ed8-b410-4973-aa16-4b0fc15e23a2
+		summarizeBy: none
+		sourceColumn: version_source
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_start
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 780aca58-4f80-4ed8-89ae-3dd51386cc14
+		summarizeBy: none
+		sourceColumn: week_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column week_label
+		dataType: string
+		lineageTag: 650c448e-e411-44d5-a217-429d288b2fbb
+		summarizeBy: none
+		sourceColumn: week_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e4991b55-0e96-4b0d-8aae-a57060d0dbbc
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 162c711b-dbe6-40ad-8a7e-e52c20b3ca45
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column base_quantity
+		dataType: double
+		lineageTag: 343ec4d2-f8f9-47b4-9254-717100ba86a7
+		summarizeBy: sum
+		sourceColumn: base_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column promo_coefficient
+		dataType: double
+		lineageTag: 3a3c972e-bd49-42d3-ac9b-aad0289c4dfc
+		summarizeBy: sum
+		sourceColumn: promo_coefficient
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column is_adjusted
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d934d95d-5b90-4f29-83a0-a97d8d191ae4
+		summarizeBy: none
+		sourceColumn: is_adjusted
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity
+		dataType: double
+		lineageTag: 6a46a388-7466-48cf-8f57-eab4de0257c7
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_forecast = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_forecast = Source{[Schema="bi",Item="fact_forecast"]}[Data]
+				in
+				    bi_fact_forecast
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

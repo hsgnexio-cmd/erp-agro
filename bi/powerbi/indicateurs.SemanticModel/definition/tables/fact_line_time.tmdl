@@ -1,0 +1,152 @@
+table fact_line_time
+	lineageTag: f086a68b-8836-49e7-91e9-2b87a1933d30
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d1395341-b59a-4890-b0cf-1c3aa7585581
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column line_id
+		dataType: int64
+		formatString: 0
+		lineageTag: f8707a7a-e030-41f3-b536-5ce2625abc3d
+		summarizeBy: none
+		sourceColumn: line_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column line_code
+		dataType: string
+		lineageTag: 4e6811cc-9f1a-4242-b16a-cee9f26d9aac
+		summarizeBy: none
+		sourceColumn: line_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column site_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e0a2276e-1c5d-463e-bebe-30920add89b3
+		summarizeBy: none
+		sourceColumn: site_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column capacity_per_hour
+		dataType: int64
+		formatString: 0
+		lineageTag: e3a8e532-132b-43dc-90c7-84589ca9eeb2
+		summarizeBy: none
+		sourceColumn: capacity_per_hour
+
+		annotation SummarizationSetBy = Automatic
+
+	column opening_hours
+		dataType: double
+		lineageTag: 2e4fa334-2630-48b1-b572-f0c2d5a4223a
+		summarizeBy: sum
+		sourceColumn: opening_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column planned_stop_hours
+		dataType: double
+		lineageTag: 242e05a6-367e-46ec-bf58-b496b1856340
+		summarizeBy: sum
+		sourceColumn: planned_stop_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column unplanned_stop_hours
+		dataType: double
+		lineageTag: cbfc8c92-2894-4f08-ad91-da2f7b052681
+		summarizeBy: sum
+		sourceColumn: unplanned_stop_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column required_hours
+		dataType: double
+		lineageTag: 6042e525-e0e4-4f55-957a-eeb1c0bc8968
+		summarizeBy: sum
+		sourceColumn: required_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column operating_hours
+		dataType: double
+		lineageTag: c495549c-478e-421c-9ed8-91a4542d333b
+		summarizeBy: sum
+		sourceColumn: operating_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column produced
+		dataType: double
+		lineageTag: 43daf8f3-657f-4c92-9b4d-9625598b3f0b
+		summarizeBy: sum
+		sourceColumn: produced
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column scrap
+		dataType: double
+		lineageTag: 4c87eac6-df14-40a3-bbba-b6f7a957361e
+		summarizeBy: sum
+		sourceColumn: scrap
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column net_hours
+		dataType: double
+		lineageTag: d0a988b4-0fd6-43f8-9e25-881bd1e7d997
+		summarizeBy: sum
+		sourceColumn: net_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column useful_hours
+		dataType: double
+		lineageTag: 96db4fbc-12e9-4fbc-a90d-48c700f5116a
+		summarizeBy: sum
+		sourceColumn: useful_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_line_time = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_line_time = Source{[Schema="bi",Item="fact_line_time"]}[Data]
+				in
+				    bi_fact_line_time
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
