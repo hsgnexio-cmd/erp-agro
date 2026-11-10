@@ -10,6 +10,8 @@ from django.db import connection
 from psycopg import sql
 
 MIN_PASSWORD_LENGTH = 12
+# Début des valeurs d'exemple de .env.example, à remplacer avant usage
+EXAMPLE_PREFIX = "change-moi"
 
 GRANTS = [
     "GRANT CONNECT ON DATABASE {db} TO {role}",
@@ -45,6 +47,11 @@ def create_or_update_user(name: str, password: str) -> bool:
         raise ValidationError(
             f"Mot de passe de l'utilisateur {name} trop court ou absent : mets au moins "
             f"{MIN_PASSWORD_LENGTH} caractères dans BI_DB_PASSWORD (fichier .env)."
+        )
+    if password.startswith(EXAMPLE_PREFIX):
+        raise ValidationError(
+            "BI_DB_PASSWORD contient encore la valeur d'exemple de .env.example : remplace-la "
+            "par un vrai mot de passe dans le fichier .env (voir README)."
         )
     created = not role_exists(name)
     verb = (
