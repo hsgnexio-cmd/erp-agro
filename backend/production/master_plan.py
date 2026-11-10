@@ -28,6 +28,8 @@ from django.utils import timezone
 
 from previsions import forecast as sales_forecast
 from previsions.models import ForecastVersion
+from referentiel import calendar
+from referentiel.calendar import Activity
 from referentiel.choices import ArticleType
 from referentiel.models import Article, ProductionLine
 from referentiel.services import line_accepts
@@ -69,6 +71,16 @@ def round_up_to_case(quantity: Decimal) -> Decimal:
     if quantity <= 0:
         return ZERO
     return (quantity / CASE_SIZE).to_integral_value(rounding=ROUND_CEILING) * CASE_SIZE
+
+
+def closed_reason(day: date, line: ProductionLine) -> str:
+    """Raison pour laquelle l'usine de la ligne ne fabrique pas ce jour-là (vide si ouvré)."""
+    return calendar.closed_reason(day, Activity.PRODUCTION, line.site.code)
+
+
+def production_days(week: date, line: ProductionLine) -> list[date]:
+    """Jours ouvrés de l'usine de la ligne dans la semaine (hors fériés et fermetures)."""
+    return [day for day in work_days(week) if not closed_reason(day, line)]
 
 
 def split_over_days(quantity: Decimal, days: list[date]) -> dict[date, Decimal]:
@@ -310,8 +322,11 @@ def compute_plan(week: date, *, user=None, at: datetime | None = None):
             projected_stock=calc.projected_stock,
             proposed_quantity=calc.proposed_quantity,
         )
-        for day, quantity in split_over_days(calc.proposed_quantity, work_days(week)).items():
-            MasterPlanDay.objects.create(item=item, day=day, quantity=quantity)
+        # Phase 11 : réparti sur les jours ouvrés de l'usine ; zéro les jours fériés ou fermés
+        open_days = production_days(week, calc.line) or work_days(week)
+        split = split_over_days(calc.proposed_quantity, open_days)
+        for day in work_days(week):
+            MasterPlanDay.objects.create(item=item, day=day, quantity=split.get(day, ZERO))
     return plan, skipped
 
 
@@ -327,9 +342,14 @@ def set_quantity(plan: MasterPlan, *, article: Article, day: date, quantity: Dec
         raise ValidationError("L'usine fabrique du lundi au vendredi de la semaine du plan.")
     if quantity is None or quantity < 0:
         raise ValidationError({"quantity": "La quantité ne peut pas être négative."})
-    item = plan.items.filter(article=article).first()
+    item = plan.items.select_related("line__site").filter(article=article).first()
     if item is None:
         raise ValidationError(f"{article.code} n'est pas dans le plan : ajoute-le d'abord.")
+    reason = closed_reason(day, item.line)
+    if reason and quantity > 0:
+        raise ValidationError(
+            f"L'usine {item.line.site.code} ne fabrique pas le {calendar.describe(day)} ({reason})."
+        )
     entry, _ = MasterPlanDay.objects.get_or_create(
         item=item, day=day, defaults={"quantity": quantity}
     )
@@ -445,8 +465,10 @@ def line_load(plan: MasterPlan) -> list[dict]:
         cells = []
         for day in work_days(plan.week):
             value = hours[(line.pk, day)].quantize(Decimal("0.1"))
+            closed = closed_reason(day, line)
+            capacity = ZERO if closed else planning.DAILY_CAPACITY_HOURS
             cells.append(
-                {"day": day, "hours": value, "overload": value > planning.DAILY_CAPACITY_HOURS}
+                {"day": day, "hours": value, "overload": value > capacity, "closed": closed}
             )
         result.append({"line": line, "cells": cells})
     return result

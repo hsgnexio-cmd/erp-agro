@@ -156,6 +156,7 @@ class PlanningView(APIView):
                         "cells": [
                             {
                                 "date": cell["date"],
+                                "closed": cell["closed"],
                                 "hours": str(cell["hours"]),
                                 "warnings": cell["warnings"],
                                 "orders": [
@@ -190,7 +191,7 @@ def _dec(value) -> str | None:
 
 
 def _plan_detail(plan: MasterPlan) -> dict:
-    items = plan.items.select_related("article", "line").prefetch_related(
+    items = plan.items.select_related("article", "line__site").prefetch_related(
         "days__production_order__line"
     )
     return {
@@ -233,6 +234,7 @@ def _plan_detail(plan: MasterPlan) -> dict:
                             entry.production_order.number if entry.production_order else None
                         ),
                         "deviation": master_plan.deviation(entry),
+                        "closed": master_plan.closed_reason(entry.day, item.line),
                     }
                     for entry in sorted(item.days.all(), key=lambda value: value.day)
                 ],
@@ -244,7 +246,12 @@ def _plan_detail(plan: MasterPlan) -> dict:
                 "line": row["line"].id,
                 "line_code": row["line"].code,
                 "cells": [
-                    {"day": cell["day"], "hours": str(cell["hours"]), "overload": cell["overload"]}
+                    {
+                        "day": cell["day"],
+                        "hours": str(cell["hours"]),
+                        "overload": cell["overload"],
+                        "closed": cell["closed"],
+                    }
                     for cell in row["cells"]
                 ],
             }

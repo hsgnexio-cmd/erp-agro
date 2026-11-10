@@ -4,6 +4,8 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from qualite.services import compute_allergens
+from referentiel import calendar
+from referentiel.calendar import Activity
 from referentiel.models import ProductionLine
 
 from .models import OrderStatus, ProductionOrder
@@ -59,7 +61,12 @@ def week_planning(week_start: date, site_code: str | None = None) -> dict:
             cell_orders = by_cell.get((line.pk, day), [])
             hours = sum((order_hours(o) for o in cell_orders), Decimal("0"))
             warnings = []
-            if hours > DAILY_CAPACITY_HOURS:
+            # Phase 11 : jour non ouvré de l'usine (week-end, férié, fermeture) : capacité nulle,
+            # un OF y reste possible (heures supplémentaires) mais il est signalé
+            closed = calendar.closed_reason(day, Activity.PRODUCTION, line.site.code)
+            if closed and cell_orders:
+                warnings.append(f"Jour non ouvré ({closed}) : OF à confirmer ou à déplacer.")
+            elif hours > DAILY_CAPACITY_HOURS:
                 capacity = _fr(DAILY_CAPACITY_HOURS)
                 warnings.append(
                     f"Surcharge : {_fr(hours)} h prévues pour {capacity} h disponibles."
@@ -76,6 +83,7 @@ def week_planning(week_start: date, site_code: str | None = None) -> dict:
             cells.append(
                 {
                     "date": day,
+                    "closed": closed,
                     "hours": hours,
                     "orders": [
                         {

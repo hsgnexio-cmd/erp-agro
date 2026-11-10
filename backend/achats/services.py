@@ -1,6 +1,6 @@
 """Règles métier des achats et des réceptions."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 
 from django.apps import apps
@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from referentiel.calendar import Activity, add_open_days
 from referentiel.choices import TemperatureClass
 from stocks.services import check_location_compatible, receive_lot
 
@@ -82,8 +83,9 @@ def validate_purchase_order(order) -> None:
     if order.delivery_site_id and not order.delivery_site.active:
         errors["delivery_site"] = "Ce site est inactif."
     if order.supplier_id and order.order_date and not order.expected_delivery_date:
-        order.expected_delivery_date = order.order_date + timedelta(
-            days=order.supplier.lead_time_days
+        # Phase 11 : délai fournisseur en jours ouvrés de réception (entrepôt, lundi-vendredi)
+        order.expected_delivery_date = add_open_days(
+            order.order_date, order.supplier.lead_time_days, Activity.RECEIVING
         )
     if (
         order.expected_delivery_date
