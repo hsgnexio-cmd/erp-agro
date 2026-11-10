@@ -66,7 +66,7 @@ from stocks.choices import LotStatus, UnsoldDestination
 from stocks.models import Lot
 from ventes import orders as sales
 from ventes import shipping
-from ventes.models import CustomerOrder, CustomerOrderLine, OrderSource
+from ventes.models import CustomerOrder, CustomerOrderLine, OrderSource, OrderStatus
 
 # Six semaines : il faut quelques semaines de commandes avant que les prévisions figées
 # puissent être comparées aux commandes réelles (fiabilité à S-1 sur trois semaines)
@@ -108,7 +108,7 @@ FRESH_MAX_COVER_DAYS = 4
 OTHER_COVER_DAYS = 24
 # Navette entrepôt → usine : jusqu'à 3 jours de besoin d'un coup
 FACTORY_SUPPLY_DAYS = 3
-NON_COMPLIANT_RATE = 0.03
+NON_COMPLIANT_RATE = 0.02
 
 # Incidents volontaires : (jour de l'historique, …)
 BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : production arrêtée après 30 min")
@@ -347,6 +347,7 @@ class History:
                     received = self._receive_customer_orders(day)
                 with simulated_clock(_at(day, 15)):
                     self._ship(offset, received)
+                    self._ship_pending(day)
             with simulated_clock(_at(day, 19)):
                 self._dispose_unsellable(day)
                 self._destroy_expired_materials(day)
@@ -697,6 +698,26 @@ class History:
                 temperature = Decimal(self.rng.choice(["2.1", "2.6", "3.0", "3.4"]))
                 shipping.ship_order(
                     shipment, carrier="Transports Frigo Atlantique", temperature=temperature
+                )
+
+    def _ship_pending(self, day: date) -> None:
+        """Commandes des autres données de démonstration (EDI des derniers jours…) arrivées à
+        leur date limite d'expédition : la plateforme les expédie aussi. Celles reçues
+        aujourd'hui restent à préparer dans l'application."""
+        pending = (
+            CustomerOrder.objects.filter(
+                status=OrderStatus.RECEIVED,
+                ship_by_date=day,
+                received_at__lte=timezone.now(),
+            )
+            .exclude(customer_reference__startswith=f"{REFERENCE}-")
+            .select_related("customer")
+        )
+        for order in pending:
+            shipment = self._prepare(order)
+            if shipment is not None:
+                shipping.ship_order(
+                    shipment, carrier="Transports Frigo Atlantique", temperature=Decimal("2.8")
                 )
 
     def _ship_delayed(self, day: date) -> None:
