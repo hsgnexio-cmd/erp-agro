@@ -9,7 +9,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
-annotation PBI_QueryOrder = ["dim_article","dim_customer","dim_date","dim_site","fact_production_yield","fact_recall","fact_reception","fact_sales","fact_stock_daily","fact_service","fact_stock_movement","Mesures"]
+annotation PBI_QueryOrder = ["dim_article","dim_customer","dim_date","dim_site","fact_production_yield","fact_recall","fact_reception","fact_sales","fact_stock_daily","fact_service","fact_stock_movement","fact_forecast","fact_forecast_accuracy","fact_line_time","fact_line_stop","Mesures"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
@@ -28,6 +28,10 @@ ref table LocalDateTable_fe322f8c-f79d-429b-92c0-b01cef6d637b
 ref table LocalDateTable_203dcb15-e790-44cb-a2a9-d19400ca2234
 ref table fact_stock_movement
 ref table LocalDateTable_c97e0756-b3dc-4305-9be4-9ca78d9341b6
+ref table fact_forecast
+ref table fact_forecast_accuracy
+ref table fact_line_time
+ref table fact_line_stop
 ref table Mesures
 
 ref cultureInfo fr-FR

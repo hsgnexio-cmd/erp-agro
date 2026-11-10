@@ -1,0 +1,100 @@
+table fact_forecast_accuracy
+	lineageTag: 3b1ced2f-3820-4468-88b0-b79e88c35653
+
+	column week_start
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 3bc2b4cc-8c2f-407f-a67e-acacbde8f51a
+		summarizeBy: none
+		sourceColumn: week_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column week_label
+		dataType: string
+		lineageTag: 93d33224-4044-4727-a8d6-5ef709f91f15
+		summarizeBy: none
+		sourceColumn: week_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_complete
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c6bb3e78-3ad1-422d-8d56-141641d7881f
+		summarizeBy: none
+		sourceColumn: is_complete
+
+		annotation SummarizationSetBy = Automatic
+
+	column version_number
+		dataType: string
+		lineageTag: 8737eeea-01a7-443c-8239-1953a4c53bc8
+		summarizeBy: none
+		sourceColumn: version_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 574fa45b-824f-4954-bb55-0e5fbf9a4198
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column article_id
+		dataType: int64
+		formatString: 0
+		lineageTag: b8d5a9da-4c7a-45e6-ad22-1bff7bbf602a
+		summarizeBy: none
+		sourceColumn: article_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column forecast_quantity
+		dataType: double
+		lineageTag: a686e56c-dd23-4bca-b76b-eee7c8e9f141
+		summarizeBy: sum
+		sourceColumn: forecast_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column actual_quantity
+		dataType: double
+		lineageTag: 4d66f0e9-5fd8-4a6a-a315-4f48c325081e
+		summarizeBy: sum
+		sourceColumn: actual_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column abs_error
+		dataType: double
+		lineageTag: 38174f68-d3fb-4569-9d52-8216314e83ad
+		summarizeBy: sum
+		sourceColumn: abs_error
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_forecast_accuracy = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database("localhost", "erp_agro"),
+				    bi_fact_forecast_accuracy = Source{[Schema="bi",Item="fact_forecast_accuracy"]}[Data]
+				in
+				    bi_fact_forecast_accuracy
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
