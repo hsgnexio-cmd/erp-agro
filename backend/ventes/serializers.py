@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.utils import timezone
 from rest_framework import serializers
 
+from comptes.access import mask_prices
 from referentiel.models import Article, Customer, CustomerWarehouse, Location
 from stocks.models import Lot
 
@@ -118,6 +119,13 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
 
     def get_to_be_priced(self, order) -> bool:
         return any(line.unit_price is None for line in order.lines.all())
+
+    def to_representation(self, order):
+        # Prix de vente masqués pour les rôles qui ne les voient pas (quai, qualité)
+        return mask_prices(
+            super().to_representation(order), self.context.get("request"), "prix_vente",
+            ("total_amount",), ("unit_price", "amount"),
+        )  # fmt: skip
 
 
 class CustomerOrderDetailSerializer(CustomerOrderSerializer):

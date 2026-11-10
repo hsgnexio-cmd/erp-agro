@@ -416,6 +416,31 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Comptes créés par `charger_donnees_demo` (et `creer_comptes_demo`), relançables : un compte existant n'est jamais modifié | Un visiteur qui teste le projet a tout de suite une équipe ; un mot de passe changé par l'utilisateur n'est pas écrasé. |
 | Mot de passe commun **`DEMO_USERS_PASSWORD`** dans le `.env` (8 caractères au moins, sinon aucun compte créé) | Jamais de mot de passe dans le code ; comptes de test uniquement. Le compte administrateur reste créé à part (`createsuperuser`). |
 
+## Accès en lecture selon le rôle (moindre privilège)
+
+| Décision | Raison |
+| --- | --- |
+| Chaque rôle ne **voit** que les domaines utiles à son métier ; matrice centrale `comptes/access.py` (`READ_AREAS`) | Demande de Nicolas (11/11/2026) : principe du moindre privilège, comme dans un vrai ERP. Remplace la règle « tous les rôles consultent tout » des débuts. |
+| Appliquée **par le serveur** (attribut `read_area` des vues, contrôlé par `WriteRolesPermission`) ; le menu, l'accueil et les pages suivent la même matrice (`/api/auth/me/` renvoie les domaines, `auth/roles.ts`) | Cacher un écran ne suffit pas : les données d'un autre domaine sont refusées (403). Un écran hors du rôle affiche « Accès réservé ». |
+| Socle commun à tous : référentiel, lots et stocks, traçabilité et rappels | Tout le monde a besoin de l'état des lots ; un rappel produit concerne toute l'entreprise. |
+| **Prix masqués** : prix d'achat réservés à achats et direction, prix de vente à ventes et direction ; les autres voient les commandes sans les montants | Le quai réceptionne et expédie sans avoir à connaître les prix. |
+| Tableau de bord (CA, démarque en euros) réservé à la direction ; chaque métier garde ses propres écrans de suivi (taux de service, TRS, fiabilité, rendements) | Indicateurs financiers sensibles. |
+| `admin` et les superutilisateurs voient tout | Administration et maintenance. |
+
+| Domaine (écrans) | direction | acheteur | magasinier | production | qualite | commercial |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: |
+| Référentiel (articles, fournisseurs, clients, sites, calendrier) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Lots, stocks, FEFO, températures, inventaires, alertes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Traçabilité, rappels, allergènes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Commandes fournisseurs, réceptions | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Prix d'achat (tarifs, montants des commandes fournisseurs) | ✅ | ✅ | — | — | — | — |
+| Besoins d'achat (MRP) | ✅ | ✅ | — | ✅ | — | — |
+| Production, planning, plan de production, TRS | ✅ | ✅ | — | ✅ | ✅ | — |
+| Commandes clients, EDI, expéditions, taux de service | ✅ | — | ✅ | — | ✅ | ✅ |
+| Prix de vente (tarifs, montants des commandes clients) | ✅ | — | — | — | — | ✅ |
+| Prévisions de vente | ✅ | ✅ | — | ✅ | — | ✅ |
+| Tableau de bord (indicateurs, export Excel) | ✅ | — | — | — | — | — |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.

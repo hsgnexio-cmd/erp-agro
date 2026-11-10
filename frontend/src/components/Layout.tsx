@@ -1,5 +1,6 @@
-import { NavLink, Navigate, Outlet } from 'react-router'
+import { NavLink, Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/context'
+import { canOpen } from '../auth/roles'
 import { ROLE_LABELS } from '../format'
 import { AlertBadge } from './AlertBadge'
 
@@ -35,6 +36,7 @@ const LINKS = [
 /** Cadre commun des pages : en-tête, menu, utilisateur connecté. */
 export function Layout() {
   const { status, user, logout } = useAuth()
+  const location = useLocation()
 
   if (status === 'chargement') return <p className="page-message">Chargement…</p>
   if (status === 'deconnecte' || !user) return <Navigate to="/connexion" replace />
@@ -46,7 +48,7 @@ export function Layout() {
       <header className="app-header">
         <span className="brand">ERP Brévanne Traiteur</span>
         <nav aria-label="Menu principal">
-          {LINKS.map((link) => (
+          {LINKS.filter((link) => canOpen(user, link.to)).map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}>
               {link.label}
               {link.to === '/alertes' && <AlertBadge />}
@@ -64,7 +66,14 @@ export function Layout() {
         </div>
       </header>
       <main className="app-main">
-        <Outlet />
+        {canOpen(user, location.pathname) ? (
+          <Outlet />
+        ) : (
+          <section className="page-message" role="alert">
+            <h1>Accès réservé</h1>
+            <p>Ton rôle ne donne pas accès à cet écran. Les droits de chaque rôle sont décrits dans le README.</p>
+          </section>
+        )}
       </main>
     </div>
   )

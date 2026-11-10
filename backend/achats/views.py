@@ -38,6 +38,7 @@ class SupplierPriceViewSet(viewsets.ModelViewSet):
     )
     serializer_class = SupplierPriceSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "prix_achat"
     write_roles = PURCHASING
     http_method_names = ["get", "post", "put", "patch", "head", "options"]
     filterset_fields = [
@@ -54,6 +55,7 @@ class SupplierCatalogView(APIView):
     """
 
     permission_classes = [WriteRolesPermission]
+    read_area = "prix_achat"
 
     def get(self, request: Request) -> Response:
         supplier_id = request.query_params.get("supplier")
@@ -98,6 +100,7 @@ class PurchaseOrderViewSet(
         "receptions",
     )
     permission_classes = [WriteRolesPermission]
+    read_area = "achats"
     write_roles = PURCHASING
     filterset_fields = ["status", "supplier", "delivery_site"]
     search_fields = ["number", "supplier__name", "supplier__code"]
@@ -110,7 +113,10 @@ class PurchaseOrderViewSet(
 
     def _read(self, order, status_code=status.HTTP_200_OK) -> Response:
         order = self.get_queryset().get(pk=order.pk)
-        return Response(PurchaseOrderSerializer(order).data, status=status_code)
+        return Response(
+            PurchaseOrderSerializer(order, context={"request": self.request}).data,
+            status=status_code,
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -139,6 +145,7 @@ class ReceptionViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         "order__supplier", "received_by", "location"
     ).prefetch_related("lines__order_line__article", "lines__lot")
     permission_classes = [WriteRolesPermission]
+    read_area = "achats"
     write_roles = WAREHOUSE
     filterset_fields = ["order", "order__supplier"]
     search_fields = ["number", "delivery_note_number", "order__number"]
@@ -192,6 +199,7 @@ class MrpView(APIView):
     """Besoins nets et propositions d'achat sur 9 semaines : /api/achats/mrp/"""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "mrp"
     write_roles = PURCHASING
 
     def get(self, request: Request) -> Response:
@@ -232,6 +240,7 @@ class MrpCreateOrdersView(APIView):
     """L'acheteur transforme des propositions en commandes brouillon."""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "mrp"
     write_roles = PURCHASING
 
     def post(self, request: Request) -> Response:

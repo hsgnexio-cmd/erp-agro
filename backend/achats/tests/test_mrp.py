@@ -239,8 +239,11 @@ def test_minimum_de_commande_toujours_controle(world):
 # --- API ---------------------------------------------------------------------------------
 
 
-def test_api_tous_consultent_seul_l_acheteur_cree(world, api_client_for):
-    response = api_client_for("magasinier").get("/api/achats/mrp/")
+def test_api_la_production_consulte_seul_l_acheteur_cree(world, api_client_for):
+    # Matrice d'accès : la production consulte le MRP, le quai ne le voit pas
+    assert api_client_for("magasinier").get("/api/achats/mrp/").status_code == 403
+    production = api_client_for("production")
+    response = production.get("/api/achats/mrp/")
     assert response.status_code == 200
     data = response.json()
     assert len(data["weeks"]) == 9 and data["weeks"][1]["source"] == "prévision PRV-T-1"
@@ -251,10 +254,7 @@ def test_api_tous_consultent_seul_l_acheteur_cree(world, api_client_for):
         {"article": world["cream"].pk, "week": str(week(1)), "quantity": "500"}
     ]}  # fmt: skip
     assert (
-        api_client_for("production")
-        .post("/api/achats/mrp/create-orders/", payload, format="json")
-        .status_code
-        == 403
+        production.post("/api/achats/mrp/create-orders/", payload, format="json").status_code == 403
     )
     response = api_client_for("acheteur").post(
         "/api/achats/mrp/create-orders/", payload, format="json"

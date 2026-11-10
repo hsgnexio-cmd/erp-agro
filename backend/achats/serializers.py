@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from comptes.access import mask_prices
 from referentiel.models import Article, Location, Site, Supplier
 
 from . import services
@@ -94,6 +95,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "lines",
             "reception_ids",
         ]
+
+    def to_representation(self, order):
+        # Prix d'achat masqués pour les rôles qui ne les voient pas (quai, production, qualité)
+        return mask_prices(
+            super().to_representation(order), self.context.get("request"), "prix_achat",
+            ("total_amount",), ("unit_price", "amount"),
+        )  # fmt: skip
 
 
 class OrderLineInputSerializer(serializers.Serializer):

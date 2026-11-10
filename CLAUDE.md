@@ -102,7 +102,7 @@ Conventions adoptées en cours de route (détail et raisons dans `docs/decisions
 - **Indicateurs** : calculés dans les vues SQL du schéma `bi` (`pilotage/sql/bi_views.sql`, migration), lues par l'API du tableau de bord et par Power BI ; pour modifier une vue, nouvelle migration qui relance le fichier (ajout de colonnes en fin de vue) ou recrée le schéma. Power BI / Excel se connectent avec l'utilisateur `powerbi` en lecture seule (`creer_utilisateur_bi`, droits remis après chaque `migrate`).
 - **Enregistrements jamais modifiés ni supprimés** : mouvements de stock, journal des statuts de lot, relevés de température, rappels, versions et corrections de prévision, arrêts de ligne (annulés avec motif) ; une alerte se marque « traitée ». Les documents d'opération (commandes, réceptions, lots, OF, inventaires) sont en lecture seule dans l'administration.
 - **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `BL-`, `PRV-` (versions de prévision), et `EXP-` pour les expéditions de la phase 5 ; série `SSCC` pour les palettes.
-- **Droits** : `comptes.permissions.WriteRolesPermission` + attribut `write_roles` de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
+- **Droits** : `comptes.permissions.WriteRolesPermission` + attributs `write_roles` (écriture) et `read_area` (lecture, matrice `comptes/access.py`) de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
 - **API** : les décimaux sont renvoyés en texte ; une `ValidationError` Django devient une réponse 400 lisible (`config/exceptions.py`).
 - **Équipe de démonstration** : 10 comptes fictifs (plusieurs par rôle, avec leur fonction) créés par `charger_donnees_demo` (`comptes/demo_users.py`), mot de passe commun `DEMO_USERS_PASSWORD` du `.env` ; le compte administrateur se crée à part.
 - **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui. Elle rejoue aussi 6 semaines d'historique sur le vrai calendrier (`pilotage/demo_history.py`, horloge simulée, production lun-ven, prévision figée chaque lundi, ≈ 6 min) ; les tests l'appellent avec `sans_historique=True`.
@@ -149,7 +149,7 @@ Mettre à jour la colonne Statut à la fin de chaque phase.
 
 `admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`. Chaque rôle n'accède qu'aux écrans et actions de son métier ; seul le rôle `qualite` peut libérer ou bloquer un lot.
 
-Précisions décidées en cours de route : le rôle `admin` peut tout faire, y compris libérer ou bloquer ; l'ERP bloque aussi **automatiquement** un lot (contrôle à réception non conforme, écart de température, DLC dépassée, rappel produit). Tous les rôles consultent tout ; `direction` ne modifie rien.
+Précisions décidées en cours de route : le rôle `admin` peut tout faire, y compris libérer ou bloquer ; l'ERP bloque aussi **automatiquement** un lot (contrôle à réception non conforme, écart de température, DLC dépassée, rappel produit). `direction` ne modifie rien. **Lecture selon le rôle** (moindre privilège) : matrice `comptes/access.py`, appliquée par le serveur (`read_area` des vues) et par le menu ; socle commun (référentiel, stocks, traçabilité) ; prix d'achat et de vente masqués hors achats, ventes et direction ; tableau de bord réservé à la direction.
 
 | Rôle | Actions principales |
 | --- | --- |

@@ -16,6 +16,8 @@ export interface User {
   last_name: string
   is_superuser: boolean
   roles: string[]
+  /** Domaines que l'utilisateur peut consulter (matrice d'accès du serveur) */
+  areas?: string[]
 }
 
 export type ArticleType = 'MP' | 'SF' | 'PF' | 'EM'

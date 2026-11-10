@@ -121,7 +121,7 @@ docker compose exec backend python manage.py charger_donnees_demo --sans-histori
 
 ## Rôles et utilisateurs
 
-Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md). **Tout le monde consulte tout** ; chaque rôle ne **modifie** que ce qui relève de son métier.
+Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md). Chaque rôle **voit** les données utiles à son métier (principe du moindre privilège) et ne **modifie** que ce qui relève de son métier ; `admin` voit et fait tout.
 
 ### L'équipe de démonstration
 
@@ -140,11 +140,29 @@ Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qua
 | `thomas.riou` | Thomas Riou | Commercial grands comptes | commercial |
 | `lea.nedelec` | Léa Nédélec | Administration des ventes et prévisions | commercial |
 
+### Qui voit quoi
+
+Le menu de chacun n'affiche que ses écrans ; le serveur refuse aussi les données des autres (« Ton rôle ne donne pas accès à ces données »). Un magasinier voit les commandes fournisseurs qu'il réceptionne, mais **sans les prix d'achat** ; il voit les commandes clients qu'il prépare, mais **sans les prix de vente**.
+
+| Domaine (écrans) | direction | acheteur | magasinier | production | qualite | commercial |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: |
+| Référentiel (articles, fournisseurs, clients, sites, calendrier) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Lots, stocks, FEFO, températures, inventaires, alertes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Traçabilité, rappels, allergènes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Commandes fournisseurs, réceptions | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Prix d'achat (tarifs, montants des commandes fournisseurs) | ✅ | ✅ | — | — | — | — |
+| Besoins d'achat (MRP) | ✅ | ✅ | — | ✅ | — | — |
+| Production, planning, plan de production, TRS | ✅ | ✅ | — | ✅ | ✅ | — |
+| Commandes clients, EDI, expéditions, taux de service | ✅ | — | ✅ | — | ✅ | ✅ |
+| Prix de vente (tarifs, montants des commandes clients) | ✅ | — | — | — | — | ✅ |
+| Prévisions de vente | ✅ | ✅ | — | ✅ | — | ✅ |
+| Tableau de bord (indicateurs, export Excel) | ✅ | — | — | — | — | — |
+
 ### Qui peut faire quoi
 
-| Rôle | Ce qu'il peut faire (en plus de tout consulter) |
+| Rôle | Ce qu'il peut modifier |
 | --- | --- |
-| `direction` | Rien à modifier : tableau de bord, indicateurs, export Excel, tous les écrans en lecture |
+| `direction` | Rien : tous les écrans en lecture, dont le tableau de bord et l'export Excel |
 | `acheteur` | Besoins d'achat (MRP) et commandes fournisseurs : créer, envoyer, annuler ; tarifs d'achat ; fournisseurs |
 | `magasinier` | Réceptions à quai, transferts, corrections, inventaires, relevés de température, alertes, préparation FEFO et expédition |
 | `production` | Plan de production (calcul, ajustement, gel), ordres de fabrication et déclarations (plage de marche, rebuts), arrêts de ligne ; articles, recettes, nomenclatures, lignes |

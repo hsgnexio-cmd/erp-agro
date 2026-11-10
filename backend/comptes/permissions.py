@@ -21,7 +21,8 @@ def has_any_role(user, roles) -> bool:
 
 
 class WriteRolesPermission(BasePermission):
-    """Lecture pour tous les utilisateurs connectés ; écriture pour `view.write_roles`."""
+    """Lecture selon la matrice d'accès (`view.read_area`, voir comptes/access.py ; tous les
+    utilisateurs connectés si la vue n'en a pas) ; écriture pour `view.write_roles`."""
 
     message = "Ton rôle ne permet pas cette opération."
 
@@ -32,7 +33,15 @@ class WriteRolesPermission(BasePermission):
         if not request.user.is_authenticated:
             return False
         if request.method in SAFE_METHODS:
-            return True
+            area = getattr(view, "read_area", None)
+            if area is None:
+                return True
+            from .access import can_read
+
+            if can_read(request.user, area):
+                return True
+            self.message = "Ton rôle ne donne pas accès à ces données."
+            return False
         return has_any_role(request.user, self.get_write_roles(view))
 
 
