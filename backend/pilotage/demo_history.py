@@ -574,7 +574,8 @@ class History:
                 sales.create_order(
                     customer=customer,
                     warehouse=self.rng.choice(warehouses),
-                    requested_delivery_date=day + timedelta(days=1),
+                    # Phase 11 : premier jour de livraison possible (heure limite, jours ouvrés)
+                    requested_delivery_date=sales.earliest_delivery_date(timezone.now()),
                     lines=lines,
                     customer_reference=f"{REFERENCE}-{customer.code}-{day:%Y%m%d}",
                     received_at=timezone.now(),

@@ -10,12 +10,14 @@ quatre commandes à la mesure de ce stock, pour montrer chaque cas :
 Les lots de lasagnes concernés par le rappel de démonstration (crème CB-0412) gardent du stock.
 """
 
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
+from referentiel import calendar
+from referentiel.calendar import Activity
 from referentiel.models import Article, Customer
 from stocks import services as stock_services
 from stocks.choices import UnsoldDestination
@@ -68,12 +70,15 @@ def load_demo_data() -> dict[str, int | str]:
         return {"expéditions": "pas de stock de produits finis à la plateforme, rien à faire"}
 
     today = timezone.localdate()
-    yesterday = today - timedelta(days=1)
+    # Commandes reçues le dernier jour ouvré avant aujourd'hui, avant l'heure limite (phase 11 :
+    # dates calées sur le calendrier, jamais une livraison un dimanche ou un jour férié)
+    order_day = calendar.previous_open_day(today, Activity.SHIPPING, strict=True)
 
     def received(minute: int):
-        return timezone.make_aware(datetime.combine(yesterday, time(9, minute)))
+        return timezone.make_aware(datetime.combine(order_day, time(9, minute)))
 
-    tomorrow = today + timedelta(days=1)
+    due = orders.earliest_delivery_date(received(0))  # à expédier la veille : déjà en retard
+    tomorrow = calendar.next_open_day(due, Activity.SHIPPING, strict=True)
     complete = _order("ENS1", [("PF-PAT-LASBOL-ENS1-300", 120)], received(5), tomorrow)
     partial = _order(
         "ENS2",
@@ -85,7 +90,7 @@ def load_demo_data() -> dict[str, int | str]:
         received(12),
         tomorrow,
     )
-    late = _order("ENS3", [("PF-GRA-GRADAU-BRE-1000", 24)], received(20), today)
+    late = _order("ENS3", [("PF-GRA-GRADAU-BRE-1000", 24)], received(20), due)
     refused = _order("ENS4", [("PF-GRA-GRADAU-BRE-1000", 12)], received(31), tomorrow)
 
     for order, carrier in (

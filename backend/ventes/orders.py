@@ -1,12 +1,14 @@
 """Tarifs de vente et commandes clients : règles de prise de commande."""
 
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from referentiel import calendar
+from referentiel.calendar import Activity
 from referentiel.choices import ArticleType
 from referentiel.models import Article, Customer, CustomerWarehouse
 from referentiel.services import next_document_number
@@ -73,10 +75,32 @@ def orderable_refusal(customer: Customer, article: Article) -> str | None:
 
 
 def earliest_delivery_date(received_at: datetime) -> date:
-    """Commande reçue avant 11 h : livrable dès le lendemain ; après 11 h : J+2."""
+    """Commande reçue avant 11 h un jour ouvré : livrable dès le jour de livraison suivant ;
+    après 11 h : le jour de livraison d'après. Une commande reçue un dimanche ou un jour férié
+    compte comme reçue le jour ouvré suivant au matin (phase 11)."""
     local = timezone.localtime(received_at)
-    days = 1 if local.time() < ORDER_CUTOFF else 2
-    return local.date() + timedelta(days=days)
+    day, before_cutoff = local.date(), local.time() < ORDER_CUTOFF
+    if not calendar.is_open(day, Activity.SHIPPING):
+        day, before_cutoff = calendar.next_open_day(day, Activity.SHIPPING), True
+    first = calendar.next_open_day(day, Activity.SHIPPING, strict=True)
+    return first if before_cutoff else calendar.next_open_day(first, Activity.SHIPPING, strict=True)
+
+
+def ship_by_date(delivery: date) -> date:
+    """Transport en J+1 : expédié au plus tard le dernier jour d'expédition avant la livraison."""
+    return calendar.previous_open_day(delivery, Activity.SHIPPING, strict=True)
+
+
+def delivery_refusal(delivery: date) -> str | None:
+    """Raison pour laquelle on ne livre pas ce jour-là (dimanche, férié…), ou None."""
+    reason = calendar.closed_reason(delivery, Activity.SHIPPING)
+    if not reason:
+        return None
+    possible = calendar.next_open_day(delivery, Activity.SHIPPING)
+    return (
+        f"Pas de livraison le {calendar.describe(delivery)} ({reason}) : "
+        f"prochaine date possible le {calendar.describe(possible)}."
+    )
 
 
 @transaction.atomic
@@ -103,11 +127,14 @@ def create_order(
     elif not warehouse.active:
         errors.append(f"L'entrepôt {warehouse.code} est inactif.")
     earliest = earliest_delivery_date(received_at)
-    if requested_delivery_date < earliest:
+    refusal = delivery_refusal(requested_delivery_date)
+    if refusal:
+        errors.append(refusal)
+    elif requested_delivery_date < earliest:
         errors.append(
             f"Livraison demandée le {requested_delivery_date:%d/%m/%Y} : trop tôt pour une "
             f"commande reçue le {timezone.localtime(received_at):%d/%m/%Y à %H:%M} "
-            f"(au plus tôt le {earliest:%d/%m/%Y}, heure limite 11 h)."
+            f"(au plus tôt le {calendar.describe(earliest)}, heure limite 11 h, jours ouvrés)."
         )
     if not lines:
         errors.append("La commande ne contient aucune ligne.")
@@ -132,6 +159,7 @@ def create_order(
         customer_reference=customer_reference.strip(),
         received_at=received_at,
         requested_delivery_date=requested_delivery_date,
+        ship_by_date=ship_by_date(requested_delivery_date),
         source=source,
         edi_message=edi_message,
         comment=comment.strip(),

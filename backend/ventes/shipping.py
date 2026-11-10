@@ -438,8 +438,13 @@ def build_pallets(shipment: Shipment) -> list[Pallet]:
 
 
 def on_time_limit(order: CustomerOrder) -> date:
-    """Transport en J+1 : expédié au plus tard la veille de la livraison demandée."""
-    return order.requested_delivery_date - timedelta(days=1)
+    """Transport en J+1 : expédié au plus tard le dernier jour d'expédition avant la livraison
+    (le samedi pour une livraison le lundi), date calculée à la prise de commande."""
+    if order.ship_by_date is not None:
+        return order.ship_by_date
+    from .orders import ship_by_date
+
+    return ship_by_date(order.requested_delivery_date)
 
 
 def _empty_row() -> dict:

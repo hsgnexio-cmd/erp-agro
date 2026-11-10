@@ -2,6 +2,9 @@
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 addopts = "-ra"
+markers = [
+    "calendrier: utilise le vrai calendrier (week-ends, jours fériés) au lieu du calendrier 7 j/7 des tests",
+]
 
 [tool.ruff]
 line-length = 100
