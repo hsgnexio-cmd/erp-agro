@@ -324,9 +324,9 @@ def validate_promotion(promotion: Promotion) -> None:
             errors[field] = "Une semaine est désignée par son lundi."
     if promotion.first_week and promotion.last_week and promotion.last_week < promotion.first_week:
         errors["last_week"] = "La dernière semaine précède la première."
-    if promotion.announced_on and promotion.first_week:
-        if promotion.announced_on > promotion.first_week:
-            errors["announced_on"] = "La promotion est annoncée après son début."
+    announced, first = promotion.announced_on, promotion.first_week
+    if announced and first and announced > first:
+        errors["announced_on"] = "La promotion est annoncée après son début."
     if promotion.customer_id and promotion.article_id:
         reason = orderable_refusal(promotion.customer, promotion.article)
         if reason:

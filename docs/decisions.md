@@ -452,6 +452,16 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | L'écran n'affiche les filtres site et enseigne que si un indicateur visible en tient compte | Pas de filtre sans effet. |
 | Power BI (utilisateur `powerbi`) inchangé : il lit toutes les vues `bi` | Outil de la direction. |
 
+## Relecture générale du code (finition, 10/11/2026)
+
+| Constat | Suite donnée |
+| --- | --- |
+| Règles métier : aucun mouvement ni lot supprimé (seulement des brouillons), aucune mise à jour en masse (`update()`) qui contournerait l'historique, statut d'un lot modifié en un seul endroit (`stocks/services.py`), `float` seulement dans la génération de la démo | Rien à corriger. |
+| `ruff` en mode strict : alertes « injection SQL » de `pilotage/indicators.py` | Fausses alertes : noms de colonnes écrits dans le code, valeurs passées en paramètres. |
+| Simplifications possibles (conditions imbriquées, `dict.fromkeys`) | Corrigées ; règles `SIM` et `C4` ajoutées à `ruff` (surveillées par GitHub Actions). Règles `PERF` non retenues : leurs réécritures rendent les boucles moins lisibles pour un gain négligeable. |
+| `check --deploy` : réglages HTTPS absents, `DEBUG` actif | Normal pour une application locale de développement ; section « Limites » du README. |
+| `npm audit` : 0 faille dans l'application ; faille modérée de `minimatch` dans l'outil de lint seulement | Pas de correction : la seule proposée revient à une ancienne version d'eslint. |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
