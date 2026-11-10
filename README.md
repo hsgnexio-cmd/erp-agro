@@ -156,7 +156,7 @@ Le menu de chacun n'affiche que ses écrans ; le serveur refuse aussi les donné
 | Commandes clients, EDI, expéditions, taux de service | ✅ | — | ✅ | — | ✅ | ✅ |
 | Prix de vente (tarifs, montants des commandes clients) | ✅ | — | — | — | — | ✅ |
 | Prévisions de vente | ✅ | ✅ | — | ✅ | — | ✅ |
-| Tableau de bord (indicateurs, export Excel) | ✅ | — | — | — | — | — |
+| Tableau de bord (indicateurs de son métier, export Excel) ; montants en euros | ✅ (tout, avec les euros) | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### Qui peut faire quoi
 
@@ -193,7 +193,7 @@ Administration → **Utilisateurs** → **Ajouter**. Puis, sur sa fiche :
 
 ### Le tableau de bord
 
-Menu **Tableau de bord** (tous les rôles) : les 9 indicateurs de la fiche entreprise, avec leur objectif (vert : atteint ; rouge : hors objectif) et leur évolution semaine par semaine.
+Menu **Tableau de bord** (tous les rôles) : chaque rôle voit les indicateurs de son métier (par exemple taux de service et fiabilité des prévisions pour le commercial) ; la direction voit les 9 indicateurs de la fiche entreprise, avec les montants en euros. Chaque indicateur est affiché avec son objectif (vert : atteint ; rouge : hors objectif) et leur évolution semaine par semaine.
 
 | Indicateur | Calcul | Objectif |
 | --- | --- | --- |
