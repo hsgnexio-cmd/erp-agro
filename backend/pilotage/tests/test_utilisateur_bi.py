@@ -70,7 +70,9 @@ def test_mot_de_passe_obligatoire(db):
         create_or_update_user(ROLE, "court")
     with pytest.raises(ValidationError, match="valeur d'exemple"):
         create_or_update_user(ROLE, "change-moi-aussi")
-    with override_settings(BI_DB_USER=ROLE, BI_DB_PASSWORD=""):
-        with pytest.raises(CommandError, match="BI_DB_PASSWORD"):
-            call_command("creer_utilisateur_bi")
+    with (
+        override_settings(BI_DB_USER=ROLE, BI_DB_PASSWORD=""),
+        pytest.raises(CommandError, match="BI_DB_PASSWORD"),
+    ):
+        call_command("creer_utilisateur_bi")
     assert not role_exists(ROLE)

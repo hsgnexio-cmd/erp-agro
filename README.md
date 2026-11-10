@@ -379,6 +379,12 @@ erp-agro/
 └── .env.example      # modèle de configuration (copier en .env)
 ```
 
+## Limites
+
+- Projet de **formation** : l'entreprise, les personnes et les données sont fictives.
+- L'application tourne en **mode développement** (serveurs de développement de Django et de Vite, HTTP sans chiffrement, `DJANGO_DEBUG=True`). Elle est faite pour être lancée sur son propre PC, **pas pour être mise en ligne** telle quelle : il faudrait un serveur de production, HTTPS et les réglages de sécurité correspondants (`python manage.py check --deploy` les liste).
+- Les échanges avec l'extérieur sont **simulés** : messages EDI des enseignes, pas d'envoi d'e-mails.
+
 ## Connexion Power BI / Excel
 
 Excel et Power BI lisent les **vues du schéma `bi`** (décrites dans [`bi/README.md`](bi/README.md)), avec un utilisateur PostgreSQL **en lecture seule**, `powerbi`. Il ne voit aucune table de l'application et ne peut rien modifier. Les chiffres sont les mêmes que ceux du tableau de bord.

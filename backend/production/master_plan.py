@@ -390,13 +390,13 @@ def add_article(plan: MasterPlan, *, article: Article, line: ProductionLine | No
     refusal = line_accepts(line, article)
     if refusal:
         raise ValidationError({"line": f"Ligne refusée : {refusal}."})
-    zero = {
-        name: ZERO
-        for name in (
+    zero = dict.fromkeys(
+        (
             "forecast_quantity", "ordered_quantity", "demand", "safety_days", "safety_stock",
             "stock", "open_orders", "demand_before", "projected_stock", "proposed_quantity",
-        )
-    }  # fmt: skip
+        ),
+        ZERO,
+    )  # fmt: skip
     item = MasterPlanItem.objects.create(plan=plan, article=article, line=line, **zero)
     for day in work_days(plan.week):
         MasterPlanDay.objects.create(item=item, day=day, quantity=ZERO)

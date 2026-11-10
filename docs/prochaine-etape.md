@@ -14,7 +14,7 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 1. ✅ **Tableau de bord par rôle** : fait (branche `tableau-de-bord-par-role`, voir `docs/decisions.md`, section « Tableau de bord par rôle »).
 2. ✅ **GitHub Actions** : vert (capture de Nicolas, 10/11/2026).
 3. ✅ **Test « comme un inconnu »** : dépôt cloné dans un dossier vierge (projet Docker `erp-inconnu`, ports 18000 / 15173 / 15432 via un `docker-compose.override.yml` local), README suivi à la lettre : tout démarre, démo chargée (≈ 4 min 30), tests verts. Corrigé : étape `git clone`, chemin générique, lancement en arrière-plan, `BI_DB_PASSWORD` à remplacer, création de l'administrateur, chargement de la démo et première connexion intégrés au premier lancement ; `creer_utilisateur_bi` refuse le mot de passe d'exemple.
-4. **Relecture générale du code** (revue de qualité avant que d'autres le lisent).
+4. ✅ **Relecture générale du code** : voir `docs/decisions.md`, section « Relecture générale du code ».
 5. **Accélérer les tests** (≈ 9 min en local).
 
 Ensuite : **publication** (README d'accueil avec captures d'écran et parcours de démonstration, licence, passage du dépôt en public guidé pas à pas).

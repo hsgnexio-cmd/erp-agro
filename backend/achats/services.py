@@ -157,9 +157,10 @@ def update_purchase_order(order, *, lines: list[dict] | None = None, **fields):
         raise ValidationError("Seule une commande en brouillon peut être modifiée.")
     for name, value in fields.items():
         setattr(order, name, value)
-    if "order_date" in fields or "supplier" in fields:
-        if "expected_delivery_date" not in fields:
-            order.expected_delivery_date = None
+    # Date ou fournisseur changés : la date de livraison prévue est recalculée
+    changed = "order_date" in fields or "supplier" in fields
+    if changed and "expected_delivery_date" not in fields:
+        order.expected_delivery_date = None
     order.save()
     if lines is not None:
         order.lines.all().delete()
