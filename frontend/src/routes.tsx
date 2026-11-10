@@ -11,6 +11,7 @@ import { InventoryDetailPage } from './pages/InventoryDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { MasterPlanPage } from './pages/MasterPlanPage'
 import { MrpPage } from './pages/MrpPage'
+import { OeePage } from './pages/OeePage'
 import { FefoPage } from './pages/FefoPage'
 import { ForecastPage } from './pages/ForecastPage'
 import { LotDetailPage } from './pages/LotDetailPage'
@@ -75,6 +76,7 @@ export function AppRoutes() {
         <Route path="production/:id" element={<ProductionOrderDetailPage />} />
         <Route path="production/:id/declaration" element={<DeclarationPage />} />
         <Route path="planning" element={<PlanningPage />} />
+        <Route path="trs" element={<OeePage />} />
         <Route path="plan-production" element={<MasterPlanPage />} />
         <Route path="ventes" element={<SalesOrdersPage />} />
         <Route path="ventes/nouvelle" element={<SalesOrderFormPage />} />

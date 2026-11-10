@@ -828,3 +828,21 @@ button.cell-button:hover {
 tr.late td {
   background: #fdf3f3;
 }
+
+/* --- TRS --- */
+
+.pareto-bar {
+  position: relative;
+  display: inline-block;
+  min-width: 12rem;
+  isolation: isolate;
+  padding: 0 0.4rem;
+}
+
+.pareto-bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #f9dcdc;
+  border-radius: 4px;
+  z-index: -1;
+}

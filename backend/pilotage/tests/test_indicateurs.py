@@ -104,8 +104,8 @@ def test_indicateurs_identiques_aux_calculs_metier_sur_la_demo(demo):
     assert kpi["traceability"].status == "ok"
     assert kpi["traceability"].value < 2
 
-    # Sans données dans l'ERP : « non disponible », pas de chiffre inventé
-    assert kpi["oee"].status == "indisponible"
+    # TRS : calculable, mais aucune plage de marche déclarée sans l'historique
+    assert kpi["oee"].status == "sans_donnee"
     assert kpi["oee"].value is None
     # Fiabilité des prévisions : calculable, mais aucune version figée sans l'historique
     assert kpi["forecast_accuracy"].status == "sans_donnee"
@@ -241,7 +241,7 @@ def test_export_csv_des_indicateurs_pour_excel(demo, api_client_for):
     lines = content.splitlines()
     assert "Indicateur;Valeur;Unité;Objectif;Statut;Détail" in lines
     trs = next(line for line in lines if line.startswith("TRS;"))
-    assert ";Non disponible;" in trs
+    assert ";Pas de donnée;" in trs  # aucune plage de marche sans historique
     # Décimales à la française pour Excel
     yield_line = next(line for line in lines if line.startswith("Rendement matière;"))
     assert "," in yield_line.split(";")[1]

@@ -41,6 +41,8 @@ Les dates sont en heure de Paris. Les montants sont en euros HT.
 | `bi.fact_production_yield` | OF terminé : masse théorique, masse réelle, `yield_pct` | rendement matière |
 | `bi.fact_recall` | rappel lancé : durée du calcul (`duration_ms`), lots bloqués, clients | délai de traçabilité |
 | `bi.fact_forecast` | ligne d'une version de prévision figée : semaine (`week_start`), enseigne, produit, quantité calculée, coefficient de promotion, `is_adjusted`, quantité prévue | suivi des prévisions |
+| `bi.fact_line_time` | ligne × jour : ouverture, arrêts planifiés et non planifiés, temps requis, de fonctionnement, net et utile (heures), quantités produite et rebutée | TRS |
+| `bi.fact_line_stop` | arrêt de ligne non annulé : cause (`category`), `is_planned`, durée (`duration_hours`) | Pareto des arrêts |
 | `bi.fact_forecast_accuracy` | semaine × enseigne × produit : prévision figée la semaine précédente (`forecast_quantity`), quantité commandée (`actual_quantity`), `abs_error`, `is_complete` | fiabilité des prévisions |
 
 ### Valorisation
@@ -62,7 +64,7 @@ Une fonction SQL donne le prix d'un article à une date : `bi.unit_value(article
 | Rendement matière | `sum(theoretical_mass) / sum(actual_mass)` de `fact_production_yield` | ≥ 96 % |
 | Conformité réception | lignes `is_compliant` ÷ lignes de `fact_reception` | ≥ 97 % |
 | Délai de traçabilité | rappel « à blanc » mesuré par l'application ; durée des vrais rappels dans `fact_recall` | ≤ 5 min |
-| TRS | non disponible : pas de données d'arrêts de ligne | ≥ 70 % |
+| TRS | `sum(useful_hours) / sum(required_hours)` de `fact_line_time` ; disponibilité = fonctionnement ÷ requis, performance = net ÷ fonctionnement, qualité = utile ÷ net | ≥ 70 % |
 | Fiabilité des prévisions | 1 − `sum(abs_error) / sum(actual_quantity)` de `fact_forecast_accuracy`, semaines terminées (`is_complete`) dont le lundi tombe dans la période ; jamais sous 0 % | ≥ 80 % à S-1 |
 
 Exemple de requête pour le taux de service par semaine :

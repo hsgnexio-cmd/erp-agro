@@ -200,3 +200,53 @@ export interface MasterPlan {
   /** Produits écartés du calcul (renvoyé seulement après un calcul) */
   skipped?: string[]
 }
+
+// --- Arrêts de ligne et TRS (phase 10) ---
+
+export interface LineStop {
+  id: number
+  line: number
+  line_code: string
+  started_at: string
+  ended_at: string
+  minutes: number
+  category: string
+  category_label: string
+  /** Maintenance préventive ou nettoyage planifié : hors temps requis */
+  planned: boolean
+  production_order: number | null
+  production_order_number: string | null
+  comment: string
+  created_at: string
+  created_by_name: string
+  cancelled_at: string | null
+  cancelled_by_name: string
+  cancel_reason: string
+}
+
+export interface OeeLine {
+  line: number
+  line_code: string
+  line_name: string
+  site_code: string
+  capacity_per_hour: number
+  opening_hours: string
+  planned_stop_hours: string
+  unplanned_stop_hours: string
+  required_hours: string
+  produced: string
+  scrap: string
+  oee: string | null
+  availability: string | null
+  performance: string | null
+  quality: string | null
+}
+
+export interface Oee {
+  start: string
+  end: string
+  target: string
+  total: { oee: string | null; availability: string | null; performance: string | null; quality: string | null }
+  lines: OeeLine[]
+  pareto: { category: string; label: string; planned: boolean; hours: string; count: number; share: string | null }[]
+}

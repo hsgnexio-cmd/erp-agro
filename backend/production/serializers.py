@@ -9,7 +9,13 @@ from referentiel.models import Article, Location, ProductionLine, Site
 from stocks.models import Lot
 
 from . import orders
-from .models import MasterPlan, ProductionDeclaration, ProductionOrder
+from .models import (
+    LineStop,
+    MasterPlan,
+    ProductionDeclaration,
+    ProductionOrder,
+    StopCategory,
+)
 
 
 class ProductionOrderSerializer(serializers.ModelSerializer):
@@ -77,6 +83,10 @@ class DeclarationSerializer(serializers.ModelSerializer):
             "user_name",
             "comment",
             "fefo_deviations",
+            "run_start",
+            "run_end",
+            "scrap_quantity",
+            "scrap_reason",
         ]
 
 
@@ -173,6 +183,12 @@ class DeclarationInputSerializer(serializers.Serializer):
     production_date = serializers.DateField(required=False)
     comment = serializers.CharField(required=False, allow_blank=True, default="")
     consumptions = ConsumptionInputSerializer(many=True)
+    run_start = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    run_end = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    scrap_quantity = serializers.DecimalField(
+        max_digits=14, decimal_places=3, required=False, default=Decimal("0")
+    )
+    scrap_reason = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 # --- Plan de production (phase 9b) -----------------------------------------------------
@@ -224,3 +240,46 @@ class PlanAddArticleInputSerializer(serializers.Serializer):
     line = serializers.PrimaryKeyRelatedField(
         queryset=ProductionLine.objects.all(), required=False, allow_null=True
     )
+
+
+# --- Arrêts de ligne et TRS (phase 10) -------------------------------------------------
+
+
+class LineStopSerializer(serializers.ModelSerializer):
+    line_code = serializers.CharField(source="line.code", read_only=True)
+    category_label = serializers.CharField(source="get_category_display", read_only=True)
+    production_order_number = serializers.CharField(
+        source="production_order.number", read_only=True, default=None
+    )
+    minutes = serializers.IntegerField(read_only=True)
+    planned = serializers.BooleanField(source="is_planned", read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True, default=""
+    )
+    cancelled_by_name = serializers.CharField(
+        source="cancelled_by.username", read_only=True, default=""
+    )
+
+    class Meta:
+        model = LineStop
+        fields = [
+            "id", "line", "line_code", "started_at", "ended_at", "minutes", "category",
+            "category_label", "planned", "production_order", "production_order_number",
+            "comment", "created_at", "created_by_name", "cancelled_at", "cancelled_by_name",
+            "cancel_reason",
+        ]  # fmt: skip
+
+
+class LineStopInputSerializer(serializers.Serializer):
+    line = serializers.PrimaryKeyRelatedField(queryset=ProductionLine.objects.all())
+    started_at = serializers.DateTimeField()
+    ended_at = serializers.DateTimeField()
+    category = serializers.ChoiceField(choices=StopCategory.choices)
+    production_order = serializers.PrimaryKeyRelatedField(
+        queryset=ProductionOrder.objects.all(), required=False, allow_null=True
+    )
+    comment = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class StopCancelInputSerializer(serializers.Serializer):
+    reason = serializers.CharField(allow_blank=True)

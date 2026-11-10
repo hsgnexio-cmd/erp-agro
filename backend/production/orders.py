@@ -5,7 +5,7 @@ et les consommations reliées : la traçabilité (règle 1) reste garantie.
 """
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -213,16 +213,28 @@ def declare_production(
     consumptions: list[dict],
     production_date: date | None = None,
     comment: str = "",
+    run_start: datetime | None = None,
+    run_end: datetime | None = None,
+    scrap_quantity: Decimal = ZERO,
+    scrap_reason: str = "",
+    require_run: bool = False,
     user=None,
 ) -> ProductionDeclaration:
     """Déclare une production sur un OF lancé.
 
     Chaque consommation : lot, location, quantity, et justification si le lot n'est pas
-    celui proposé par le FEFO.
+    celui proposé par le FEFO. Phase 10 : plage de marche de la ligne (obligatoire avec
+    `require_run`, comme dans l'application) et quantité rebutée, pour le calcul du TRS.
     """
+    from . import oee
+
     order = _locked(order)
     if order.status != OrderStatus.LAUNCHED:
         raise ValidationError("Seul un OF lancé peut recevoir une déclaration de production.")
+    run_errors = oee.check_run(order, run_start, run_end, required=require_run)
+    run_errors += oee.check_scrap(scrap_quantity, scrap_reason)
+    if run_errors:
+        raise ValidationError({"run": run_errors})
     consumptions = [c for c in consumptions if c["quantity"] and c["quantity"] > 0]
 
     errors, deviations = [], []
@@ -276,6 +288,10 @@ def declare_production(
         user=_user(user),
         comment=comment.strip(),
         fefo_deviations=deviations,
+        run_start=run_start,
+        run_end=run_end,
+        scrap_quantity=scrap_quantity or ZERO,
+        scrap_reason=(scrap_reason or "").strip(),
     )
 
 

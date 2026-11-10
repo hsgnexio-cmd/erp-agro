@@ -5,7 +5,7 @@ tableau de bord et Power BI lisent exactement les mêmes données.
 
 Filtres : la période s'applique à tous les indicateurs ; l'enseigne au taux de service et à
 la fiabilité des prévisions ;
-le site au rendement matière et à la couverture matières. Chaque indicateur indique les
+le site au rendement matière, au TRS et à la couverture matières. Chaque indicateur indique les
 filtres qu'il prend en compte.
 """
 
@@ -189,6 +189,27 @@ def forecast_accuracy(
     return value, detail
 
 
+def oee(start: date, end: date, site_id: int | None) -> tuple[Decimal | None, str]:
+    """TRS = temps utile ÷ temps requis des lignes (vue bi.fact_line_time, même calcul que
+    production.oee.report)."""
+    where, params = _filter("site_id", site_id)
+    useful, required, operating, net, lines = _one(
+        "SELECT sum(useful_hours), sum(required_hours), sum(operating_hours), sum(net_hours), "
+        "count(DISTINCT line_id) FILTER (WHERE required_hours > 0) FROM bi.fact_line_time "
+        f"WHERE date BETWEEN %s AND %s{where}",
+        [start, end, *params],
+    )
+    if not required:
+        return None, "Aucune plage de marche déclarée sur la période"
+    availability, performance = _ratio(operating, required), _ratio(net, operating)
+    quality = _ratio(useful, net)
+    detail = (
+        f"{lines} ligne(s) ; disponibilité {availability} %, performance {performance} %, "
+        f"qualité {quality} %"
+    ).replace(".", ",")
+    return _ratio(useful, required), detail
+
+
 def reception_compliance(start: date, end: date) -> tuple[Decimal | None, str]:
     compliant, total = _one(
         "SELECT count(*) FILTER (WHERE is_compliant), count(*) FROM bi.fact_reception "
@@ -284,10 +305,11 @@ def compute(
         material_yield(start, end, site_id),
     )  # fmt: skip
     add(
-        "oee", "TRS", "%", "Taux de rendement synthétique des lignes", [],
-        available=False,
-        detail="Non disponible : l'ERP n'enregistre ni les arrêts de ligne ni les cadences "
-        "réelles.",
+        "oee", "TRS", "%",
+        "Temps utile (quantité bonne ÷ cadence) ÷ temps requis (plages de marche − arrêts "
+        "planifiés) = disponibilité × performance × qualité",
+        ["période (début de marche)", "site"],
+        oee(start, end, site_id),
     )  # fmt: skip
     add(
         "forecast_accuracy", "Fiabilité des prévisions", "%",
@@ -318,6 +340,7 @@ WEEKLY_CODES = (
     "finished_coverage",
     "material_coverage",
     "material_yield",
+    "oee",
     "forecast_accuracy",
     "reception_compliance",
 )

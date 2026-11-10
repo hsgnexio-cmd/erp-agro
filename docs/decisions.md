@@ -347,6 +347,28 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Transformer des propositions en commandes brouillon | `admin`, `acheteur` |
 | Consulter le calcul des besoins | tous les rôles |
 
+## Phase 10 – Arrêts de ligne et TRS
+
+| Décision | Raison |
+| --- | --- |
+| Temps d'ouverture = **plages de marche déclarées** (début et fin de chaque passage d'OF sur la ligne, arrêts compris), saisies à la déclaration | Validé. Dans la démo, les lignes ne tournent qu'environ 1 h par jour : un temps d'ouverture fixe de 15 h donnerait un TRS d'environ 5 %, sans signification. |
+| TRS = disponibilité × performance × qualité = temps utile ÷ temps requis | Validé (norme NF E60-182). Requis = ouverture − arrêts planifiés ; fonctionnement = requis − arrêts non planifiés ; net = produit ÷ cadence ; utile = bon ÷ cadence. Logique dans `production/oee.py`. |
+| Calcul **jour par jour et par ligne**, cumulé ensuite ; temps jamais négatifs | Un arrêt plus long que la marche du jour ne retire pas de temps aux autres jours. Même calcul dans la vue `bi.fact_line_time` (un test le vérifie). Une plage et un arrêt comptent le jour de leur début. |
+| Arrêts : ligne, début, fin, cause, OF facultatif, commentaire ; 7 causes ; pas de chevauchement sur une ligne ; ni futur, ni plus de 24 h | Validé. « Maintenance préventive » et « nettoyage planifié » sont planifiés : retirés du temps requis, absents des parts du Pareto. |
+| Un arrêt ne se modifie pas : il **s'annule avec un motif**, puis se ressaisit | Validé, comme les autres enregistrements de l'ERP (audit). L'annulation est gardée dans l'historique. |
+| Plage de marche **obligatoire dans l'application** pour un produit fini (sur ligne) ; deux OF ne marchent pas en même temps sur une ligne ; 16 h au plus | Validé. Les fonctions métier l'acceptent sans plage pour les anciennes déclarations et les tests (`require_run`). Un semi-fini (cuisine) n'a pas de plage. |
+| Rebuts : « quantité rebutée » et motif à la déclaration, hors stock | Validé. Quantité produite = lot + rebut ; quantité bonne = lot. |
+| Vues `bi.fact_line_stop` et `bi.fact_line_time` (migration `pilotage/0005`) ; tuile TRS activée (filtres période et site), dans l'évolution par semaine et l'export CSV | Même chemin que les autres indicateurs. |
+| Écran **TRS des lignes** : TRS et ses trois taux, tableau par ligne, Pareto des arrêts, saisie et annulation des arrêts | Saisie par `production` et `admin`, consultation pour tous. |
+| Démo : plages à partir de 5 h, OF de la journée à la suite ; changements de série (3 à 7 min), micro-arrêts, pannes (8 % des OF), manques matière, cadence réelle à 85–97 % ; 0,3 à 2 % de rebuts | Validé. La panne de ligne de l'historique arrête désormais la production après 30 min (20 % de l'OF fabriqué, 5 h de panne) au lieu d'annuler l'OF : elle pèse sur le TRS et crée toujours des ruptures. Tirages aléatoires séparés, pour ne pas changer le reste de l'historique. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Saisir ou annuler un arrêt ; déclarer plage de marche et rebuts | `admin`, `production` |
+| Consulter le TRS et les arrêts | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -355,7 +377,7 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | --- | --- | --- |
 | `ValidatedModel` : validation complète (`full_clean`) à chaque enregistrement | `referentiel/models.py` | Les règles s'appliquent quel que soit le chemin (API, administration, script, données de démo). |
 | Les opérations relisent et verrouillent le lot (`select_for_update`) | `stocks/services.py`, `production/services.py`, `ventes/services.py` | Statut et stock lus à l'instant de l'opération ; deux personnes ne modifient pas le même lot en même temps. |
-| Enregistrements jamais modifiés ni supprimés | `StockMovement`, `LotStatusChange`, `TemperatureReading`, `ProductRecall`, `Alert` (marquée traitée), `ForecastVersion`, `ForecastLine`, `ForecastAdjustment` | Preuves pour les audits IFS / BRCGS (règles 11 et 12). |
+| Enregistrements jamais modifiés ni supprimés | `StockMovement`, `LotStatusChange`, `TemperatureReading`, `ProductRecall`, `Alert` (marquée traitée), `ForecastVersion`, `ForecastLine`, `ForecastAdjustment`, `LineStop` (annulé avec motif) | Preuves pour les audits IFS / BRCGS (règles 11 et 12). |
 | Documents d'opération en lecture seule dans l'administration | `ReadOnlyAdminMixin` (`stocks/admin.py`) | Commandes, réceptions, lots, OF, inventaires, rappels, commandes clients naissent des opérations de l'application, qui appliquent les règles. |
 | Numérotation par compteur en base | `referentiel.services.next_document_number`, modèle `DocumentSequence` (aussi pour la série des SSCC et les versions de prévision `PRV-`) | Sans doublon même en accès simultané ; numéro attribué après validation. |
 | Droits par rôle | `comptes.permissions.WriteRolesPermission` + `write_roles` sur chaque vue ; `sync_group_permissions` après chaque `migrate` | Lecture pour tous, écriture selon le métier ; mêmes droits dans l'administration. |
@@ -373,11 +395,10 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 
 | Sujet | Où en est-on | Quand |
 | --- | --- | --- |
-| Suite de la feuille de route | Phase 9 terminée (prévisions, plan de production figé à J-2, MRP) ; autres pistes dans ce tableau (TRS…) | À décider avec Nicolas |
+| Suite de la feuille de route | Phases 9 (planification) et 10 (TRS) terminées ; autres pistes dans ce tableau | À décider avec Nicolas |
 | Stock de produits finis de démonstration | Résolu en 8a par l'historique de 4 semaines (11 produits finis). Les commandes EDI de la démo 7a, reçues avant l'historique, restent en partie non livrées : elles pèsent sur le taux de service de la semaine en cours | — |
 | Valorisation des ruptures (CA perdu) | La démarque est valorisée (8a) ; les ruptures ne sont comptées qu'en quantités | Si besoin |
 | Pénalités des enseignes sous 98,5 % | Seulement signalées (taux de service en rouge) | Si besoin |
-| TRS | « Non disponible » : pas de saisie des arrêts de ligne (la fiabilité des prévisions est disponible depuis la 9a) | Phase complémentaire possible |
 | Durée du chargement de l'historique de démo (≈ 6 min, 6 semaines depuis la 9a) | Une seule fois ; les tests utilisent `--sans-historique` ou un historique de 4 jours | À optimiser si besoin |
 | Saisonnalité et événements calendaires dans les prévisions | La moyenne pondérée ne connaît que les 4 dernières semaines ; le commercial corrige à la main | Si besoin, quand l'historique sera plus long |
 | Versions datées des nomenclatures | Une seule nomenclature par article (l'historique garde les anciennes valeurs) | Phase complémentaire possible |
