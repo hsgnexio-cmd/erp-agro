@@ -369,6 +369,31 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Saisir ou annuler un arrêt ; déclarer plage de marche et rebuts | `admin`, `production` |
 | Consulter le TRS et les arrêts | tous les rôles |
 
+## Phase 11a – Calendrier : jours ouvrés et jours fériés
+
+| Décision | Raison |
+| --- | --- |
+| Phase 11 découpée en 11a (calendrier et règles) et 11b (historique de démonstration sur le vrai calendrier) | Deux pull requests plus faciles à relire et à tester. |
+| Module `referentiel/calendar.py` : les 11 jours fériés de France calculés chaque année (Pâques par l'algorithme grégorien), sans nouvelle bibliothèque | Validé. Rien à saisir chaque année. |
+| **Fermetures exceptionnelles** par site (`SiteClosure` : site, du, au, motif ; pas de chevauchement), saisies dans l'administration par le rôle `admin` | Validé (ponts, inventaire annuel…). Historique des modifications (règle 12). |
+| Qui travaille quand : production (NAN, REN) du lundi au vendredi ; expédition PFN, livraisons des enseignes et prise de commande du lundi au samedi ; réception MPE du lundi au vendredi ; jamais un jour férié ni un jour de fermeture du site | Validé. Fiche : production 5 j/7 ; la grande distribution est livrée 6 j/7. |
+| Heure limite en jours ouvrés : avant 11 h → prochain jour de livraison ; après → le suivant ; une commande reçue un dimanche ou un jour férié compte comme reçue le jour ouvré suivant au matin | Validé. Exemple : mardi 10/11 avant 11 h → jeudi 12/11 (le 11 est férié). |
+| Livraison un dimanche ou un jour férié **refusée**, avec la prochaine date possible dans le message | Validé (commande saisie comme EDI). |
+| « Livrée à l'heure » = expédiée au plus tard le **jour d'expédition précédent** la livraison (samedi pour un lundi) ; date enregistrée sur la commande à sa création (`ship_by_date`, remplie aussi pour les commandes existantes par la migration `ventes/0003`) | Validé. La vue `bi.fact_service` lit cette date (migration `pilotage/0006`) : pas de calendrier à recalculer en SQL. Une fermeture saisie après la commande ne change pas sa date limite. |
+| Plan de production : quantité répartie sur les jours ouvrés de l'usine de la ligne ; saisie refusée un jour fermé ; charge à 0 h de capacité ce jour-là | Validé. |
+| Planning : un OF un jour non ouvré est **accepté avec un avertissement** ; cases grisées | Validé (heures supplémentaires possibles), comme la surcharge. |
+| Délais fournisseurs en **jours ouvrés de réception** (MPE) : livraison prévue par défaut d'une commande, date de commande et livraison des propositions MRP | Validé. Un délai de 3 jours commandé un vendredi donne une livraison le mercredi. |
+| EDI simulé : rien les jours fériés | Validé. |
+| Tests : **calendrier 7 j/7 sans jour férié par défaut** (fixture `seven_day_calendar` du `conftest.py` racine) ; les tests du calendrier portent la marque `@pytest.mark.calendrier` | Les tests des autres règles utilisent des dates relatives (« demain ») : ils auraient échoué chaque veille de week-end ou de jour férié (constaté le 10/11, veille de l'Armistice). |
+| Démo (11a) : commandes de l'historique et de la démo des expéditions calées sur le premier jour de livraison possible | Pour que le chargement ne soit jamais refusé. Le rejeu complet sur le vrai calendrier (production du lundi au vendredi, stock avant les week-ends) est l'objet de la 11b. |
+
+### Droits
+
+| Opération | Rôles |
+| --- | --- |
+| Saisir une fermeture exceptionnelle (administration) | `admin` |
+| Consulter le calendrier | tous les rôles |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -386,7 +411,7 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Connexion par session Django + jeton CSRF | `comptes/views.py`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Sécurité standard ; l'origine du front-end (`localhost:5173`) doit être déclarée de confiance. |
 | Données de démonstration : une commande, relançable, dates relatives à aujourd'hui | `charger_donnees_demo` (référentiel → achats → stocks → surveillance → traçabilité → production → ventes → expéditions → prévisions → historique de 6 semaines → plan de production de S+1 (brouillon) ; `--sans-historique` dans les tests) | Démo cohérente quel que soit le jour ; chaque module ne recharge rien s'il est déjà présent. |
 | Tâches planifiées Celery Beat | `CELERY_BEAT_SCHEDULE` (`config/settings.py`) | 6 h : alertes de stock ; 9 h 30 en semaine : EDI simulé ; lundi 5 h : prévision figée ; samedi 12 h : plan de production de S+1 figé. Commandes `verifier_alertes` et `simuler_edi` pour lancer à la main. |
-| Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. |
+| Tests | pytest : `conftest.py` racine + un par app ; Vitest : `mockApi`, `renderApp` (`frontend/src/test/utils.tsx`) | Noms de tests en français décrivant la règle vérifiée. Calendrier 7 j/7 par défaut, vrai calendrier avec `@pytest.mark.calendrier` (phase 11). |
 | Front-end | hook `useApi` (rechargement par paramètre `?v=`), `auth/roles.ts`, `StatusBadge` | Même façon de faire sur tous les écrans. |
 
 ## Points en suspens
@@ -406,7 +431,7 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |
 | Réservation de stock (OF, préparation) | Pas de réservation ; contrôle du stock au moment de l'opération | Si besoin |
 | Formulaires React du référentiel | Saisie dans l'administration Django | Si besoin |
-| Jours ouvrés et jours fériés | L'heure limite, le planning et l'historique de démo (7 jours sur 7) ne tiennent pas compte des week-ends | Si besoin |
+| Historique de démonstration sur le vrai calendrier | Règles en jours ouvrés faites en 11a ; l'historique produit encore 7 j/7 | Phase 11b |
 | Durée de la suite de tests back-end (≈ 5 min en local) | Due surtout aux tests qui rechargent toutes les données de démo | À optimiser (données de démo partagées entre tests) |
 | Expéditions de démonstration de la phase 5 | Non rattachées à des commandes clients (numéros `EXP-`) : elles ne comptent pas dans le taux de service | À garder en tête en phase 8 |
 | Base locale de Nicolas modifiée par les vérifications | Commande CA-2026-00011 et lot de crème bloqué (5,2 °C), lot de lait libéré et transféré, message EDI `ENS4-…-ERR`, commande CC-2026-00019 préparée et expédiée en 7b (BL-2026-00005, 54 lasagnes), compte `test-verif` désactivé | Repartir d'une base neuve si besoin (procédure dans `docs/prochaine-etape.md`) |

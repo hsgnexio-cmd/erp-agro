@@ -36,7 +36,7 @@ Les dates sont en heure de Paris. Les montants sont en euros HT.
 | `bi.fact_stock_movement` | mouvement de stock, valorisé (`value`) ; `is_markdown` = destruction, don, alimentation animale, destruction d'invendable | démarque, couvertures (sorties) |
 | `bi.fact_stock_daily` | jour × article × site × statut du lot ce jour-là : stock de fin de journée (`quantity`) et sa valeur (`value`) | couvertures |
 | `bi.fact_sales` | ligne expédiée : quantité, prix, montant (`amount`) | chiffre d'affaires |
-| `bi.fact_service` | commande client : commandé, livré à l'heure, en retard, manquant ; `is_counted` = faux pour une commande encore dans les temps | taux de service |
+| `bi.fact_service` | commande client : commandé, livré à l'heure, en retard, manquant ; `on_time_limit` = dernier jour d'expédition avant la livraison (jours ouvrés) ; `is_counted` = faux pour une commande encore dans les temps | taux de service |
 | `bi.fact_reception` | ligne de réception : `is_compliant`, motifs | conformité réception |
 | `bi.fact_production_yield` | OF terminé : masse théorique, masse réelle, `yield_pct` | rendement matière |
 | `bi.fact_recall` | rappel lancé : durée du calcul (`duration_ms`), lots bloqués, clients | délai de traçabilité |
