@@ -1,7 +1,8 @@
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
-addopts = "-ra"
+# -n auto : tests répartis sur tous les cœurs (pytest-xdist) ; « pytest -n 0 » pour un seul cœur
+addopts = "-ra -n auto"
 markers = [
     "calendrier: utilise le vrai calendrier (week-ends, jours fériés) au lieu du calendrier 7 j/7 des tests",
 ]

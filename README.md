@@ -345,10 +345,16 @@ docker compose exec backend python manage.py verifier_alertes
 
 ## Tests
 
-Tests du back-end (pytest) :
+Tests du back-end (pytest), répartis sur tous les cœurs du processeur (environ 2 min 30) :
 
 ```powershell
 docker compose exec backend pytest
+```
+
+Pour lancer un seul fichier de tests, sur un seul processus (plus lisible en cas d'erreur) :
+
+```powershell
+docker compose exec backend pytest -n 0 ventes/tests/test_expedition.py
 ```
 
 Vérification du style du code Python (ruff) :

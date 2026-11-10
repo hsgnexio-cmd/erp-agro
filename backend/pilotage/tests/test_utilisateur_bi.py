@@ -1,5 +1,6 @@
 """Utilisateur PostgreSQL de Power BI : lecture du schéma bi seulement (phase 8b)."""
 
+import os
 import secrets
 
 import psycopg
@@ -12,7 +13,8 @@ from psycopg import sql
 
 from pilotage.bi_access import create_or_update_user, role_exists
 
-ROLE = "powerbi_test"
+# Un rôle PostgreSQL vaut pour tout le serveur : un nom par processus de test (pytest-xdist)
+ROLE = f"powerbi_test_{os.environ.get('PYTEST_XDIST_WORKER', 'main')}"
 
 
 def _connect(password: str):
