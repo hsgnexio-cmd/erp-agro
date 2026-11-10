@@ -36,9 +36,23 @@ READ_AREAS: dict[str, list[Role] | None] = {
     "prix_vente": [ADMIN, DIRECTION, COMMERCIAL],
     # Prévisions de vente : ventes, production (plan), achats (MRP)
     "previsions": [ADMIN, DIRECTION, COMMERCIAL, PRODUCTION, ACHETEUR],
-    # Tableau de bord (chiffre d'affaires, démarque en euros…) : direction
-    "pilotage": [ADMIN, DIRECTION],
+    # Tableau de bord : chaque rôle y voit les indicateurs de son métier (DASHBOARD_INDICATORS)
+    "pilotage": None,
 }
+
+# Indicateurs du tableau de bord de chaque rôle (codes de pilotage/indicators.py). L'admin et la
+# direction voient tout, avec les montants en euros ; un utilisateur à plusieurs rôles voit la
+# réunion de leurs indicateurs.
+DASHBOARD_INDICATORS: dict[Role, list[str]] = {
+    QUALITE: ["reception_compliance", "traceability", "markdown"],
+    PRODUCTION: ["material_yield", "oee", "material_coverage"],
+    ACHETEUR: ["material_coverage", "reception_compliance"],
+    COMMERCIAL: ["service_rate", "forecast_accuracy"],
+    MAGASINIER: ["service_rate", "finished_coverage"],
+}
+
+# Montants en euros (chiffre d'affaires, démarque, stocks valorisés) : direction seulement
+AMOUNTS_ROLES = [ADMIN, DIRECTION]
 
 
 def can_read(user, area: str) -> bool:
@@ -49,6 +63,22 @@ def can_read(user, area: str) -> bool:
 def readable_areas(user) -> list[str]:
     """Domaines que l'utilisateur peut consulter (renvoyés au front-end pour son menu)."""
     return [area for area in READ_AREAS if can_read(user, area)]
+
+
+def dashboard_indicators(user) -> set[str] | None:
+    """Codes des indicateurs que l'utilisateur voit au tableau de bord (None = tous)."""
+    if has_any_role(user, AMOUNTS_ROLES):
+        return None
+    codes = set()
+    for role, role_codes in DASHBOARD_INDICATORS.items():
+        if has_any_role(user, [role]):
+            codes.update(role_codes)
+    return codes
+
+
+def can_see_amounts(user) -> bool:
+    """Vrai si l'utilisateur voit les montants en euros du tableau de bord."""
+    return has_any_role(user, AMOUNTS_ROLES)
 
 
 def mask_prices(data: dict, request, area: str, fields: tuple[str, ...], line_fields=()) -> dict:

@@ -48,7 +48,7 @@ const INDICATORS: Indicators = {
       target_min: '70',
       status: 'indisponible',
       detail: 'Non disponible : l’ERP n’enregistre ni les arrêts de ligne ni les cadences réelles.',
-      filters: [],
+      filters: ['période (début de marche)', 'site'],
     }),
   ],
   weeks: [
@@ -110,6 +110,24 @@ describe('Tableau de bord', () => {
     expect(within(row).getByText('96 %')).toHaveClass('badge-danger')
     // Le TRS n'a pas d'évolution par semaine
     expect(screen.queryByRole('cell', { name: 'TRS' })).not.toBeInTheDocument()
+  })
+
+  it('n’affiche que les filtres utiles aux indicateurs du rôle', async () => {
+    // Un commercial : taux de service (filtre enseigne), sans indicateur par site
+    mockApi({
+      '/api/auth/me/': { body: { ...TEST_USER, roles: ['commercial'] } },
+      '/api/referentiel/sites/': { body: paginated([]) },
+      '/api/referentiel/customers/': { body: paginated([]) },
+      '/api/pilotage/indicators/': {
+        body: { ...INDICATORS, indicators: [indicator({})], weeks: [] },
+      },
+    })
+    renderApp('/tableau-de-bord')
+
+    await screen.findByRole('article', { name: 'Taux de service' })
+    expect(screen.getByLabelText('Enseigne')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Site')).not.toBeInTheDocument()
+    expect(screen.queryByRole('article', { name: 'Démarque' })).not.toBeInTheDocument()
   })
 
   it('recalcule avec le site choisi', async () => {

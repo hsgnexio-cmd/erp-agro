@@ -8,7 +8,7 @@ const STOREKEEPER = {
   first_name: 'Sandrine',
   job_title: 'Cheffe de quai, plateforme PFN',
   roles: ['magasinier'],
-  areas: ['referentiel', 'stocks', 'qualite', 'achats', 'ventes'],
+  areas: ['referentiel', 'stocks', 'qualite', 'achats', 'ventes', 'pilotage'],
 }
 
 describe("Accès selon le rôle", () => {
@@ -20,16 +20,17 @@ describe("Accès selon le rôle", () => {
     const menu = await screen.findByRole('navigation', { name: 'Menu principal' })
     expect(within(menu).getByRole('link', { name: 'Ventes' })).toBeInTheDocument()
     expect(within(menu).getByRole('link', { name: /Lots/ })).toBeInTheDocument()
-    expect(within(menu).queryByRole('link', { name: 'Tableau de bord' })).not.toBeInTheDocument()
+    // Tableau de bord ouvert à tous : le serveur n'y renvoie que les indicateurs du rôle
+    expect(within(menu).getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument()
     expect(within(menu).queryByRole('link', { name: 'Prévisions' })).not.toBeInTheDocument()
     expect(within(menu).queryByRole('link', { name: 'TRS' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Indicateurs de la fiche entreprise, par semaine')).not.toBeInTheDocument()
+    expect(screen.queryByText('Demande à 8 semaines, promotions, fiabilité')).not.toBeInTheDocument()
     expect(screen.getByText('Cheffe de quai, plateforme PFN', { exact: false })).toBeInTheDocument()
   })
 
   it('un écran hors du rôle affiche « Accès réservé »', async () => {
     mockApi({ '/api/auth/me/': { body: STOREKEEPER } })
-    renderApp('/tableau-de-bord')
+    renderApp('/previsions')
     expect(await screen.findByRole('heading', { name: 'Accès réservé' })).toBeInTheDocument()
   })
 })

@@ -4,7 +4,7 @@ import { canOpen } from '../auth/roles'
 import { useApi } from '../hooks/useApi'
 
 const SECTIONS = [
-  { to: '/tableau-de-bord', title: 'Tableau de bord', text: 'Indicateurs de la fiche entreprise, par semaine' },
+  { to: '/tableau-de-bord', title: 'Tableau de bord', text: 'Les indicateurs de ton métier, par semaine' },
   { to: '/articles', title: 'Articles', text: 'Matières, semi-finis, produits finis, emballages' },
   { to: '/fournisseurs', title: 'Fournisseurs', text: 'Coordonnées, délais, audits' },
   { to: '/clients', title: 'Clients', text: 'Enseignes, MDD, DLC minimale à la livraison' },

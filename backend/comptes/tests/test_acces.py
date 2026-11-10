@@ -13,7 +13,8 @@ from ventes import orders as sales
 
 
 def test_chaque_role_voit_son_metier_et_le_socle_commun(make_user):
-    commun = {"referentiel", "stocks", "qualite"}
+    # Socle commun ; le tableau de bord (pilotage) est filtré indicateur par indicateur
+    commun = {"referentiel", "stocks", "qualite", "pilotage"}
     attendu = {
         "direction": set(READ_AREAS),
         "acheteur": commun | {"achats", "prix_achat", "mrp", "production", "previsions"},
