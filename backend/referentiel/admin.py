@@ -23,6 +23,7 @@ from .models import (
     ProductionLine,
     Recipe,
     Site,
+    SiteClosure,
     Supplier,
     SupplierArticle,
 )
@@ -205,3 +206,9 @@ class ProductionLineAdmin(SimpleHistoryAdmin):
     list_display = ("code", "name", "site", "capacity_per_hour", "formats", "active")
     list_filter = ("site", "active")
     filter_horizontal = ("families",)
+
+
+@admin.register(SiteClosure)
+class SiteClosureAdmin(SimpleHistoryAdmin):
+    list_display = ("site", "start_date", "end_date", "reason")
+    list_filter = ("site",)

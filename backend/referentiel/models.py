@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from simple_history.models import HistoricalRecords
@@ -540,3 +541,38 @@ class ProductionLine(ValidatedModel):
 
     def clean(self) -> None:
         services.validate_production_line(self)
+
+
+# --- Calendrier (phase 11) ---------------------------------------------------------------
+
+
+class SiteClosure(ValidatedModel):
+    """Fermeture exceptionnelle d'un site (pont, inventaire annuel…), en plus des jours fériés."""
+
+    site = models.ForeignKey(
+        Site, on_delete=models.PROTECT, related_name="closures", verbose_name="site"
+    )
+    start_date = models.DateField("du")
+    end_date = models.DateField("au (inclus)")
+    reason = models.CharField("motif", max_length=200)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["start_date", "site"]
+        verbose_name = "fermeture exceptionnelle"
+        verbose_name_plural = "fermetures exceptionnelles"
+
+    def __str__(self) -> str:
+        return f"{self.site.code} : {self.start_date:%d/%m/%Y} au {self.end_date:%d/%m/%Y}"
+
+    def clean(self) -> None:
+        if not (self.reason or "").strip():
+            raise ValidationError({"reason": "Indique le motif de la fermeture."})
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({"end_date": "La date de fin précède la date de début."})
+        if self.site_id and self.start_date and self.end_date:
+            overlap = SiteClosure.objects.filter(
+                site_id=self.site_id, start_date__lte=self.end_date, end_date__gte=self.start_date
+            ).exclude(pk=self.pk)
+            if overlap.exists():
+                raise ValidationError("Une autre fermeture de ce site couvre déjà ces dates.")

@@ -16,6 +16,7 @@ SALES = [Role.ADMIN, Role.COMMERCIAL]
 # Nom technique du modèle → rôles autorisés à créer / modifier
 WRITE_ROLES: dict[str, list[Role]] = {
     "site": ADMIN,
+    "siteclosure": ADMIN,
     "location": ADMIN,
     "productfamily": ADMIN,
     "materialcategory": ADMIN,

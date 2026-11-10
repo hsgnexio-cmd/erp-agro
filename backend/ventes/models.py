@@ -103,6 +103,9 @@ class CustomerOrder(models.Model):
     customer_reference = models.CharField("référence de l'enseigne", max_length=50, blank=True)
     received_at = models.DateTimeField("reçue le")
     requested_delivery_date = models.DateField("livraison demandée")
+    # Phase 11 : dernier jour d'expédition de la plateforme avant la livraison (transport J+1),
+    # calculé avec le calendrier à la prise de commande ; sert au taux de service
+    ship_by_date = models.DateField("à expédier au plus tard le", null=True, blank=True)
     status = models.CharField(
         "statut", max_length=20, choices=OrderStatus.choices, default=OrderStatus.RECEIVED
     )
