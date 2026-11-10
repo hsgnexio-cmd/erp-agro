@@ -120,3 +120,18 @@ def test_commande_refusee_pour_une_livraison_un_jour_ferie(
         requested_delivery_date=MONDAY, lines=line, received_at=at(FRIDAY, 9),
     )  # fmt: skip
     assert order.ship_by_date == SATURDAY
+
+
+def test_api_du_calendrier(api_client_for):
+    site = Site.objects.create(code="REN", name="Usine froid", site_type=SiteType.FACTORY)
+    SiteClosure.objects.create(site=site, start_date=FRIDAY, end_date=FRIDAY, reason="Pont")
+    response = api_client_for("magasinier").get("/api/referentiel/calendar/", {"year": 2026})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["holidays"]) == 11
+    assert {"date": "2026-11-11", "label": "Armistice 1918", "weekday": "mercredi"} in data[
+        "holidays"
+    ]
+    assert data["closures"][0]["site_code"] == "REN"
+    bad = api_client_for("qualite").get("/api/referentiel/calendar/", {"year": "abc"})
+    assert bad.status_code == 400

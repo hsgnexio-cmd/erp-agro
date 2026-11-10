@@ -846,3 +846,15 @@ tr.late td {
   border-radius: 4px;
   z-index: -1;
 }
+
+/* --- Calendrier (jours non ouvrés) --- */
+
+.closed-day {
+  background: repeating-linear-gradient(135deg, #f1f2ef, #f1f2ef 6px, #e6e8e3 6px, #e6e8e3 12px);
+  color: var(--muted);
+}
+
+.closed-label {
+  color: var(--muted);
+  font-style: italic;
+}

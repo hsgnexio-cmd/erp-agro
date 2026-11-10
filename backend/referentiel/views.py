@@ -1,8 +1,16 @@
 """Adresses de l'API du référentiel : /api/referentiel/…"""
 
-from rest_framework import viewsets
+from datetime import date
 
-from . import serializers, services
+from django.utils import timezone
+from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from . import calendar, serializers, services
 from .models import (
     Allergen,
     Article,
@@ -16,6 +24,7 @@ from .models import (
     ProductionLine,
     Recipe,
     Site,
+    SiteClosure,
     Supplier,
     SupplierArticle,
 )
@@ -148,3 +157,56 @@ class ProductionLineViewSet(ReferentielViewSet):
             ids = [line.pk for line in queryset if services.line_accepts(line, article) is None]
             queryset = queryset.filter(pk__in=ids)
         return queryset
+
+
+# --- Calendrier (phase 11) ---------------------------------------------------------------
+
+
+class CalendarView(APIView):
+    """Jours fériés et fermetures exceptionnelles d'une année : /api/referentiel/calendar/"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        value = request.query_params.get("year") or str(timezone.localdate().year)
+        if not value.isdigit() or not 2000 <= int(value) <= 2100:
+            raise ValidationError({"year": ["Année invalide."]})
+        year = int(value)
+        closures = SiteClosure.objects.filter(
+            start_date__lte=date(year, 12, 31), end_date__gte=date(year, 1, 1)
+        ).select_related("site")
+        return Response(
+            {
+                "year": year,
+                "rules": [
+                    {"activity": "Production (usines NAN, REN)", "days": "du lundi au vendredi"},
+                    {
+                        "activity": "Expédition (PFN), livraisons des enseignes, prise de commande",
+                        "days": "du lundi au samedi",
+                    },
+                    {
+                        "activity": "Réception des fournisseurs (MPE), délais fournisseurs",
+                        "days": "du lundi au vendredi",
+                    },
+                ],
+                "holidays": [
+                    {
+                        "date": day,
+                        "label": label,
+                        "weekday": calendar.WEEKDAY_NAMES[day.weekday()],
+                    }
+                    for day, label in calendar.french_holidays(year).items()
+                ],
+                "closures": [
+                    {
+                        "id": closure.id,
+                        "site_code": closure.site.code,
+                        "site_name": closure.site.name,
+                        "start_date": closure.start_date,
+                        "end_date": closure.end_date,
+                        "reason": closure.reason,
+                    }
+                    for closure in closures
+                ],
+            }
+        )
