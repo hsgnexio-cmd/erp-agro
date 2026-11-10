@@ -39,6 +39,7 @@ from unittest import mock
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from achats import services as purchasing
@@ -66,7 +67,7 @@ from stocks.choices import LotStatus, UnsoldDestination
 from stocks.models import Lot
 from ventes import orders as sales
 from ventes import shipping
-from ventes.models import CustomerOrder, CustomerOrderLine, OrderSource
+from ventes.models import CustomerOrder, CustomerOrderLine, OrderSource, OrderStatus
 
 # Six semaines : il faut quelques semaines de commandes avant que les prévisions figées
 # puissent être comparées aux commandes réelles (fiabilité à S-1 sur trois semaines)
@@ -108,7 +109,7 @@ FRESH_MAX_COVER_DAYS = 4
 OTHER_COVER_DAYS = 24
 # Navette entrepôt → usine : jusqu'à 3 jours de besoin d'un coup
 FACTORY_SUPPLY_DAYS = 3
-NON_COMPLIANT_RATE = 0.03
+NON_COMPLIANT_RATE = 0.02
 
 # Incidents volontaires : (jour de l'historique, …)
 BREAKDOWN = (9, "PF-SAU-BOEBOU-BRE-300", "Panne de la ligne : production arrêtée après 30 min")
@@ -347,6 +348,7 @@ class History:
                     received = self._receive_customer_orders(day)
                 with simulated_clock(_at(day, 15)):
                     self._ship(offset, received)
+                    self._ship_pending(day)
             with simulated_clock(_at(day, 19)):
                 self._dispose_unsellable(day)
                 self._destroy_expired_materials(day)
@@ -482,7 +484,7 @@ class History:
             # pendant la fermeture et ne passerait plus la DLC minimale des enseignes
             safety = SAFETY_DAYS_SHORT
         while current < next_day:
-            covered += self._demand(article, current)
+            covered += self._demand(article, current) + self._pending_demand(article, current)
             current += timedelta(days=1)
         quantity = covered + mean * safety - self._usable_stock(article, day)
         return _round_up(quantity, Decimal("12")) if quantity > 0 else ZERO
@@ -697,6 +699,40 @@ class History:
                 temperature = Decimal(self.rng.choice(["2.1", "2.6", "3.0", "3.4"]))
                 shipping.ship_order(
                     shipment, carrier="Transports Frigo Atlantique", temperature=temperature
+                )
+
+    def _pending_demand(self, article: Article, day: date) -> Decimal:
+        """Quantités des commandes des autres données de démonstration (EDI des derniers jours)
+        à expédier ce jour-là : la production les prévoit aussi."""
+        total = (
+            CustomerOrderLine.objects.filter(
+                article=article,
+                order__status=OrderStatus.RECEIVED,
+                order__ship_by_date=day,
+            )
+            .exclude(order__customer_reference__startswith=f"{REFERENCE}-")
+            .aggregate(total=Sum("quantity"))["total"]
+        )
+        return total or ZERO
+
+    def _ship_pending(self, day: date) -> None:
+        """Commandes des autres données de démonstration (EDI des derniers jours…) arrivées à
+        leur date limite d'expédition : la plateforme les expédie aussi. Celles reçues
+        aujourd'hui restent à préparer dans l'application."""
+        pending = (
+            CustomerOrder.objects.filter(
+                status=OrderStatus.RECEIVED,
+                ship_by_date=day,
+                received_at__lte=timezone.now(),
+            )
+            .exclude(customer_reference__startswith=f"{REFERENCE}-")
+            .select_related("customer")
+        )
+        for order in pending:
+            shipment = self._prepare(order)
+            if shipment is not None:
+                shipping.ship_order(
+                    shipment, carrier="Transports Frigo Atlantique", temperature=Decimal("2.8")
                 )
 
     def _ship_delayed(self, day: date) -> None:
