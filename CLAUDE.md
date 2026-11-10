@@ -104,7 +104,7 @@ Conventions adoptées en cours de route (détail et raisons dans `docs/decisions
 - **Numérotation** : `referentiel.services.next_document_number` (compteur en base, sans trou). Formats : `CA-`, `REC-`, `LR-`, `LF-`, `TR-`, `INV-`, `RAP-`, `OF-`, `CC-`, `BL-`, `PRV-` (versions de prévision), et `EXP-` pour les expéditions de la phase 5 ; série `SSCC` pour les palettes.
 - **Droits** : `comptes.permissions.WriteRolesPermission` + attribut `write_roles` de la vue ; les groupes Django sont synchronisés après chaque `migrate` (`sync_group_permissions`).
 - **API** : les décimaux sont renvoyés en texte ; une `ValidationError` Django devient une réponse 400 lisible (`config/exceptions.py`).
-- **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui. Elle rejoue aussi 6 semaines d'historique (`pilotage/demo_history.py`, horloge simulée, prévision figée chaque lundi, ≈ 6 min) ; les tests l'appellent avec `sans_historique=True`.
+- **Données de démonstration** : une seule commande `charger_donnees_demo`, relançable sans doublon ; dates calculées à partir d'aujourd'hui. Elle rejoue aussi 6 semaines d'historique sur le vrai calendrier (`pilotage/demo_history.py`, horloge simulée, production lun-ven, prévision figée chaque lundi, ≈ 6 min) ; les tests l'appellent avec `sans_historique=True`.
 - **Calendrier** : jours fériés et jours ouvrés par activité dans `referentiel/calendar.py` (production lun-ven, expédition et livraisons lun-sam, réception lun-ven) ; les tests tournent sur un calendrier 7 j/7, sauf ceux marqués `@pytest.mark.calendrier`.
 - **Front-end** : hook `useApi`, droits dans `auth/roles.ts`, tests avec `mockApi` / `renderApp` (`src/test/utils.tsx`).
 
@@ -140,7 +140,7 @@ Ne jamais : supprimer des données ou des fichiers sans demander, modifier une r
 | 8. Pilotage | Indicateurs, connexion Power BI, requêtes Power Query | Terminée (8a : historique de démo, vues SQL `bi`, tableau de bord ; 8b : utilisateur `powerbi` en lecture seule, Power Query, mesures DAX, export CSV) |
 | 9. Prévisions et planification | Prévisions de vente à 8 semaines, promotions, fiabilité ; plan figé à J-2, calcul des besoins (MRP) | Terminée (9a : prévisions de vente, promotions, corrections, versions figées, fiabilité à S-1 ; 9b : plan de production hebdomadaire figé à J-2, OF créés au gel ; 9c : calcul des besoins (MRP), propositions d'achat, commandes brouillon) |
 | 10. TRS | Arrêts de ligne, plages de marche, rebuts, TRS (disponibilité × performance × qualité) | Terminée |
-| 11. Calendrier | Jours ouvrés, jours fériés, fermetures de site ; historique de démo sur le vrai calendrier | En cours (11a : calendrier, heure limite et taux de service en jours ouvrés, plan, planning, délais fournisseurs ; 11b : historique de démonstration, à faire) |
+| 11. Calendrier | Jours ouvrés, jours fériés, fermetures de site ; historique de démo sur le vrai calendrier | Terminée (11a : calendrier, heure limite et taux de service en jours ouvrés, plan, planning, délais fournisseurs ; 11b : historique de démonstration sur le vrai calendrier) |
 
 Mettre à jour la colonne Statut à la fin de chaque phase.
 
