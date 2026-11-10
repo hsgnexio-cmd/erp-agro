@@ -1,24 +1,18 @@
-# Prochaine étape : après la partie 11a
+# Prochaine étape : après la phase 11
 
-Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (section « Phase 11a » et « Points en suspens »).
+Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Phase 11a », « Phase 11b » et « Points en suspens »).
 
 ## 1. Où en est le projet
 
 - Les phases 1 à 10 sont terminées ; rapport Power BI complété (pull request #16).
-- **Partie 11a – Calendrier** : faite sur la branche `phase-11a-calendrier` (pull request à créer et fusionner par Nicolas) :
-  - `referentiel/calendar.py` : jours fériés, fermetures de site (`SiteClosure`), jours ouvrés par activité ;
-  - heure limite et livraisons en jours ouvrés, `ship_by_date` pour le taux de service (Python et vue `bi.fact_service`) ;
-  - plan de production, planning, délais fournisseurs et MRP en jours ouvrés ; EDI simulé arrêté les jours fériés ;
-  - écran **Calendrier**, jours non ouvrés grisés ; tests sur calendrier 7 j/7 sauf `@pytest.mark.calendrier`.
+- **Phase 11 – Calendrier** : deux branches à fusionner **dans l'ordre** par Nicolas :
+  1. `phase-11a-calendrier` : calendrier (jours fériés, fermetures de site), heure limite, taux de service, plan, planning, délais fournisseurs et MRP en jours ouvrés, écran **Calendrier** ;
+  2. `phase-11b-historique` (construite sur la 11a) : historique de démonstration sur le vrai calendrier.
+- La base locale de Nicolas garde son ancien historique (7 j/7) ; pour voir la nouvelle démo, repartir d'une base neuve (section 4).
 
-## 2. Prochaine étape : partie 11b – Historique de démonstration sur le vrai calendrier
+## 2. Prochaine étape : à choisir avec Nicolas
 
-Décision validée (09/11/2026) : l'historique rejoue le vrai calendrier. Plan détaillé à présenter :
-
-- commandes reçues du lundi au samedi (heure limite), livraisons du lundi au samedi, expéditions la veille d'un jour de livraison ;
-- production du lundi au vendredi seulement (`pilotage/demo_history.py`, `_produce`) : la production du vendredi et la veille d'un jour férié couvre les expéditions jusqu'au jour ouvré suivant (stock de sécurité, DLC courtes) ;
-- prévisions figées le lundi, plages de marche et arrêts seulement les jours ouvrés ;
-- vérifier les indicateurs de démo (taux de service, TRS, fiabilité, couvertures) et ajuster les réglages si besoin.
+Pistes ci-dessous ; présenter un plan et les décisions métier avant de coder.
 
 ## 3. Pistes
 

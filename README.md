@@ -113,7 +113,7 @@ Remplir la base avec des données fictives cohérentes avec la fiche entreprise 
 docker compose exec backend python manage.py charger_donnees_demo
 ```
 
-La commande rejoue aussi **6 semaines d'historique**, jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables, et la prévision de vente figée chaque lundi. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes) et une promotion ×2 d'une enseigne. C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
+La commande rejoue aussi **6 semaines d'historique** sur le vrai calendrier (commandes et expéditions du lundi au samedi, production du lundi au vendredi, jours fériés), jour par jour : réceptions, fabrications, commandes des enseignes, expéditions, invendables, et la prévision de vente figée chaque lundi. Elle passe par les mêmes règles que l'application, avec quelques incidents volontaires (panne de ligne, transporteur en retard, fuite en cuisson, réceptions non conformes) et une promotion ×2 d'une enseigne. C'est ce qui alimente le tableau de bord. Ce chargement prend **environ 6 minutes** ; pour s'en passer :
 
 ```powershell
 docker compose exec backend python manage.py charger_donnees_demo --sans-historique

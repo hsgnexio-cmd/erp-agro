@@ -394,6 +394,19 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Saisir une fermeture exceptionnelle (administration) | `admin` |
 | Consulter le calendrier | tous les rôles |
 
+## Phase 11b – Historique de démonstration sur le vrai calendrier
+
+| Décision | Raison |
+| --- | --- |
+| Commandes des enseignes du lundi au samedi (jours fériés exclus), pour le prochain jour de livraison ; expédition le jour même à 15 h | Même règles que l'application (11a) : heure limite et livraisons en jours ouvrés. |
+| Production du lundi au vendredi seulement ; chaque fabrication couvre les expéditions jusqu'au jour de production suivant (le samedi pour le vendredi, la veille d'un jour férié) | Fiche entreprise : 5 jours sur 7. |
+| La qualité **libère à 14 h** la production du matin (historique seulement) | Validé par Nicolas (10/11/2026). Sinon, les livraisons du mardi n'auraient pas de produit frais. Dans l'application, la libération reste une décision manuelle de la qualité. |
+| Un produit dont la DLC restante serait trop courte à la livraison **n'est pas commandé** ce jour-là (produits à 8 jours livrés le lundi, piémontaise pour ENS4 à 75 %) | Validé par Nicolas (10/11/2026) : assortiment réaliste plutôt que des ruptures artificielles. Calcul : dernier jour de production avant l'expédition + part minimale de l'enseigne ≤ durée de vie. |
+| Pas de stock de sécurité la veille d'un week-end ou d'un jour férié | Il vieillissait pendant la fermeture et finissait donné le lundi : la démarque de la démo montait à 9,8 %. |
+| Invendables jugés sur la **prochaine livraison réelle** (calendrier) ; achats de frais sur 4 jours de besoin au plus (au lieu de 6) | Sans production le week-end, la viande achetée pour 6 jours périmait. |
+| Incidents (panne, fuite, transporteur en retard) au premier jour ouvré à partir du jour prévu ; première prévision figée seulement après une semaine complète de commandes | Résultats identiques quel que soit le jour du chargement ; une première semaine partielle donnait une fiabilité de 34 %. |
+| Résultat mesuré (28 derniers jours, chargement du 10/11/2026) | Démarque 1,49 % ; TRS 75 % ; taux de service 99,5 à 99,7 % sur les semaines complètes ; fiabilité des prévisions 83,5 % sur 3 semaines ; rendement 98,5 %. La couverture produits finis par semaine vaut presque 0 : elle est mesurée le dimanche, quand le stock est expédié et que l'usine ne produit pas. La semaine en cours reste basse (commandes de démonstration des phases 7a et 7b). |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
@@ -431,7 +444,6 @@ Règles de fonctionnement prises en cours de route, valables pour tous les modul
 | Envoi d'e-mails (alertes, rappels, commandes fournisseurs en PDF) | Pas de serveur d'envoi ; tout est dans l'application | Si besoin |
 | Réservation de stock (OF, préparation) | Pas de réservation ; contrôle du stock au moment de l'opération | Si besoin |
 | Formulaires React du référentiel | Saisie dans l'administration Django | Si besoin |
-| Historique de démonstration sur le vrai calendrier | Règles en jours ouvrés faites en 11a ; l'historique produit encore 7 j/7 | Phase 11b |
 | Durée de la suite de tests back-end (≈ 5 min en local) | Due surtout aux tests qui rechargent toutes les données de démo | À optimiser (données de démo partagées entre tests) |
 | Expéditions de démonstration de la phase 5 | Non rattachées à des commandes clients (numéros `EXP-`) : elles ne comptent pas dans le taux de service | À garder en tête en phase 8 |
 | Base locale de Nicolas modifiée par les vérifications | Commande CA-2026-00011 et lot de crème bloqué (5,2 °C), lot de lait libéré et transféré, message EDI `ENS4-…-ERR`, commande CC-2026-00019 préparée et expédiée en 7b (BL-2026-00005, 54 lasagnes), compte `test-verif` désactivé | Repartir d'une base neuve si besoin (procédure dans `docs/prochaine-etape.md`) |
