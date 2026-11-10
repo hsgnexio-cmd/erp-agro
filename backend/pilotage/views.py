@@ -67,6 +67,7 @@ class IndicatorsView(APIView):
     """
 
     permission_classes = [WriteRolesPermission]
+    read_area = "pilotage"
 
     def get(self, request: Request) -> Response:
         params = _parameters(request)
@@ -108,6 +109,7 @@ class IndicatorsExportView(APIView):
     """Les mêmes indicateurs en fichier CSV, à ouvrir dans Excel."""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "pilotage"
 
     def get(self, request: Request) -> HttpResponse:
         params = _parameters(request)

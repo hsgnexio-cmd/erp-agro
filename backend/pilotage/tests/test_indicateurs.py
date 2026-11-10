@@ -193,10 +193,13 @@ def test_stock_du_jour_avec_le_statut_du_lot_ce_jour_la(cream, cream_room):
 # --- API -----------------------------------------------------------------------------------
 
 
-def test_tous_les_roles_consultent_les_indicateurs(demo, api_client_for):
-    for role in ("direction", "magasinier", "commercial"):
+def test_la_direction_consulte_les_indicateurs_pas_le_quai(demo, api_client_for):
+    # Matrice d'accès : le tableau de bord (CA, démarque en euros) est réservé à la direction
+    for role in ("magasinier", "commercial"):
         response = api_client_for(role).get("/api/pilotage/indicators/")
-        assert response.status_code == 200, role
+        assert response.status_code == 403, role
+    response = api_client_for("direction").get("/api/pilotage/indicators/")
+    assert response.status_code == 200
     data = response.json()
     assert [item["code"] for item in data["indicators"]] == [
         "service_rate", "markdown", "finished_coverage", "material_coverage",

@@ -45,6 +45,7 @@ class ProductionOrderViewSet(
         "article", "site", "line", "output_location", "created_by"
     ).prefetch_related("declarations__lot", "declarations__user")
     permission_classes = [WriteRolesPermission]
+    read_area = "production"
     write_roles = PRODUCTION
     http_method_names = ["get", "post", "patch", "head", "options"]
     filterset_fields = ["status", "site__code", "line", "article", "planned_date"]
@@ -136,6 +137,7 @@ class PlanningView(APIView):
     """Planning de la semaine : /api/production/planning/?week=2026-11-02&site=NAN"""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "production"
 
     def get(self, request: Request) -> Response:
         day = parse_date(request.query_params.get("week", "")) or timezone.localdate()
@@ -268,6 +270,7 @@ class MasterPlanViewSet(viewsets.ReadOnlyModelViewSet):
     ).order_by("-week")
     serializer_class = MasterPlanSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "production"
     write_roles = PRODUCTION
     filterset_fields = ["week", "status"]
 
@@ -329,6 +332,7 @@ class LineStopViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = LineStopSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "production"
     write_roles = PRODUCTION
     filterset_fields = ["line", "category", "production_order"]
 
@@ -372,6 +376,7 @@ class OeeView(APIView):
     """TRS par ligne sur une période : /api/production/oee/?start=…&end=…&site=…"""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "production"
 
     def get(self, request: Request) -> Response:
         start, end, site = _period(request)

@@ -9,6 +9,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .access import readable_areas
+
 
 def serialize_user(user) -> dict:
     return {
@@ -19,6 +21,8 @@ def serialize_user(user) -> dict:
         "last_name": user.last_name,
         "is_superuser": user.is_superuser,
         "roles": sorted(user.groups.values_list("name", flat=True)),
+        # Domaines consultables (matrice d'accès) : le menu de l'application en dépend
+        "areas": readable_areas(user),
     }
 
 

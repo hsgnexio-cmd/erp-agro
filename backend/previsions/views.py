@@ -52,6 +52,7 @@ class ForecastView(APIView):
     """Prévision du moment (non figée), par enseigne × produit, sur les 8 semaines à venir."""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "previsions"
 
     def get(self, request: Request) -> Response:
         customer_id = _customer_param(request)
@@ -118,6 +119,7 @@ class ForecastVersionViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelView
     )
     serializer_class = ForecastVersionSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "previsions"
     write_roles = SALES
     filterset_fields = ["source"]
 
@@ -160,6 +162,7 @@ class PromotionViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Promotion.objects.select_related("customer", "article", "created_by", "cancelled_by")
     serializer_class = PromotionSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "previsions"
     write_roles = SALES
     filterset_fields = ["customer", "article"]
 
@@ -188,6 +191,7 @@ class ForecastAdjustmentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelV
     queryset = ForecastAdjustment.objects.select_related("customer", "article", "created_by")
     serializer_class = ForecastAdjustmentSerializer
     permission_classes = [WriteRolesPermission]
+    read_area = "previsions"
     write_roles = SALES
     filterset_fields = ["customer", "article", "week"]
 
@@ -205,6 +209,7 @@ class AccuracyView(APIView):
     """Fiabilité à S-1, semaine par semaine (par défaut : les 8 dernières semaines)."""
 
     permission_classes = [WriteRolesPermission]
+    read_area = "previsions"
 
     def get(self, request: Request) -> Response:
         today = timezone.localdate()

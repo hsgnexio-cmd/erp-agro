@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useAuth } from '../auth/context'
+import { canOpen } from '../auth/roles'
 import { useApi } from '../hooks/useApi'
 
 const SECTIONS = [
@@ -47,7 +48,7 @@ export function HomePage() {
         {statusLabel}
       </p>
       <div className="cards">
-        {SECTIONS.map((section) => (
+        {SECTIONS.filter((section) => canOpen(user, section.to)).map((section) => (
           <Link key={section.to} to={section.to} className="card">
             <strong>{section.title}</strong>
             <span>{section.text}</span>
