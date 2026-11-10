@@ -8,9 +8,11 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db import connection
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from achats.models import ReceptionLine, SupplierPrice
 from achats.services import current_price
@@ -193,11 +195,7 @@ def test_stock_du_jour_avec_le_statut_du_lot_ce_jour_la(cream, cream_room):
 # --- API -----------------------------------------------------------------------------------
 
 
-def test_la_direction_consulte_les_indicateurs_pas_le_quai(demo, api_client_for):
-    # Matrice d'accès : le tableau de bord (CA, démarque en euros) est réservé à la direction
-    for role in ("magasinier", "commercial"):
-        response = api_client_for(role).get("/api/pilotage/indicators/")
-        assert response.status_code == 403, role
+def test_la_direction_consulte_tous_les_indicateurs(demo, api_client_for):
     response = api_client_for("direction").get("/api/pilotage/indicators/")
     assert response.status_code == 200
     data = response.json()
@@ -210,6 +208,61 @@ def test_la_direction_consulte_les_indicateurs_pas_le_quai(demo, api_client_for)
     assert service["target_min"] == "98.5"
     assert data["weeks"], "évolution par semaine"
     assert set(data["weeks"][0]["values"]) == set(indicators.WEEKLY_CODES)
+
+
+ROLE_INDICATORS = {
+    "qualite": ["markdown", "reception_compliance", "traceability"],
+    "production": ["material_coverage", "material_yield", "oee"],
+    "acheteur": ["material_coverage", "reception_compliance"],
+    "commercial": ["service_rate", "forecast_accuracy"],
+    "magasinier": ["service_rate", "finished_coverage"],
+}
+
+
+@pytest.mark.parametrize("role", list(ROLE_INDICATORS))
+def test_chaque_role_ne_recoit_que_les_indicateurs_de_son_metier(demo, api_client_for, role):
+    # Filtrage par le serveur : les autres indicateurs ne sont ni calculés ni renvoyés
+    data = api_client_for(role).get("/api/pilotage/indicators/").json()
+    codes = [item["code"] for item in data["indicators"]]
+    expected = ROLE_INDICATORS[role]
+    assert sorted(codes) == sorted(expected)
+    weekly = set(expected) & set(indicators.WEEKLY_CODES)
+    assert all(set(week["values"]) == weekly for week in data["weeks"])
+    # Aucun montant en euros hors direction
+    assert "€" not in str(data)
+    for item in data["indicators"]:
+        if item["code"] in indicators.AMOUNT_CODES:
+            assert item["detail"] == indicators.AMOUNTS_HIDDEN
+
+
+def test_montants_en_euros_pour_la_direction_seulement(demo, api_client_for):
+    data = api_client_for("direction").get("/api/pilotage/indicators/").json()
+    details = {item["code"]: item["detail"] for item in data["indicators"]}
+    assert "€" in details["markdown"] and "€" in details["material_coverage"]
+    # La valeur reste la même pour un rôle qui ne voit pas les euros
+    quality = api_client_for("qualite").get("/api/pilotage/indicators/").json()
+    markdown = next(item for item in quality["indicators"] if item["code"] == "markdown")
+    assert markdown["value"] == next(
+        item["value"] for item in data["indicators"] if item["code"] == "markdown"
+    )
+
+
+def test_plusieurs_roles_voient_la_reunion_de_leurs_indicateurs(demo, make_user):
+    user = make_user("commercial")
+    user.groups.add(Group.objects.get(name="magasinier"))
+    client = APIClient()
+    client.force_authenticate(user)
+    codes = {item["code"] for item in client.get("/api/pilotage/indicators/").json()["indicators"]}
+    assert codes == {"service_rate", "forecast_accuracy", "finished_coverage"}
+
+
+def test_export_csv_filtre_selon_le_role(demo, api_client_for):
+    content = api_client_for("commercial").get("/api/pilotage/indicators/export/").content
+    lines = content.decode("utf-8").splitlines()
+    labels = {line.split(";")[0] for line in lines}
+    assert {"Taux de service", "Fiabilité des prévisions"} <= labels
+    assert not labels & {"Démarque", "TRS", "Couverture matières", "Délai de traçabilité"}
+    assert "€" not in content.decode("utf-8")
 
 
 def test_api_refuse_les_filtres_incoherents(api_client_for, factory_site):

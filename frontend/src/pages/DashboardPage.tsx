@@ -64,7 +64,17 @@ function Tile({ indicator }: { indicator: Indicator }) {
   )
 }
 
-/** Tableau de bord de la direction : les indicateurs de la fiche entreprise. */
+/** Un indicateur tient-il compte de ce filtre (« site », « enseigne ») ? */
+function usesFilter(indicators: Indicator[] | undefined, name: string): boolean {
+  return (indicators ?? []).some((indicator) =>
+    indicator.filters.some((filter) => filter.split(' ')[0] === name),
+  )
+}
+
+/**
+ * Tableau de bord : chaque rôle voit les indicateurs de son métier, la direction voit tout
+ * (liste filtrée par le serveur, voir backend/comptes/access.py).
+ */
 export function DashboardPage() {
   const [start, setStart] = useState(daysAgoIso(27))
   const [end, setEnd] = useState(todayIso())
@@ -77,6 +87,12 @@ export function DashboardPage() {
   if (site) params.set('site', site)
   if (customer) params.set('customer', customer)
   const { data, error, loading } = useApi<Indicators>(`/api/pilotage/indicators/?${params}`)
+
+  // Derniers indicateurs reçus : les filtres restent affichés pendant un nouveau calcul
+  const [shown, setShown] = useState<Indicators>()
+  if (data && data !== shown) setShown(data)
+  const showSite = site !== '' || usesFilter(shown?.indicators, 'site')
+  const showCustomer = customer !== '' || usesFilter(shown?.indicators, 'enseigne')
 
   const weekly = data?.indicators.filter((indicator) =>
     data.weeks.some((week) => indicator.code in week.values),
@@ -93,8 +109,9 @@ export function DashboardPage() {
         </div>
       </div>
       <p className="hint">
-        Les indicateurs de la fiche entreprise, calculés à partir des vues du schéma « bi » (les
-        mêmes que celles de Power BI). Vert : objectif atteint ; rouge : hors objectif.
+        Les indicateurs de la fiche entreprise utiles à ton métier (la direction les voit tous,
+        avec les montants en euros), calculés à partir des vues du schéma « bi », les mêmes que
+        celles de Power BI. Vert : objectif atteint ; rouge : hors objectif.
       </p>
       <div className="filters">
         <label className="stacked">
@@ -105,28 +122,32 @@ export function DashboardPage() {
           au
           <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
         </label>
-        <label className="stacked">
-          Site
-          <select value={site} onChange={(e) => setSite(e.target.value)}>
-            <option value="">Tous les sites</option>
-            {sites.data?.results.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.code} – {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="stacked">
-          Enseigne
-          <select value={customer} onChange={(e) => setCustomer(e.target.value)}>
-            <option value="">Toutes les enseignes</option>
-            {customers.data?.results.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.code} – {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {showSite && (
+          <label className="stacked">
+            Site
+            <select value={site} onChange={(e) => setSite(e.target.value)}>
+              <option value="">Tous les sites</option>
+              {sites.data?.results.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.code} – {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {showCustomer && (
+          <label className="stacked">
+            Enseigne
+            <select value={customer} onChange={(e) => setCustomer(e.target.value)}>
+              <option value="">Toutes les enseignes</option>
+              {customers.data?.results.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.code} – {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       {error && <p className="error">{error}</p>}
       {loading && <p className="count">Calcul des indicateurs…</p>}

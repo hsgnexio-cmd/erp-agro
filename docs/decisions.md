@@ -424,7 +424,7 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Appliquée **par le serveur** (attribut `read_area` des vues, contrôlé par `WriteRolesPermission`) ; le menu, l'accueil et les pages suivent la même matrice (`/api/auth/me/` renvoie les domaines, `auth/roles.ts`) | Cacher un écran ne suffit pas : les données d'un autre domaine sont refusées (403). Un écran hors du rôle affiche « Accès réservé ». |
 | Socle commun à tous : référentiel, lots et stocks, traçabilité et rappels | Tout le monde a besoin de l'état des lots ; un rappel produit concerne toute l'entreprise. |
 | **Prix masqués** : prix d'achat réservés à achats et direction, prix de vente à ventes et direction ; les autres voient les commandes sans les montants | Le quai réceptionne et expédie sans avoir à connaître les prix. |
-| Tableau de bord (CA, démarque en euros) réservé à la direction ; chaque métier garde ses propres écrans de suivi (taux de service, TRS, fiabilité, rendements) | Indicateurs financiers sensibles. |
+| ~~Tableau de bord réservé à la direction~~ → remplacé le 10/11/2026 par le **tableau de bord par rôle** (section suivante) | Chaque métier a aussi besoin de suivre ses indicateurs. |
 | `admin` et les superutilisateurs voient tout | Administration et maintenance. |
 
 | Domaine (écrans) | direction | acheteur | magasinier | production | qualite | commercial |
@@ -439,7 +439,18 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Commandes clients, EDI, expéditions, taux de service | ✅ | — | ✅ | — | ✅ | ✅ |
 | Prix de vente (tarifs, montants des commandes clients) | ✅ | — | — | — | — | ✅ |
 | Prévisions de vente | ✅ | ✅ | — | ✅ | — | ✅ |
-| Tableau de bord (indicateurs, export Excel) | ✅ | — | — | — | — | — |
+| Tableau de bord (indicateurs de son métier, export Excel) ; montants en euros | ✅ (tout, avec les euros) | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+## Tableau de bord par rôle
+
+| Décision | Raison |
+| --- | --- |
+| Tableau de bord ouvert à tous les rôles ; chaque rôle n'y voit que les **indicateurs de son métier** (`DASHBOARD_INDICATORS` de `comptes/access.py`) : qualité → conformité réception, délai de traçabilité, démarque en % ; production → rendement matière, TRS, couverture matières ; achats → couverture matières, conformité réception ; commercial → taux de service, fiabilité des prévisions ; magasinier → taux de service, couverture produits finis | Validé par Nicolas (10/11/2026) : chacun suit ses objectifs au même endroit, sans voir ceux des autres métiers. |
+| `admin` et `direction` voient les 9 indicateurs ; un utilisateur à plusieurs rôles voit la réunion de leurs indicateurs | La direction pilote l'ensemble. |
+| **Montants en euros réservés à la direction** : pour les autres, la valeur (%, jours) reste, mais le détail en euros (CA, démarque, stocks valorisés) est remplacé par « Calculé en valeur ; montants en euros réservés à la direction » | Même logique que les prix masqués. |
+| Filtrage **par le serveur** : l'API, l'évolution par semaine et l'export CSV ne contiennent que les indicateurs du rôle ; les autres ne sont pas calculés (écran plus rapide) | Cacher une tuile à l'écran ne suffirait pas. |
+| L'écran n'affiche les filtres site et enseigne que si un indicateur visible en tient compte | Pas de filtre sans effet. |
+| Power BI (utilisateur `powerbi`) inchangé : il lit toutes les vues `bi` | Outil de la direction. |
 
 ## Conventions techniques transverses
 

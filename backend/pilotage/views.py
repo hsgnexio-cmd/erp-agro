@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from comptes.access import can_see_amounts, dashboard_indicators
 from comptes.permissions import WriteRolesPermission
 from referentiel.models import Customer, Site
 
@@ -51,10 +52,20 @@ def _parameters(request: Request) -> dict:
     }
 
 
-def _compute(params: dict) -> tuple[list, list]:
-    filters = {"site_id": params["site_id"], "customer_id": params["customer_id"]}
+def _compute(request: Request, params: dict) -> tuple[list, list]:
+    """Seulement les indicateurs du rôle (filtrés par le serveur, pas seulement à l'écran)."""
+    filters = {
+        "site_id": params["site_id"],
+        "customer_id": params["customer_id"],
+        "codes": dashboard_indicators(request.user),
+    }
     return (
-        indicators.compute(params["start"], params["end"], **filters),
+        indicators.compute(
+            params["start"],
+            params["end"],
+            with_amounts=can_see_amounts(request.user),
+            **filters,
+        ),
         indicators.weekly(params["start"], params["end"], **filters),
     )
 
@@ -62,8 +73,8 @@ def _compute(params: dict) -> tuple[list, list]:
 class IndicatorsView(APIView):
     """Les indicateurs de la fiche entreprise, avec leur évolution par semaine.
 
-    Paramètres : start, end (AAAA-MM-JJ), site, customer (identifiants). Consultable par
-    tous les rôles.
+    Paramètres : start, end (AAAA-MM-JJ), site, customer (identifiants). Chaque rôle reçoit
+    les indicateurs de son métier ; la direction les reçoit tous, avec les montants en euros.
     """
 
     permission_classes = [WriteRolesPermission]
@@ -71,7 +82,7 @@ class IndicatorsView(APIView):
 
     def get(self, request: Request) -> Response:
         params = _parameters(request)
-        results, weeks = _compute(params)
+        results, weeks = _compute(request, params)
         return Response(
             {
                 "start": params["start"],
@@ -113,7 +124,7 @@ class IndicatorsExportView(APIView):
 
     def get(self, request: Request) -> HttpResponse:
         params = _parameters(request)
-        results, weeks = _compute(params)
+        results, weeks = _compute(request, params)
         content = indicators.to_csv(params["start"], params["end"], results, weeks)
         response = HttpResponse(content, content_type="text/csv; charset=utf-8")
         filename = f"indicateurs-{params['start']:%Y%m%d}-{params['end']:%Y%m%d}.csv"

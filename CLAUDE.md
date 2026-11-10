@@ -149,7 +149,7 @@ Mettre à jour la colonne Statut à la fin de chaque phase.
 
 `admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`. Chaque rôle n'accède qu'aux écrans et actions de son métier ; seul le rôle `qualite` peut libérer ou bloquer un lot.
 
-Précisions décidées en cours de route : le rôle `admin` peut tout faire, y compris libérer ou bloquer ; l'ERP bloque aussi **automatiquement** un lot (contrôle à réception non conforme, écart de température, DLC dépassée, rappel produit). `direction` ne modifie rien. **Lecture selon le rôle** (moindre privilège) : matrice `comptes/access.py`, appliquée par le serveur (`read_area` des vues) et par le menu ; socle commun (référentiel, stocks, traçabilité) ; prix d'achat et de vente masqués hors achats, ventes et direction ; tableau de bord réservé à la direction.
+Précisions décidées en cours de route : le rôle `admin` peut tout faire, y compris libérer ou bloquer ; l'ERP bloque aussi **automatiquement** un lot (contrôle à réception non conforme, écart de température, DLC dépassée, rappel produit). `direction` ne modifie rien. **Lecture selon le rôle** (moindre privilège) : matrice `comptes/access.py`, appliquée par le serveur (`read_area` des vues) et par le menu ; socle commun (référentiel, stocks, traçabilité) ; prix d'achat et de vente masqués hors achats, ventes et direction ; tableau de bord par rôle (`DASHBOARD_INDICATORS` : chaque rôle voit les indicateurs de son métier, la direction tout avec les euros, filtrage par le serveur).
 
 | Rôle | Actions principales |
 | --- | --- |

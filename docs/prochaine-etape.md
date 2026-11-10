@@ -11,8 +11,7 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 
 ## 2. Prochaine étape : finition, dans cet ordre (validé par Nicolas le 10/11/2026)
 
-1. **Tableau de bord par rôle** : chaque rôle voit les indicateurs de son métier, la direction voit tout avec les montants en euros. Proposition à valider :
-   qualité → conformité réception, délai de traçabilité, démarque en % ; production → rendement matière, TRS, couverture matières ; achats → couverture matières, conformité réception ; commercial → taux de service, fiabilité des prévisions ; magasinier → taux de service, couverture produits finis. Domaine `pilotage` de `comptes/access.py` à ouvrir aux autres rôles, avec un filtrage des tuiles (et de l'export CSV) côté serveur ; pas de montants en euros hors direction.
+1. ✅ **Tableau de bord par rôle** : fait (branche `tableau-de-bord-par-role`, voir `docs/decisions.md`, section « Tableau de bord par rôle »).
 2. **GitHub Actions** : demander à Nicolas une capture de l'onglet Actions (dépôt privé) et corriger s'il est rouge.
 3. **Test « comme un inconnu »** : cloner le dépôt dans un dossier vierge (autre nom de projet Docker et autres ports, sans toucher à la base de Nicolas), suivre le README à la lettre, corriger tout ce qui bloque.
 4. **Relecture générale du code** (revue de qualité avant que d'autres le lisent).

@@ -257,8 +257,15 @@ def compute(
     site_id: int | None = None,
     customer_id: int | None = None,
     with_traceability: bool = True,
+    codes: set[str] | None = None,
+    with_amounts: bool = True,
 ) -> list[Indicator]:
-    """Les neuf indicateurs de la fiche entreprise sur la période."""
+    """Les neuf indicateurs de la fiche entreprise sur la période.
+
+    `codes` : indicateurs à calculer (None = tous), selon le rôle (comptes/access.py) ; les
+    autres ne sont pas calculés. `with_amounts=False` : détails sans montant en euros, pour les
+    rôles qui ne voient pas le chiffre d'affaires ni les stocks valorisés.
+    """
     today = timezone.localdate()
     # Les stocks et sorties ne vont pas au-delà d'aujourd'hui
     stock_end = min(end, today)
@@ -266,73 +273,78 @@ def compute(
 
     indicators = []
 
-    def add(code, label, unit, definition, filters, computed=None, available=True, detail=""):
-        indicator = Indicator(code, label, unit, definition, filters, available=available)
-        if computed is not None:
-            indicator.value, indicator.detail = computed
-        else:
-            indicator.detail = detail
+    def add(code, label, unit, definition, filters, computed):
+        if codes is not None and code not in codes:
+            return
+        indicator = Indicator(code, label, unit, definition, filters)
+        indicator.value, indicator.detail = computed()
+        if not with_amounts and code in AMOUNT_CODES:
+            indicator.detail = AMOUNTS_HIDDEN
         indicators.append(indicator)
 
     add(
         "service_rate", "Taux de service", "%",
         "Quantité livrée complète et à l'heure ÷ quantité commandée",
         ["période (livraison demandée)", "enseigne"],
-        service_rate(start, end, customer_id),
+        lambda: service_rate(start, end, customer_id),
     )  # fmt: skip
     add(
         "markdown", "Démarque", "% du CA",
         "Valeur détruite ou donnée (destructions, invendables) ÷ chiffre d'affaires",
         ["période"],
-        markdown(start, end),
+        lambda: markdown(start, end),
     )  # fmt: skip
     add(
         "finished_coverage", "Couverture produits finis", "jours",
         "Stock disponible de produits finis ÷ expéditions moyennes par jour (en valeur)",
         ["période (stock à la date de fin)"],
-        _coverage(stock_start, stock_end, ["PF"], MovementType.SHIPMENT, None),
+        lambda: _coverage(stock_start, stock_end, ["PF"], MovementType.SHIPMENT, None),
     )  # fmt: skip
     add(
         "material_coverage", "Couverture matières", "jours",
         "Stock disponible de matières premières ÷ consommations moyennes par jour (en valeur)",
         ["période (stock à la date de fin)", "site"],
-        _coverage(stock_start, stock_end, ["MP"], MovementType.CONSUMPTION, site_id),
+        lambda: _coverage(stock_start, stock_end, ["MP"], MovementType.CONSUMPTION, site_id),
     )  # fmt: skip
     add(
         "material_yield", "Rendement matière", "%",
         "Consommation théorique (nomenclature, pertes comprises) ÷ consommation réelle",
         ["période (clôture de l'OF)", "site"],
-        material_yield(start, end, site_id),
+        lambda: material_yield(start, end, site_id),
     )  # fmt: skip
     add(
         "oee", "TRS", "%",
         "Temps utile (quantité bonne ÷ cadence) ÷ temps requis (plages de marche − arrêts "
         "planifiés) = disponibilité × performance × qualité",
         ["période (début de marche)", "site"],
-        oee(start, end, site_id),
+        lambda: oee(start, end, site_id),
     )  # fmt: skip
     add(
         "forecast_accuracy", "Fiabilité des prévisions", "%",
         "1 − écart absolu ÷ commandes réelles, prévision figée la semaine précédente (S-1), "
         "par produit et par enseigne",
         ["période (semaines terminées)", "enseigne"],
-        forecast_accuracy(start, end, customer_id),
+        lambda: forecast_accuracy(start, end, customer_id),
     )  # fmt: skip
     add(
         "reception_compliance", "Conformité réception", "%",
         "Lignes de réception conformes ÷ lignes reçues",
         ["période"],
-        reception_compliance(start, end),
+        lambda: reception_compliance(start, end),
     )  # fmt: skip
     if with_traceability:
         add(
             "traceability", "Délai de traçabilité", "s",
             "Durée du calcul complet d'un rappel (lots liés, stocks, clients livrés)",
             [],
-            traceability(start, end),
+            lambda: traceability(start, end),
         )  # fmt: skip
     return indicators
 
+
+# Indicateurs dont le détail donne des montants en euros (CA, stocks valorisés)
+AMOUNT_CODES = ("markdown", "finished_coverage", "material_coverage")
+AMOUNTS_HIDDEN = "Calculé en valeur ; montants en euros réservés à la direction"
 
 WEEKLY_CODES = (
     "service_rate",
@@ -347,7 +359,12 @@ WEEKLY_CODES = (
 
 
 def weekly(
-    start: date, end: date, *, site_id: int | None = None, customer_id: int | None = None
+    start: date,
+    end: date,
+    *,
+    site_id: int | None = None,
+    customer_id: int | None = None,
+    codes: set[str] | None = None,
 ) -> list[dict]:
     """Évolution semaine par semaine (semaines ISO, coupées aux bornes de la période)."""
     today = timezone.localdate()
@@ -363,6 +380,7 @@ def weekly(
                 site_id=site_id,
                 customer_id=customer_id,
                 with_traceability=False,
+                codes=codes,
             )
             if indicator.code in WEEKLY_CODES
         }
