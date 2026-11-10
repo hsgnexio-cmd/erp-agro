@@ -39,6 +39,7 @@ from unittest import mock
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from achats import services as purchasing
@@ -483,7 +484,7 @@ class History:
             # pendant la fermeture et ne passerait plus la DLC minimale des enseignes
             safety = SAFETY_DAYS_SHORT
         while current < next_day:
-            covered += self._demand(article, current)
+            covered += self._demand(article, current) + self._pending_demand(article, current)
             current += timedelta(days=1)
         quantity = covered + mean * safety - self._usable_stock(article, day)
         return _round_up(quantity, Decimal("12")) if quantity > 0 else ZERO
@@ -699,6 +700,20 @@ class History:
                 shipping.ship_order(
                     shipment, carrier="Transports Frigo Atlantique", temperature=temperature
                 )
+
+    def _pending_demand(self, article: Article, day: date) -> Decimal:
+        """Quantités des commandes des autres données de démonstration (EDI des derniers jours)
+        à expédier ce jour-là : la production les prévoit aussi."""
+        total = (
+            CustomerOrderLine.objects.filter(
+                article=article,
+                order__status=OrderStatus.RECEIVED,
+                order__ship_by_date=day,
+            )
+            .exclude(order__customer_reference__startswith=f"{REFERENCE}-")
+            .aggregate(total=Sum("quantity"))["total"]
+        )
+        return total or ZERO
 
     def _ship_pending(self, day: date) -> None:
         """Commandes des autres données de démonstration (EDI des derniers jours…) arrivées à
