@@ -102,9 +102,9 @@ SAFETY_DAYS_LONG = Decimal("1")
 SHORT_SHELF_LIFE_DAYS = 10
 # Marge prise sur les matières pour absorber les écarts de consommation
 MATERIAL_MARGIN = Decimal("1.08")
-# Achats, en jours de besoin : frais selon sa durée de vie (au plus la moitié, 6 jours
-# maximum), sec, surgelés et emballages : 24 jours
-FRESH_MAX_COVER_DAYS = 6
+# Achats, en jours de besoin : frais selon sa durée de vie (au plus la moitié, 4 jours
+# maximum, la production s'arrêtant le week-end), sec, surgelés et emballages : 24 jours
+FRESH_MAX_COVER_DAYS = 4
 OTHER_COVER_DAYS = 24
 # Navette entrepôt → usine : jusqu'à 3 jours de besoin d'un coup
 FACTORY_SUPPLY_DAYS = 3
@@ -315,7 +315,10 @@ class History:
         )
 
     def _freeze_forecast(self, day: date) -> None:
-        """Version du lundi 5 h, dès qu'il existe des commandes livrées avant ce lundi."""
+        """Version du lundi 5 h, dès qu'une semaine complète de commandes est passée : une
+        première semaine partielle donnerait une prévision bien trop basse."""
+        if day - timedelta(days=7) < self.start + timedelta(days=FIRST_ORDER_DAY):
+            return
         past_orders = CustomerOrderLine.objects.filter(
             order__requested_delivery_date__lt=day
         ).exclude(order__status="annulee")
@@ -474,6 +477,10 @@ class History:
         safety = SAFETY_DAYS_SHORT if short else SAFETY_DAYS_LONG
         covered = ZERO
         current, next_day = day, self._next_production_day(article, day)
+        if (next_day - day).days > 1:
+            # Veille de week-end ou de jour férié : pas de stock de sécurité, il vieillirait
+            # pendant la fermeture et ne passerait plus la DLC minimale des enseignes
+            safety = SAFETY_DAYS_SHORT
         while current < next_day:
             covered += self._demand(article, current)
             current += timedelta(days=1)
@@ -702,7 +709,8 @@ class History:
     # --- Invendables et matières périmées -------------------------------------------------
 
     def _dispose_unsellable(self, day: date) -> None:
-        """Produit fini que plus aucune enseigne n'acceptera demain : don ou destruction."""
+        """Produit fini que plus aucune enseigne n'acceptera à la prochaine livraison : don ou
+        destruction."""
         lots = Lot.objects.filter(
             article__in=self.products.values(),
             status=LotStatus.RELEASED,
@@ -713,7 +721,8 @@ class History:
                 continue
             buyers = self.buyers[lot.article.code]
             pct = min((customer.min_remaining_shelf_life_pct for customer in buyers), default=0)
-            delivery = day + timedelta(days=2)
+            # Prochain jour d'expédition et sa livraison (calendrier)
+            delivery = self._delivery(calendar.next_open_day(day, Activity.SHIPPING, strict=True))
             if lot.expiry_date >= delivery + timedelta(
                 days=_days(Decimal(lot.article.shelf_life_days) * pct / 100)
             ):
