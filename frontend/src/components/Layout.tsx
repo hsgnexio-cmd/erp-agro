@@ -56,7 +56,7 @@ export function Layout() {
         <div className="user">
           <span>
             {user.first_name || user.username}
-            {roles && <small> · {roles}</small>}
+            {user.job_title ? <small> · {user.job_title}</small> : roles && <small> · {roles}</small>}
           </span>
           <button type="button" className="link-button" onClick={() => void logout()}>
             Se déconnecter

@@ -121,12 +121,46 @@ docker compose exec backend python manage.py charger_donnees_demo --sans-histori
 
 ## Rôles et utilisateurs
 
-Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md).
+Les 7 rôles (`admin`, `direction`, `acheteur`, `magasinier`, `production`, `qualite`, `commercial`) sont des **groupes** Django, créés automatiquement par une migration. Leurs droits sont décrits dans [`docs/decisions.md`](docs/decisions.md). **Tout le monde consulte tout** ; chaque rôle ne **modifie** que ce qui relève de son métier.
 
-Créer un utilisateur : administration → **Utilisateurs** → **Ajouter**. Puis, sur sa fiche :
+### L'équipe de démonstration
+
+`charger_donnees_demo` crée l'équipe fictive de Brévanne Traiteur (ou, seule : `docker compose exec backend python manage.py creer_comptes_demo`). Comme dans une vraie entreprise, plusieurs personnes peuvent avoir le même rôle. Tous ces comptes ont le **mot de passe de démonstration** `DEMO_USERS_PASSWORD` du fichier `.env` (comptes de test uniquement). Le compte administrateur, lui, se crée à part avec son propre mot de passe (voir plus haut).
+
+| Identifiant | Personne | Fonction | Rôle |
+| --- | --- | --- | --- |
+| `helene.morvan` | Hélène Morvan | Directrice générale | direction |
+| `pierre.kerjean` | Pierre Kerjean | Directeur administratif et financier | direction |
+| `julien.legoff` | Julien Le Goff | Acheteur matières et emballages | acheteur |
+| `sandrine.prigent` | Sandrine Prigent | Cheffe de quai, plateforme PFN | magasinier |
+| `yann.tanguy` | Yann Tanguy | Magasinier, entrepôt matières MPE | magasinier |
+| `marc.guillou` | Marc Guillou | Responsable de production, usine NAN | production |
+| `anne.perrot` | Anne Perrot | Responsable de production, usine REN | production |
+| `claire.lebihan` | Claire Le Bihan | Responsable qualité | qualite |
+| `thomas.riou` | Thomas Riou | Commercial grands comptes | commercial |
+| `lea.nedelec` | Léa Nédélec | Administration des ventes et prévisions | commercial |
+
+### Qui peut faire quoi
+
+| Rôle | Ce qu'il peut faire (en plus de tout consulter) |
+| --- | --- |
+| `direction` | Rien à modifier : tableau de bord, indicateurs, export Excel, tous les écrans en lecture |
+| `acheteur` | Besoins d'achat (MRP) et commandes fournisseurs : créer, envoyer, annuler ; tarifs d'achat ; fournisseurs |
+| `magasinier` | Réceptions à quai, transferts, corrections, inventaires, relevés de température, alertes, préparation FEFO et expédition |
+| `production` | Plan de production (calcul, ajustement, gel), ordres de fabrication et déclarations (plage de marche, rebuts), arrêts de ligne ; articles, recettes, nomenclatures, lignes |
+| `qualite` | Libérer, bloquer, débloquer, détruire un lot ; invendables ; rappels produit ; allergènes ; relevés de température, alertes ; articles et nomenclatures |
+| `commercial` | Commandes clients et EDI, tarifs de vente, enseignes et entrepôts ; prévisions de vente, promotions, corrections, versions figées |
+| `admin` | Tout, y compris l'administration (référentiel, sites, fermetures du calendrier) |
+
+Exemple de journée : `marc.guillou` déclare la fabrication du matin, `claire.lebihan` libère les lots, `sandrine.prigent` prépare et expédie les commandes, `helene.morvan` suit le taux de service sur le tableau de bord. Une action hors de son rôle est refusée avec un message clair.
+
+### Créer d'autres utilisateurs
+
+Administration → **Utilisateurs** → **Ajouter**. Puis, sur sa fiche :
 
 - section **Permissions** → **Groupes** : choisir son rôle ;
-- cocher **Statut équipe** s'il doit pouvoir utiliser l'administration (saisie du référentiel).
+- cocher **Statut équipe** s'il doit pouvoir utiliser l'administration (saisie du référentiel) ;
+- section **Entreprise** : sa fonction (affichée en haut de l'application).
 
 ## Utiliser l'application
 

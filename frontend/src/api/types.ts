@@ -11,6 +11,8 @@ export interface User {
   id: number
   username: string
   first_name: string
+  /** Fonction dans l'entreprise (ex. « Responsable qualité ») */
+  job_title?: string
   last_name: string
   is_superuser: boolean
   roles: string[]

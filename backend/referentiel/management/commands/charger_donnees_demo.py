@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from achats.demo_data import load_demo_data as load_purchasing
+from comptes.demo_users import load_demo_data as load_team
 from pilotage.demo_history import load_demo_data as load_history
 from previsions.demo_data import load_demo_data as load_forecasts
 from production.demo_data import load_demo_data as load_production
@@ -26,6 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options) -> None:
         loaders = [
+            ("Équipe (comptes de démonstration)", load_team),
             ("Référentiel", load_referential),
             ("Achats", load_purchasing),
             ("Stocks", load_stocks),

@@ -407,6 +407,15 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Incidents (panne, fuite, transporteur en retard) au premier jour ouvré à partir du jour prévu ; première prévision figée seulement après une semaine complète de commandes | Résultats identiques quel que soit le jour du chargement ; une première semaine partielle donnait une fiabilité de 34 %. |
 | Résultat mesuré (28 derniers jours, chargement du 10/11/2026) | Démarque 1,49 % ; TRS 75 % ; taux de service 99,5 à 99,7 % sur les semaines complètes ; fiabilité des prévisions 83,5 % sur 3 semaines ; rendement 98,5 %. La couverture produits finis par semaine vaut presque 0 : elle est mesurée le dimanche, quand le stock est expédié et que l'usine ne produit pas. La semaine en cours reste basse (commandes de démonstration des phases 7a et 7b). |
 
+## Équipe de démonstration et comptes par rôle
+
+| Décision | Raison |
+| --- | --- |
+| On garde les **7 rôles** ; plusieurs personnes par rôle (10 comptes : 2 direction, 1 acheteur, 2 magasiniers, 2 responsables de production, 1 qualité, 2 commerciaux) | Chaque rôle est branché sur les droits de tous les écrans : un nouveau rôle demanderait de redécider ses droits partout. Une entreprise a plusieurs personnes par métier (un responsable de production par usine). |
+| Nouveau champ **fonction** sur l'utilisateur (`job_title`), affiché en haut de l'application | Montre qui agit (« Claire · Responsable qualité ») plutôt que le seul nom du rôle. |
+| Comptes créés par `charger_donnees_demo` (et `creer_comptes_demo`), relançables : un compte existant n'est jamais modifié | Un visiteur qui teste le projet a tout de suite une équipe ; un mot de passe changé par l'utilisateur n'est pas écrasé. |
+| Mot de passe commun **`DEMO_USERS_PASSWORD`** dans le `.env` (8 caractères au moins, sinon aucun compte créé) | Jamais de mot de passe dans le code ; comptes de test uniquement. Le compte administrateur reste créé à part (`createsuperuser`). |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
