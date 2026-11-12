@@ -24,7 +24,7 @@ Tout le cycle d'un industriel du frais, de la commande de matières jusqu'à la 
 
 Les **12 règles métier** (traçabilité totale, FEFO, DLC minimale client, statuts de lot…) sont appliquées par le serveur, pas seulement par l'écran, et couvertes par plus de 470 tests automatiques.
 
-| Simulation du rappel d'un lot de crème | Traçabilité aval d'un lot |
+| Rappel d'un lot de crème contaminé | Traçabilité aval d'un lot |
 | --- | --- |
 | ![Rappel produit](docs/captures/rappel.jpg) | ![Traçabilité](docs/captures/tracabilite.jpg) |
 | **Plan de production de la semaine** | **TRS des lignes** |
@@ -35,7 +35,7 @@ Les **12 règles métier** (traçabilité totale, FEFO, DLC minimale client, sta
 Une fois l'application lancée (voir [Premier lancement](#premier-lancement)), les données de démonstration rejouent 6 semaines d'activité. Pour en faire le tour :
 
 1. Se connecter avec `helene.morvan` (directrice générale) et le mot de passe de démonstration : le **tableau de bord** montre les 9 indicateurs et leur évolution semaine par semaine.
-2. Menu **Rappels** : la veille, la crèmerie a signalé un lot de crème contaminé. Le rappel liste les produits finis fabriqués avec, les stocks bloqués et les enseignes livrées, avec les quantités.
+2. Menu **Rappels** (groupe Qualité, en bas du menu de gauche) : la veille, la crèmerie a signalé un lot de crème contaminé. Le rappel liste les produits finis fabriqués avec, les stocks bloqués et les enseignes livrées, avec les quantités.
 3. Cliquer sur le lot d'origine, puis **Voir la traçabilité de ce lot** : l'arbre va de la crème jusqu'aux entrepôts des enseignes.
 4. Se déconnecter, puis se reconnecter avec `claire.lebihan` (qualité) ou `thomas.riou` (commercial) : chaque rôle ne voit que les écrans et les indicateurs de son métier.
 5. **Plan de production**, **Prévisions**, **Taux de service** et **TRS** montrent la planification et ses résultats.
@@ -250,6 +250,10 @@ Administration → **Utilisateurs** → **Ajouter**. Puis, sur sa fiche :
 - section **Entreprise** : sa fonction (affichée en haut de l'application).
 
 ## Utiliser l'application
+
+Le **menu à gauche** range les écrans par métier : Référentiel, Approvisionnements, Stocks et lots, Fabrication, Commercial, Qualité. Chaque rôle n'y voit que ses écrans ; l'**accueil** reprend le même rangement, avec une phrase par écran. Sur tablette, le menu passe au-dessus du contenu.
+
+![Accueil : les écrans rangés par métier](docs/captures/accueil.jpg)
 
 | Adresse | Contenu |
 | --- | --- |

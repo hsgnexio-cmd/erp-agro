@@ -30,7 +30,7 @@ Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt e
 
 ## 2 ter. Nouveau design (branches `design` puis `design-ecrans`, 12/11/2026)
 
-✅ Menu latéral par métier, nouveau style commun et revue de tous les écrans (une quarantaine, photographiés un par un ; voir `docs/decisions.md`, section « Design de l'interface »). Captures du README refaites (`docs/captures/*.jpg`). La vidéo (`video/`) montre encore l'ancien design : à régénérer si Nicolas le demande (captures de `video/public/captures/` à refaire sur une démo neuve).
+✅ Menu latéral par métier, nouveau style commun et revue de tous les écrans (une quarantaine, photographiés un par un ; voir `docs/decisions.md`, section « Design de l'interface »). Captures du README refaites (`docs/captures/*.jpg`). Vidéo, GIF et captures du README refaits avec le nouveau design (branche `video-nouveau-design`) ; dans la vidéo, le menu latéral reste fixe pendant le défilement (`sticky` du composant `Browser`).
 
 ## 3. Pistes
 

@@ -68,6 +68,7 @@ export const Rappel: React.FC = () => {
           width={1080}
           title="ERP Brévanne Traiteur · Rappel produit"
           scroll={scroll}
+          sticky={248}
           style={{ transform: 'rotateY(-10deg) rotateX(3deg)', transformOrigin: '100% 50%' }}
         />
       </div>
