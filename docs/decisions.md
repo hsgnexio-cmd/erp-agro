@@ -482,6 +482,14 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Vidéo de démonstration | Dossier `video/` (Remotion : vidéo écrite en React, gratuit pour un particulier), à part de l'ERP ; voix de synthèse edge-tts, captures par le protocole DevTools d'Edge, montage calé sur le tempo de la musique ; MP4 et musique non versionnés | Montrer le projet en une minute sans l'installer ; aucune dépendance ajoutée au back-end ni au front-end. |
 | Historique Git | Aucun secret : `.env` jamais commité, seuls des mots de passe d'exemple dans `.env.example` et le README | Préalable au passage du dépôt en public. |
 
+## Design de l'interface (12/11/2026)
+
+| Sujet | Décision | Pourquoi |
+| --- | --- | --- |
+| Menu | Menu latéral rangé par métier (`components/Layout.tsx`, `GROUPS`) : Référentiel, Approvisionnements, Stocks et lots, Fabrication, Commercial, Qualité ; il passe au-dessus du contenu sous 900 px de large | Maquette A validée par Nicolas (canevas Claude Design) ; 25 liens sur deux lignes devenaient illisibles. Les titres de groupe ne reprennent jamais le libellé d'un lien (« Achats », « Stocks », « Production », « Ventes »), pour ne pas créer d'ambiguïté dans les tests. |
+| Style | Tout reste dans `index.css` : variables (`--sidebar`, `--accent`, `--radius-card`, `--shadow`), section finale « Design 2026 » (cartes, tableaux, boutons, champs, badges) ; aucune dépendance ajoutée, police système | Changer l'apparence sans toucher aux écrans ni aux règles métier. |
+| Indicateurs | L'état d'un indicateur se lit sur sa pastille (« Objectif atteint » / « Hors objectif »), plus sur une barre colorée à gauche | Plus lisible, et la couleur n'est pas le seul signal. |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.

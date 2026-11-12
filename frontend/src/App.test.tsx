@@ -53,7 +53,8 @@ describe('Connexion', () => {
 
     expect(await screen.findByText('Bonjour Claire')).toBeInTheDocument()
     expect(await screen.findByText('Serveur et base de données connectés')).toBeInTheDocument()
-    expect(screen.getByText(/Qualité/)).toBeInTheDocument()
+    // Le rôle de l'utilisateur, à côté de son prénom (« Qualité » est aussi un titre du menu)
+    expect(screen.getByText(/· Qualité/)).toBeInTheDocument()
 
     const loginCall = fetchMock.mock.calls.find(([url]) => url === '/api/auth/login/')
     expect(JSON.parse(loginCall?.[1]?.body as string)).toEqual({
