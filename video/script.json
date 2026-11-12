@@ -1,0 +1,10 @@
+[
+  {"id": "accroche", "text": "Un lot de crème est contaminé. Combien de produits sont touchés ? Quels clients ont été livrés ?"},
+  {"id": "reponse", "text": "Avec l'ERP Brévanne, la réponse tombe en moins d'une seconde."},
+  {"id": "tracabilite", "text": "Un numéro de lot, un clic. La traçabilité remonte chaque matière, et suit chaque produit jusqu'aux entrepôts des enseignes."},
+  {"id": "rappel", "text": "Vingt-trois lots identifiés. Les stocks restants, bloqués automatiquement. Six enseignes à prévenir, avec les quantités exactes."},
+  {"id": "modules", "text": "Et ce n'est qu'un écran parmi quarante. Achats, stocks, production, ventes, prévisions : tout le cycle d'un industriel du frais, dans un seul outil."},
+  {"id": "pilotage", "text": "Neuf indicateurs clés, suivis semaine après semaine. Et chaque métier ne voit que ce qui le concerne."},
+  {"id": "preuves", "text": "Douze règles métier garanties par le serveur. Plus de quatre cent soixante-dix tests automatiques. Zéro stock sans mouvement tracé."},
+  {"id": "fin", "text": "ERP Brévanne Traiteur. Le code est sur GitHub."}
+]

@@ -125,10 +125,11 @@ LEAK = (22, "PF-GRA-GRADAU-BRE-1000", Decimal("1.075"), "Fuite sur la cuve de cu
 # Promotion réalisée : (enseigne, produit, semaines avant la semaine courante, coefficient)
 PAST_PROMOTION = ("ENS2", "PF-PAT-LASBOL-BRE-300", 2, Decimal("2"))
 PROMOTION_NOTICE_DAYS = 49
-# Rappel produit (scénario de référence) : la veille, la crèmerie signale un lot contaminé ;
-# on prend le plus récent lot de crème déjà consommé, reçu au moins 6 jours plus tôt
+# Rappel produit (scénario de référence) : la veille, la crèmerie signale un lot contaminé.
+# Parmi les derniers lots de crème déjà consommés, on prend celui dont le rappel est le plus
+# parlant : des produits finis encore en stock à bloquer, et le plus d'enseignes livrées
 RECALL = ("MP-LAI-CREME35", "Contamination signalée par le fournisseur (Listeria)")
-RECALL_LOT_MIN_AGE_DAYS = 6
+RECALL_CANDIDATES = 12
 FORECAST_HOUR = 5
 
 STORAGE = {
@@ -365,16 +366,21 @@ class History:
         production. Les produits finis encore en stock sont bloqués (règle 9)."""
         code, reason = RECALL
         day = self.today - timedelta(days=1)
-        lot = (
+        candidates = (
             Lot.objects.filter(
-                article__code=code,
-                reception_date__lte=day - timedelta(days=RECALL_LOT_MIN_AGE_DAYS),
-                movements__movement_type=MovementType.CONSUMPTION,
+                article__code=code, movements__movement_type=MovementType.CONSUMPTION
             )
             .distinct()
-            .order_by("-reception_date", "-number")
-            .first()
+            .order_by("-reception_date", "-number")[:RECALL_CANDIDATES]
         )
+
+        def interest(lot: Lot) -> tuple[bool, int, int]:
+            impact = quality.recall_impact(lot)
+            customers = {row["warehouse"].customer_id for row in impact.deliveries}
+            return (bool(impact.lots_to_block), len(customers), len(impact.lots_to_block))
+
+        # max() garde le premier en cas d'égalité : le lot le plus récent
+        lot = max(candidates, key=interest, default=None)
         if lot is None:
             return  # historique trop court (tests)
         with simulated_clock(_at(day, 20)):

@@ -1,0 +1,22 @@
+[
+  {"session": "direction", "path": "/tracabilite", "wait": 4000,
+   "typing": {"text": "LR-261109-0004", "prefix": "trace", "wait": 6000},
+   "file": "tracabilite.jpg", "fullPage": true},
+  {"session": "direction", "path": "/rappels/2", "file": "rappel.jpg", "wait": 6000, "fullPage": true},
+  {"session": "direction", "path": "/tableau-de-bord", "file": "tableau-de-bord.jpg", "wait": 10000, "fullPage": true},
+  {"session": "direction", "path": "/commandes", "file": "achats.jpg", "wait": 4000},
+  {"session": "direction", "path": "/lots", "file": "lots.jpg", "wait": 4000},
+  {"session": "direction", "path": "/stocks", "file": "stocks.jpg", "wait": 4000},
+  {"session": "direction", "path": "/production", "file": "production.jpg", "wait": 4000},
+  {"session": "direction", "path": "/plan-production", "file": "plan-production.jpg", "wait": 5000},
+  {"session": "direction", "path": "/planning", "file": "planning.jpg", "wait": 5000},
+  {"session": "direction", "path": "/trs", "file": "trs.jpg", "wait": 5000},
+  {"session": "direction", "path": "/ventes", "file": "ventes.jpg", "wait": 4000},
+  {"session": "direction", "path": "/expeditions", "file": "expeditions.jpg", "wait": 4000},
+  {"session": "direction", "path": "/previsions", "file": "previsions.jpg", "wait": 5000},
+  {"session": "direction", "path": "/taux-de-service", "file": "taux-de-service.jpg", "wait": 5000},
+  {"session": "direction", "path": "/temperatures", "file": "temperatures.jpg", "wait": 4000},
+  {"session": "direction", "path": "/besoins-achat", "file": "besoins-achat.jpg", "wait": 9000},
+  {"session": "qualite", "path": "/tableau-de-bord", "file": "tableau-qualite.jpg", "wait": 9000},
+  {"session": "commercial", "path": "/tableau-de-bord", "file": "tableau-commercial.jpg", "wait": 9000}
+]

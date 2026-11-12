@@ -1,0 +1,5 @@
+node_modules/
+out/
+# Musique : fichier sous licence de son auteur, à déposer soi-même (voir README.md)
+public/musique.mp3
+musique.mp3/
