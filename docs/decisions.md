@@ -264,7 +264,7 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Droits remis automatiquement après chaque `migrate` (`pilotage.bi_access.refresh_grants`) et droits par défaut sur le schéma | Une vue recréée par une migration garde sa lecture pour `powerbi`. |
 | Fonctions de valorisation en `SECURITY DEFINER` (migration `0002`) | Elles lisent les tarifs (tables de l'application) avec les droits de l'ERP : `powerbi` peut les appeler sans accès aux tables. |
 | Colonne `value` ajoutée à `bi.fact_stock_daily` (migration `0003`) | Les mesures DAX ne peuvent pas appeler une fonction SQL : la vue fournit la valeur du stock, utilisée aussi par le tableau de bord. |
-| Une requête Power Query typée par vue (`bi/power-query/*.pq`) et les mesures DAX documentées (`bi/mesures-dax.md`) | Validé : Nicolas construit lui-même le rapport Power BI (formation) et l'enregistre au format projet `.pbip` (texte, suivi par Git) dans `bi/powerbi/`. Un `.pbix` est un binaire qu'on ne peut pas produire de façon fiable par le code. |
+| Une requête Power Query typée par vue (`bi/power-query/*.pq`) et les mesures DAX documentées (`bi/mesures-dax.md`) | Validé : Nicolas construit lui-même le rapport Power BI (pour apprendre l'outil) et l'enregistre au format projet `.pbip` (texte, suivi par Git) dans `bi/powerbi/`. Un `.pbix` est un binaire qu'on ne peut pas produire de façon fiable par le code. |
 | Excel d'abord, Power BI ensuite | Validé : Excel est déjà installé sur le PC de Nicolas. |
 | **Export CSV** du tableau de bord (`/api/pilotage/indicators/export/`) : séparateur « ; », UTF-8 avec marque d'ordre, décimales à la virgule | Validé : s'ouvre directement dans Excel, sans connexion à configurer. Même format que la liste des clients d'un rappel. |
 

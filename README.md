@@ -1,6 +1,6 @@
 # ERP Brévanne Traiteur
 
-ERP agroalimentaire complet pour **Brévanne Traiteur SAS**, une entreprise fictive de plats cuisinés frais : 520 salariés, 165 M€ de chiffre d'affaires, deux usines (plats chauds près de Nantes, traiteur froid près de Rennes), des ventes en grande distribution sous sa marque et en marque distributeur. Projet réalisé dans le cadre d'une formation.
+ERP agroalimentaire complet pour **Brévanne Traiteur SAS**, une entreprise fictive de plats cuisinés frais : 520 salariés, 165 M€ de chiffre d'affaires, deux usines (plats chauds près de Nantes, traiteur froid près de Rennes), des ventes en grande distribution sous sa marque et en marque distributeur. Projet personnel, mené seul pour mettre en pratique le fonctionnement d'une supply chain agroalimentaire et ses contraintes ; le code a été écrit avec l'assistance de l'IA Claude Code.
 
 Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-entreprise.md), les règles du projet dans [`CLAUDE.md`](CLAUDE.md) et les choix faits en cours de route dans [`docs/decisions.md`](docs/decisions.md).
 
@@ -428,7 +428,7 @@ erp-agro/
 
 ## Limites
 
-- Projet de **formation** : l'entreprise, les personnes et les données sont fictives.
+- Projet **personnel** d'apprentissage : l'entreprise, les personnes et les données sont fictives.
 - L'application tourne en **mode développement** (serveurs de développement de Django et de Vite, HTTP sans chiffrement, `DJANGO_DEBUG=True`). Elle est faite pour être lancée sur son propre PC, **pas pour être mise en ligne** telle quelle : il faudrait un serveur de production, HTTPS et les réglages de sécurité correspondants (`python manage.py check --deploy` les liste).
 - Les échanges avec l'extérieur sont **simulés** : messages EDI des enseignes, pas d'envoi d'e-mails.
 
