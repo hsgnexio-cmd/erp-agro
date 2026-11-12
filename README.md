@@ -6,6 +6,10 @@ Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-ent
 
 ![Tableau de bord de la direction](docs/captures/tableau-de-bord.png)
 
+**En vidéo (1 minute)** : le scénario du rappel produit, de l'alerte du fournisseur à la liste des enseignes à prévenir. La vidéo est fabriquée avec du code (Remotion), voir [`video/`](video/README.md).
+
+![Extrait de la vidéo : le rappel d'un lot de crème](docs/captures/demo.gif)
+
 ## Ce que fait l'ERP
 
 Tout le cycle d'un industriel du frais, de la commande de matières jusqu'à la livraison des enseignes :

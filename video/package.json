@@ -7,7 +7,7 @@
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts Demo out/demo-brut.mp4 --crf=23 && npm run volume",
     "volume": "remotion ffmpeg -v error -i out/demo-brut.mp4 -c:v copy -af loudnorm=I=-15:TP=-1.5:LRA=11 -ar 48000 -c:a aac -b:a 192k out/demo.mp4 -y",
-    "gif": "remotion render src/index.ts Demo out/demo.gif --codec=gif --frames=351-884 --scale=0.3 --every-nth-frame=4",
+    "gif": "remotion render src/index.ts Demo out/demo.gif --codec=gif --frames=604-884 --scale=0.3 --every-nth-frame=4",
     "stills": "node scripts/stills.mjs"
   },
   "dependencies": {

@@ -21,14 +21,12 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 
 Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt en **public** (GitHub → Settings → General → Danger Zone → Change visibility). Pour voir le rappel dans sa propre base, repartir d'une démo neuve (section 4).
 
-## 2 bis. En cours : vidéo de démonstration (branche `video-demo`, pause le 12/11/2026)
+## 2 bis. Vidéo de démonstration (branche `video-demo`, 12/11/2026)
 
-Vidéo promotionnelle d'environ 62 s en 1080p, faite avec **Remotion** (dossier `video/`, indépendant de l'ERP), voix de synthèse Microsoft « Henri » (edge-tts) et musique choisie par Nicolas (128 BPM, non versionnée : `video/public/musique.mp3`).
+✅ Vidéo promotionnelle de 62 s en 1080p, faite avec **Remotion** (dossier `video/`, indépendant de l'ERP, mode d'emploi dans `video/README.md`) : 8 scènes calées sur la musique (128 BPM, le drop tombe à 7 s), voix de synthèse Microsoft « Vivienne » (Nicolas préférait une voix d'homme : « Henri » jugée trop robotique, « Rémy » refusée par le service), sous-titres mot à mot, musique baissée sous la voix. Le MP4 (`video/out/demo.mp4`, 28 Mo) et la musique ne sont pas versionnés ; l'extrait `docs/captures/demo.gif` est dans le README.
 
-- ✅ Fait : Remotion installé (`video/package.json`), texte de la voix (`video/script.json`), voix générée avec le repère de chaque mot (`video/public/voix/`, script `video/scripts/tts.py`), 33 captures de l'ERP (`video/public/captures/`, script `video/scripts/capture.mjs` et plan `plan-captures.json`), calage sur la musique (`video/src/timing.ts` : le drop du morceau tombe à 7 s, quand l'ERP apparaît ; scènes alignées sur les temps), règle de choix du lot rappelé corrigée dans `pilotage/demo_history.py`.
-- ⏳ Reste : écrire les 8 scènes animées (`video/src/scenes/` : accroche, réponse, traçabilité, rappel, modules, pilotage, preuves, fin), les composants (navigateur 3D, textes animés, compteurs, sous-titres), régler les volumes voix / musique, rendre `video/out/demo.mp4` (+ GIF court pour le README), `video/README.md`, tests back-end, commit, pull request.
-- 🧹 À nettoyer à la fin : base temporaire `erp_verif` (gardée pour refaire des captures sans recharger la démo) : `docker compose exec db sh -c 'dropdb -U "$POSTGRES_USER" erp_verif'`. Le rappel filmé y est `RAP-2026-00002` (lot `LR-261109-0004` : 23 lots, 8 bloqués, 6 enseignes).
-- 💡 Remarqué en filmant : sur la fiche d'un rappel, la colonne Statut montre l'état **avant** blocage (« Libéré ») alors que le bandeau annonce les lots bloqués ; à clarifier (badge « Bloqué par ce rappel »).
+- 💡 À proposer : sur la fiche d'un rappel, la colonne Statut montre l'état **avant** blocage (« Libéré ») alors que le bandeau annonce les lots bloqués ; ajouter un badge « Bloqué par ce rappel ».
+- 💡 Possible : voix off enregistrée par Nicolas lui-même (remplacer `video/public/voix/*.mp3` et les repères de `durations.json`), mise en ligne de la vidéo (LinkedIn, YouTube) et lien dans le README.
 
 ## 3. Pistes
 
