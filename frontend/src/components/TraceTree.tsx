@@ -36,20 +36,29 @@ function TraceItem({
   return (
     <li>
       <div className="trace-node">
-        <Link to={`/lots/${node.lot}`}>{node.lot_number}</Link>
-        <span>
+        <div className="trace-node-head">
+          <Link className="lot-number" to={`/lots/${node.lot}`}>
+            {node.lot_number}
+          </Link>
+          <StatusBadge status={node.status} label={node.status_label} />
+        </div>
+        <span className="trace-node-article">
           {node.article_code} <small>{node.article_name}</small>
         </span>
-        <StatusBadge status={node.status} label={node.status_label} />
-        {node.expiry_date && <small>DLC/DDM {formatDate(node.expiry_date)}</small>}
-        {quantity && <small className="trace-qty">{quantity}</small>}
+        <div className="trace-node-meta">
+          {node.expiry_date && <small>DLC/DDM {formatDate(node.expiry_date)}</small>}
+          {quantity && <small className="trace-qty">{quantity}</small>}
+        </div>
       </div>
       {node.shipments.length > 0 && (
         <ul className="trace-shipments">
           {node.shipments.map((s) => (
             <li key={s.warehouse_code}>
-              🚚 {s.customer_code} – {s.warehouse_name} : {formatDecimal(s.quantity)} {node.unit}{' '}
-              <small>(dernière livraison le {formatDate(s.last_shipped)})</small>
+              <span className="ship-icon" aria-hidden="true" />
+              <span>
+                {s.customer_code} – {s.warehouse_name} : {formatDecimal(s.quantity)} {node.unit}
+              </span>
+              <small>dernière livraison le {formatDate(s.last_shipped)}</small>
             </li>
           ))}
         </ul>

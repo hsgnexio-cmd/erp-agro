@@ -4,7 +4,7 @@ ERP agroalimentaire complet pour **Brévanne Traiteur SAS**, une entreprise fict
 
 Le contexte métier est décrit dans [`docs/fiche-entreprise.md`](docs/fiche-entreprise.md), les règles du projet dans [`CLAUDE.md`](CLAUDE.md) et les choix faits en cours de route dans [`docs/decisions.md`](docs/decisions.md).
 
-![Tableau de bord de la direction](docs/captures/tableau-de-bord.png)
+![Tableau de bord de la direction](docs/captures/tableau-de-bord.jpg)
 
 **En vidéo (1 minute)** : le scénario du rappel produit, de l'alerte du fournisseur à la liste des enseignes à prévenir. La vidéo est fabriquée avec du code (Remotion), voir [`video/`](video/README.md).
 
@@ -24,11 +24,11 @@ Tout le cycle d'un industriel du frais, de la commande de matières jusqu'à la 
 
 Les **12 règles métier** (traçabilité totale, FEFO, DLC minimale client, statuts de lot…) sont appliquées par le serveur, pas seulement par l'écran, et couvertes par plus de 470 tests automatiques.
 
-| Rappel d'un lot de crème contaminé | Traçabilité aval d'un lot |
+| Simulation du rappel d'un lot de crème | Traçabilité aval d'un lot |
 | --- | --- |
-| ![Rappel produit](docs/captures/rappel.png) | ![Traçabilité](docs/captures/tracabilite.png) |
+| ![Rappel produit](docs/captures/rappel.jpg) | ![Traçabilité](docs/captures/tracabilite.jpg) |
 | **Plan de production de la semaine** | **TRS des lignes** |
-| ![Plan de production](docs/captures/plan-production.png) | ![TRS](docs/captures/trs.png) |
+| ![Plan de production](docs/captures/plan-production.jpg) | ![TRS](docs/captures/trs.jpg) |
 
 ## Essayer la démo en 5 minutes
 

@@ -1114,3 +1114,446 @@ td.num {
   border-radius: 18px;
   box-shadow: 0 20px 60px rgb(0 0 0 / 0.25);
 }
+
+/* --- Design 2026 : mise en page des écrans (en-têtes, filtres, fiches, alertes, traçabilité) --- */
+
+.app-main > section > h1,
+.page-title h1 {
+  letter-spacing: -0.015em;
+}
+
+.app-main h2 {
+  margin: 2rem 0 0.75rem;
+}
+
+.panel h2,
+.kpi h2,
+.home-group h2 {
+  margin-top: 0.75rem;
+}
+
+/* Lien de retour en haut d'une fiche */
+.app-main > section > p:first-child > a,
+.app-main > section > a:first-child {
+  display: inline-block;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.app-main > section > p:first-child > a:hover,
+.app-main > section > a:first-child:hover {
+  color: var(--brand);
+}
+
+.page-intro,
+.hint {
+  color: var(--muted);
+  max-width: 80ch;
+  line-height: 1.5;
+}
+
+.page-intro {
+  margin: -0.3rem 0 1.1rem;
+}
+
+/* Barre de filtres : une carte, pour la distinguer du contenu */
+.filters {
+  align-items: center;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-hero input {
+  flex: 1 1 320px;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.count {
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0.6rem;
+}
+
+/* Fiches : libellés discrets, valeurs bien lisibles, lignes séparées */
+.details {
+  gap: 0;
+  padding: 0.4rem 1.25rem;
+}
+
+.details dt,
+.details dd {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #ecefe8;
+}
+
+.details dt {
+  padding-right: 2rem;
+  font-size: 0.9rem;
+}
+
+.details dt:last-of-type,
+.details dd:last-of-type {
+  border-bottom: 0;
+}
+
+.details dd {
+  font-weight: 500;
+}
+
+.panel {
+  padding: 0.5rem 1.25rem 1.25rem;
+}
+
+.error {
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  background: #ffe3df;
+  font-weight: 500;
+}
+
+td .error,
+label .error,
+small.error {
+  padding: 0;
+  background: none;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state strong {
+  color: #18212b;
+  font-size: 1.05rem;
+}
+
+button.secondary,
+.button.secondary {
+  background: #fff;
+  color: var(--brand-dark);
+  border: 1px solid var(--border-strong);
+}
+
+button.danger {
+  background: #b42318;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #8a1c1c;
+}
+
+/* Accueil par métier */
+.home-group {
+  margin-top: 1.75rem;
+}
+
+.home-group h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.home-group .cards {
+  margin-top: 0;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.home .card strong {
+  color: var(--brand-dark);
+}
+
+.home .subtitle {
+  font-size: 1.15rem;
+}
+
+/* Alertes : le niveau se lit sur la pastille et sur le fond, plus sur une barre latérale */
+.alert-card,
+.alert-card.level-critique {
+  border-left: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+}
+
+.alert-card.level-critique {
+  background: #fff7f5;
+  border-color: #f0b4b4;
+}
+
+.alert-card .resolve {
+  margin-top: 0.5rem;
+}
+
+/* Traçabilité : chaque lot est une carte, reliée à ses lots liés */
+.trace-columns {
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.trace-columns h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.direction {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--brand-light)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e5128' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5M6 11l6-6 6 6'/%3E%3C/svg%3E")
+    center / 60% no-repeat;
+}
+
+.direction.down {
+  transform: rotate(180deg);
+}
+
+.trace-tree ul {
+  border-left: 2px solid var(--brand-light);
+  margin-left: 0.9rem;
+  padding-left: 1rem;
+}
+
+.trace-tree li {
+  margin-top: 0.6rem;
+}
+
+.trace-node {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.7rem 0.9rem;
+  background: #f8faf5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.trace-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.lot-number {
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 600;
+}
+
+.trace-node-article {
+  font-weight: 600;
+}
+
+.trace-node-article small {
+  font-weight: 400;
+}
+
+.trace-node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+}
+
+.trace-tree ul.trace-shipments {
+  border-left: 0;
+  margin: 0.35rem 0 0 0.25rem;
+  padding-left: 0;
+}
+
+.trace-shipments li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.6rem;
+  margin-top: 0;
+  padding: 0.3rem 0;
+  font-size: 0.93rem;
+}
+
+.trace-shipments small {
+  color: var(--muted);
+}
+
+.ship-icon {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6b3a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h11v10H3zM14 9h4l3 3v4h-7z'/%3E%3Ccircle cx='7' cy='18' r='2'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* Chiffres clés d'un rappel ou d'une simulation */
+.cards.summary .card {
+  gap: 0.2rem;
+}
+
+.cards.summary .card strong {
+  font-size: 2.3rem;
+  line-height: 1.1;
+  color: var(--brand-dark);
+}
+
+.danger-zone {
+  background: #fff7f5;
+}
+
+/* Planning : cartes d'OF plus lisibles */
+.planning-order {
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgb(23 61 33 / 0.08);
+}
+
+.table-wrapper + p,
+.table-wrapper + .hint {
+  margin-top: 0.9rem;
+}
+
+/* Boutons « texte » dans le contenu (nom d'article cliquable, cellule de prévision) */
+.app-main .link-button,
+.app-main .link-button:hover:not(:disabled) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-align: left;
+}
+
+button.cell-button,
+button.cell-button:hover:not(:disabled) {
+  min-height: 0;
+  background: none;
+  font-weight: inherit;
+  border-radius: 4px;
+}
+
+/* Formulaires : dans une carte, comme les fiches */
+.form {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.panel .form,
+.form .form {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.form label,
+label.stacked,
+.reception-line label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3b4652;
+}
+
+.form label.checkbox,
+.reception-line label.checkbox,
+.checkbox-inline {
+  font-weight: 500;
+}
+
+.form h2 {
+  margin-top: 0.5rem;
+}
+
+.reception-line {
+  border-color: var(--border);
+  border-radius: var(--radius);
+  background: #f8faf5;
+}
+
+.form-actions {
+  padding-top: 0.25rem;
+}
+
+.page-intro + .filters,
+.hint + .filters,
+.hint + .table-wrapper,
+.page-intro + .table-wrapper {
+  margin-top: 1rem;
+}
+
+.filters + .table-wrapper,
+.table-wrapper + .filters,
+.table-wrapper + .actions,
+.filters + .actions {
+  margin-top: 1rem;
+}
+
+.filters {
+  align-items: flex-end;
+}
+
+.filters label.stacked,
+.filters label:has(> input),
+.filters label:has(> select) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.app-main section > p + .form,
+.app-main section > p + .filters,
+.app-main section > p + .table-wrapper,
+.app-main section > p + .panel {
+  margin-top: 1rem;
+}
+
+/* Étiquettes de palettes : le tableau reste dans le cadre de l'étiquette */
+.pallet-labels {
+  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+}
+
+.pallet-label th,
+.pallet-label td {
+  position: static;
+  padding: 0.3rem 0.4rem;
+  white-space: normal;
+  background: none;
+  color: inherit;
+}
+
+.pallet-label tbody tr:hover td {
+  background: none;
+}
+
+/* Une case à cocher dans une barre de filtres reste sur une ligne */
+.filters label:has(> input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  min-height: 2.5rem;
+}

@@ -28,9 +28,9 @@ Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt e
 - 💡 À proposer : sur la fiche d'un rappel, la colonne Statut montre l'état **avant** blocage (« Libéré ») alors que le bandeau annonce les lots bloqués ; ajouter un badge « Bloqué par ce rappel ».
 - 💡 Possible : voix off enregistrée par Nicolas lui-même (remplacer `video/public/voix/*.mp3` et les repères de `durations.json`), mise en ligne de la vidéo (LinkedIn, YouTube) et lien dans le README.
 
-## 2 ter. Nouveau design (branche `design`, 12/11/2026)
+## 2 ter. Nouveau design (branches `design` puis `design-ecrans`, 12/11/2026)
 
-✅ Menu latéral par métier et nouveau style (voir `docs/decisions.md`, section « Design de l'interface »). Reste : refaire les captures du README (`docs/captures/`), prises avec l'ancien design ; la vidéo montre aussi l'ancien design.
+✅ Menu latéral par métier, nouveau style commun et revue de tous les écrans (une quarantaine, photographiés un par un ; voir `docs/decisions.md`, section « Design de l'interface »). Captures du README refaites (`docs/captures/*.jpg`). La vidéo (`video/`) montre encore l'ancien design : à régénérer si Nicolas le demande (captures de `video/public/captures/` à refaire sur une démo neuve).
 
 ## 3. Pistes
 
