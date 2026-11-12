@@ -1430,3 +1430,130 @@ button.danger:hover:not(:disabled) {
 .table-wrapper + .hint {
   margin-top: 0.9rem;
 }
+
+/* Boutons « texte » dans le contenu (nom d'article cliquable, cellule de prévision) */
+.app-main .link-button,
+.app-main .link-button:hover:not(:disabled) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-align: left;
+}
+
+button.cell-button,
+button.cell-button:hover:not(:disabled) {
+  min-height: 0;
+  background: none;
+  font-weight: inherit;
+  border-radius: 4px;
+}
+
+/* Formulaires : dans une carte, comme les fiches */
+.form {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.panel .form,
+.form .form {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.form label,
+label.stacked,
+.reception-line label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3b4652;
+}
+
+.form label.checkbox,
+.reception-line label.checkbox,
+.checkbox-inline {
+  font-weight: 500;
+}
+
+.form h2 {
+  margin-top: 0.5rem;
+}
+
+.reception-line {
+  border-color: var(--border);
+  border-radius: var(--radius);
+  background: #f8faf5;
+}
+
+.form-actions {
+  padding-top: 0.25rem;
+}
+
+.page-intro + .filters,
+.hint + .filters,
+.hint + .table-wrapper,
+.page-intro + .table-wrapper {
+  margin-top: 1rem;
+}
+
+.filters + .table-wrapper,
+.table-wrapper + .filters,
+.table-wrapper + .actions,
+.filters + .actions {
+  margin-top: 1rem;
+}
+
+.filters {
+  align-items: flex-end;
+}
+
+.filters label.stacked,
+.filters label:has(> input),
+.filters label:has(> select) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.app-main section > p + .form,
+.app-main section > p + .filters,
+.app-main section > p + .table-wrapper,
+.app-main section > p + .panel {
+  margin-top: 1rem;
+}
+
+/* Étiquettes de palettes : le tableau reste dans le cadre de l'étiquette */
+.pallet-labels {
+  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+}
+
+.pallet-label th,
+.pallet-label td {
+  position: static;
+  padding: 0.3rem 0.4rem;
+  white-space: normal;
+  background: none;
+  color: inherit;
+}
+
+.pallet-label tbody tr:hover td {
+  background: none;
+}
+
+/* Une case à cocher dans une barre de filtres reste sur une ligne */
+.filters label:has(> input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  min-height: 2.5rem;
+}
