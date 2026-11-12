@@ -1,4 +1,4 @@
-# Prochaine étape : finition avant publication
+# Prochaine étape : publication, puis pistes
 
 Ce document permet à une nouvelle session de reprendre directement. À lire avec `CLAUDE.md` et `docs/decisions.md` (sections « Équipe de démonstration et comptes par rôle » et « Accès en lecture selon le rôle »).
 
@@ -7,7 +7,7 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 - Les **11 phases** sont terminées (dernières : 9 planification, 10 TRS, 11 calendrier).
 - Depuis : réglages de la démo (pull request #19), **équipe de démonstration** de 10 personnes avec leur fonction (`comptes/demo_users.py`, mot de passe `DEMO_USERS_PASSWORD` du `.env`), **accès en lecture selon le rôle** (`comptes/access.py` : menu filtré, refus du serveur, prix masqués, tableau de bord réservé à la direction).
 - Base locale de Nicolas repartie à neuf le 10/11/2026 : démo complète sur 6 semaines, compte administrateur `nicolas`, utilisateur `powerbi` recréé.
-- Dépôt GitHub **privé** ; le `.env` n'a jamais été envoyé (vérifié).
+- Dépôt GitHub **privé** jusqu'à la publication ; le `.env` n'a jamais été envoyé (vérifié).
 
 ## 2. Prochaine étape : finition, dans cet ordre (validé par Nicolas le 10/11/2026)
 
@@ -17,7 +17,9 @@ Ce document permet à une nouvelle session de reprendre directement. À lire ave
 4. ✅ **Relecture générale du code** : voir `docs/decisions.md`, section « Relecture générale du code ».
 5. ✅ **Accélérer les tests** : pytest-xdist, 7 min 19 → 2 min 25 (voir `docs/decisions.md`). ⚠️ Après la fusion, reconstruire l'image du back-end (`docker compose up -d --build`), sinon pytest ne connaît pas l'option `-n`.
 
-Ensuite : **publication** (README d'accueil avec captures d'écran et parcours de démonstration, licence, passage du dépôt en public guidé pas à pas).
+6. ✅ **Publication** (branche `publication`) : licence PolyForm Noncommercial (`LICENSE.md`), accueil du README avec captures d'écran (`docs/captures/`) et parcours « Essayer la démo en 5 minutes », rappel d'un lot de crème ajouté à l'historique de démo, audit de cohérence des données et historique Git vérifié sans secret (voir `docs/decisions.md`, section « Publication »).
+
+Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt en **public** (GitHub → Settings → General → Danger Zone → Change visibility). Pour voir le rappel dans sa propre base, repartir d'une démo neuve (section 4).
 
 ## 3. Pistes
 
@@ -26,6 +28,7 @@ Tirées des « Points en suspens » de `docs/decisions.md` :
 1. Accélérer le chargement de l'historique de démonstration (≈ 4 à 6 min).
 2. Saisonnalité dans les prévisions (quand l'historique sera plus long).
 3. Formulaires React du référentiel, réservation de stock, envoi d'e-mails, « refus à quai ».
+4. Facturation (factures, avoirs, TVA, export comptable) et coût de revient des recettes : indispensables avant tout usage réel en entreprise.
 
 ## 4. Repartir d'une base de démonstration neuve (si besoin)
 

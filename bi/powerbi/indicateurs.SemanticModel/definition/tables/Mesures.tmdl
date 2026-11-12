@@ -60,23 +60,23 @@ table Mesures
 		formatString: #,0
 		lineageTag: d583469c-7a40-4320-8249-21cde9cd731d
 
-	measure 'Commandé' = SUM ( fact_forecast_accuracy[actual_quantity] )
+	measure Commandé = SUM ( fact_forecast_accuracy[actual_quantity] )
 		formatString: #,0
 		lineageTag: a62bb28d-7c29-47e2-8789-409969819460
 
-	measure 'TRS' = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[required_hours] ) )
+	measure TRS = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[required_hours] ) )
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: 7c89909e-3524-4b30-9acf-7ade9fdcb17d
 
-	measure 'Disponibilité' = DIVIDE ( SUM ( fact_line_time[operating_hours] ), SUM ( fact_line_time[required_hours] ) )
+	measure Disponibilité = DIVIDE ( SUM ( fact_line_time[operating_hours] ), SUM ( fact_line_time[required_hours] ) )
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: c389ae6f-f89a-48ee-bffe-6c0efa8316d4
 
-	measure 'Performance' = DIVIDE ( SUM ( fact_line_time[net_hours] ), SUM ( fact_line_time[operating_hours] ) )
+	measure Performance = DIVIDE ( SUM ( fact_line_time[net_hours] ), SUM ( fact_line_time[operating_hours] ) )
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: 0b301f29-03e0-4cae-9b1f-026a0ec1f800
 
-	measure 'Qualité' = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[net_hours] ) )
+	measure Qualité = DIVIDE ( SUM ( fact_line_time[useful_hours] ), SUM ( fact_line_time[net_hours] ) )
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: ab3cdbf0-af8e-44cc-bb16-e860801d59d1
 

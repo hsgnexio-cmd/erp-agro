@@ -126,3 +126,4 @@ relationship 7bb12a0e-1a1c-43f6-86ca-5fa8172c86a0
 relationship 6966aaf8-c885-400f-93ed-02d241b75c2d
 	fromColumn: fact_line_stop.site_id
 	toColumn: dim_site.site_id
+
