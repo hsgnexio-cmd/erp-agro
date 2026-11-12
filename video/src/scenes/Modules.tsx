@@ -85,7 +85,7 @@ const Cut: React.FC<{ frame: number; from: number; index: number }> = ({ frame, 
   )
 }
 
-/** 29,5 – 38,9 s : « un écran parmi quarante », les cinq modules, puis « un seul outil ». */
+/** 29,5 – 38,9 s : « un écran parmi quarante », les cinq modules, puis « de bout en bout ». */
 export const Modules: React.FC = () => {
   const frame = useCurrentFrame()
   const g = SCENES.modules.from + frame
@@ -127,10 +127,9 @@ export const Modules: React.FC = () => {
                 { text: 'Tout', at: w(12) },
                 { text: 'le', at: w(13) },
                 { text: 'cycle', at: w(14) },
-                { text: "d'un", at: w(15) },
-                { text: 'industriel', at: w(16) },
-                { text: 'du', at: w(17) },
-                { text: 'frais', at: w(18) },
+                { text: "d'une", at: w(15) },
+                { text: 'usine', at: w(16) },
+                { text: 'agroalimentaire', at: w(17) },
               ]}
             />
             <div style={{ display: 'flex', alignItems: 'center', marginTop: 90 }}>
@@ -166,8 +165,8 @@ export const Modules: React.FC = () => {
               })}
             </div>
             <div style={{ marginTop: 80 }}>
-              <Slam frame={frame} at={w(20)} style={{ fontSize: 190, fontWeight: 900, color: C.lime, lineHeight: 1 }}>
-                Un seul outil.
+              <Slam frame={frame} at={w(18)} style={{ fontSize: 118, fontWeight: 900, color: C.lime, lineHeight: 1 }}>
+                Développé de bout en bout.
               </Slam>
             </div>
           </AbsoluteFill>

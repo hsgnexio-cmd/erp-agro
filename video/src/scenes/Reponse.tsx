@@ -42,14 +42,14 @@ export const Logo: React.FC<{ size?: number }> = ({ size = 1 }) => (
   </div>
 )
 
-/** 7 – 11,7 s : le drop. « Avec l'ERP Brévanne, la réponse tombe en moins d'une seconde. » */
+/** 7 – 11,7 s : le drop. « Voici un projet personnel : un ERP agroalimentaire complet. » */
 export const Reponse: React.FC = () => {
   const frame = useCurrentFrame()
   const g = SCENES.reponse.from + frame
   const logo = pop(frame, 0, 240, 13)
-  // Le logo remonte pour laisser la place à la promesse
-  const up = lerp(frame, [w(3) - 6, w(3) + 10], [0, 1])
-  const line = interpolate(frame, [w(7) + 6, w(7) + 20], [0, 1], CLAMP)
+  // Le logo remonte pour laisser la place à la présentation du projet
+  const up = lerp(frame, [w(1) - 6, w(1) + 10], [0, 1])
+  const line = interpolate(frame, [w(5) + 6, w(5) + 20], [0, 1], CLAMP)
   return (
     <AbsoluteFill style={{ color: C.white }}>
       <Background variant="green" globalFrame={g} />
@@ -84,12 +84,12 @@ export const Reponse: React.FC = () => {
       </AbsoluteFill>
 
       <AbsoluteFill style={{ alignItems: 'center', top: 470, fontFamily: FONT }}>
-        <Rise frame={frame} at={w(3)} style={{ fontSize: 66, fontWeight: 600 }}>
-          La réponse tombe en
+        <Rise frame={frame} at={w(1)} style={{ fontSize: 66, fontWeight: 600 }}>
+          Un projet personnel
         </Rise>
         <div style={{ position: 'relative', marginTop: 6 }}>
-          <Slam frame={frame} at={w(7)} style={{ fontSize: 190, fontWeight: 900, color: C.lime, lineHeight: 1.1 }}>
-            moins d'1 seconde
+          <Slam frame={frame} at={w(5)} style={{ fontSize: 160, fontWeight: 900, color: C.lime, lineHeight: 1.1 }}>
+            ERP agroalimentaire
           </Slam>
           <div
             style={{
@@ -103,9 +103,9 @@ export const Reponse: React.FC = () => {
             }}
           />
         </div>
-        <Rise frame={frame} at={w(9) + 8} style={{ marginTop: 44 }}>
-          <Pill mono background="rgba(6,18,10,0.55)" color={C.white} size={34}>
-            23 lots retracés en 0,02 s
+        <Rise frame={frame} at={w(7) + 6} style={{ marginTop: 44 }}>
+          <Pill background="rgba(6,18,10,0.55)" color={C.white} size={34}>
+            conçu et construit seul, de A à Z
           </Pill>
         </Rise>
       </AbsoluteFill>

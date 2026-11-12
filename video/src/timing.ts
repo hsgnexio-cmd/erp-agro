@@ -28,7 +28,7 @@ export const SCENES: Record<SceneId, { from: number; to: number; voiceAt: number
   modules: { from: beat(48), to: beat(68), voiceAt: 0.1 },
   pilotage: { from: beat(68), to: beat(84), voiceAt: 0.25 },
   preuves: { from: beat(84), to: beat(104), voiceAt: 0.2 },
-  fin: { from: beat(104), to: beat(104) + sec(6.4), voiceAt: 0.35 },
+  fin: { from: beat(104), to: beat(104) + sec(7.6), voiceAt: 0.35 },
 }
 export const TOTAL = SCENES.fin.to
 
