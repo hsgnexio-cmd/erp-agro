@@ -2,7 +2,7 @@
   {"session": "direction", "path": "/tracabilite", "wait": 4000,
    "typing": {"text": "LR-261109-0004", "prefix": "trace", "wait": 6000},
    "file": "tracabilite.jpg", "fullPage": true},
-  {"session": "direction", "path": "/rappels/2", "file": "rappel.jpg", "wait": 6000, "fullPage": true},
+  {"session": "direction", "path": "/rappels/1", "file": "rappel.jpg", "wait": 6000, "fullPage": true},
   {"session": "direction", "path": "/tableau-de-bord", "file": "tableau-de-bord.jpg", "wait": 10000, "fullPage": true},
   {"session": "direction", "path": "/commandes", "file": "achats.jpg", "wait": 4000},
   {"session": "direction", "path": "/lots", "file": "lots.jpg", "wait": 4000},

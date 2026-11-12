@@ -24,7 +24,7 @@ export const Pilotage: React.FC = () => {
   const split = w(7) - 5
   const enter = pop(frame, 0, 120, 16)
   const first = visible(frame, -10, split + 4, 5)
-  const scroll = interpolate(frame, [6, w(3), split], [330, 640, 1260], CLAMP)
+  const scroll = interpolate(frame, [6, w(3), split], [150, 520, 940], CLAMP)
   return (
     <AbsoluteFill style={{ color: C.white, fontFamily: FONT }}>
       <Background globalFrame={g} />
@@ -45,6 +45,7 @@ export const Pilotage: React.FC = () => {
             width={1370}
             title="ERP Brévanne Traiteur · Tableau de bord"
             scroll={scroll}
+            sticky={248}
             style={{ transform: 'rotateY(-8deg) rotateX(4deg)', transformOrigin: '100% 50%' }}
           />
         </div>
@@ -94,6 +95,7 @@ export const Pilotage: React.FC = () => {
                   src={`captures/${item.src}.jpg`}
                   width={width}
                   title={`${item.who} · ${item.role}`}
+                  sticky={248}
                   scroll={lerp(frame, [split, 225], [center ? 240 : 150, center ? 330 : 190], false)}
                   style={{ transform: `rotateY(${item.tilt}deg)` }}
                 />

@@ -13,6 +13,8 @@ export const Browser: React.FC<{
   /** Défilement vertical, en pixels de la page (largeur de référence : 1440). */
   scroll?: number
   zoom?: number
+  /** Largeur (px de la page) du menu latéral, qui reste fixe pendant le défilement. */
+  sticky?: number
   /** Point fixe du zoom, de 0 à 1. */
   focus?: [number, number]
   /** Calque posé sur la page, dans le repère 1440 × 900. */
@@ -23,6 +25,7 @@ export const Browser: React.FC<{
   width,
   title = 'ERP Brévanne Traiteur',
   scroll = 0,
+  sticky = 0,
   zoom = 1,
   focus = [0.5, 0.5],
   children,
@@ -89,6 +92,20 @@ export const Browser: React.FC<{
             src={staticFile(src)}
             style={{ width: '100%', display: 'block', transform: `translateY(${-scroll * k}px)` }}
           />
+          {sticky > 0 && scroll > 0 ? (
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: sticky * k,
+                height: '100%',
+                overflow: 'hidden',
+              }}
+            >
+              <Img src={staticFile(src)} style={{ width: width, maxWidth: 'none', display: 'block' }} />
+            </div>
+          ) : null}
           {children ? (
             <div
               style={{

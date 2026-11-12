@@ -31,12 +31,12 @@ export const Tracabilite: React.FC = () => {
   const src =
     frame < result ? `captures/trace-${String(typed).padStart(2, '0')}.jpg` : 'captures/tracabilite.jpg'
   // Gros plan sur le champ pendant la saisie, puis sur l'arbre « aval » une fois tracé
-  const zoom = frame < result ? 1.9 : lerp(frame, [result + 4, result + 40], [1, 1.42])
-  const focus: [number, number] = frame < result ? [0.1, 0.3] : [0.95, 0.3]
-  const scroll = frame < result ? 0 : lerp(frame, [w(9), 250], [0, 980], false)
+  const zoom = frame < result ? 1.2 : lerp(frame, [result + 4, result + 40], [1, 1.42])
+  const focus: [number, number] = frame < result ? [1, 0.19] : [0.95, 0.34]
+  const scroll = frame < result ? 0 : lerp(frame, [w(9), 250], [0, 1250], false)
   // Curseur : va jusqu'au bouton « Tracer » et clique
-  const cx = lerp(frame, [w(4) - 14, click - 1], [760, 364])
-  const cy = lerp(frame, [w(4) - 14, click - 1], [560, 283])
+  const cx = lerp(frame, [w(4) - 14, click - 1], [900, 1353])
+  const cy = lerp(frame, [w(4) - 14, click - 1], [520, 172])
   const ripple = interpolate(frame, [click, click + 10], [0, 1], CLAMP)
   const first = visible(frame, 0, w(6) - 4, 6)
   const second = visible(frame, w(6) - 4, 400, 6)
@@ -61,6 +61,7 @@ export const Tracabilite: React.FC = () => {
           zoom={zoom}
           focus={focus}
           scroll={scroll}
+          sticky={248}
           style={{ transform: 'rotateY(10deg) rotateX(3deg)', transformOrigin: '0% 50%' }}
         >
           {frame < result + 2 ? (
@@ -68,8 +69,8 @@ export const Tracabilite: React.FC = () => {
               <div
                 style={{
                   position: 'absolute',
-                  left: 364 - 60,
-                  top: 283 - 60,
+                  left: 1353 - 60,
+                  top: 172 - 60,
                   width: 120,
                   height: 120,
                   borderRadius: '50%',
