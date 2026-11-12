@@ -6,7 +6,7 @@ Ce fichier est lu par Claude Code au début de chaque session. Il décrit le pro
 
 - **Entreprise (fictive)** : Brévanne Traiteur SAS, ETI de plats cuisinés frais (520 salariés, 165 M€ de CA).
 - **Activité** : plats chauds (usine NAN, près de Nantes) et traiteur froid (usine REN, près de Rennes), vendus en grande distribution, sous la marque Brévanne (55 % du CA) et en marque distributeur MDD (45 %).
-- **Objectif** : développer un ERP agroalimentaire complet, de qualité professionnelle, dans le cadre d'une formation.
+- **Objectif** : développer un ERP agroalimentaire complet, de qualité professionnelle. C'est un **projet personnel** de Nicolas (pas un projet d'école ni de formation), pour mettre en pratique le fonctionnement d'une supply chain agroalimentaire.
 - **Description détaillée de l'entreprise** : voir `docs/fiche-entreprise.md`. La lire avant toute décision métier.
 
 ## 2. Le développeur
