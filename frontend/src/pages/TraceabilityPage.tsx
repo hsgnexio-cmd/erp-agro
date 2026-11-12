@@ -21,7 +21,11 @@ export function TraceabilityPage() {
   return (
     <section>
       <h1>Traçabilité</h1>
-      <form className="filters" onSubmit={handleSubmit}>
+      <p className="page-intro">
+        Saisis un numéro de lot pour voir de quoi il est fait (amont) et où il est allé (aval), jusqu'aux
+        entrepôts des enseignes.
+      </p>
+      <form className="filters search-hero" onSubmit={handleSubmit}>
         <input
           aria-label="Numéro de lot"
           placeholder="Numéro de lot, ex. LR-261025-0001"
@@ -32,6 +36,14 @@ export function TraceabilityPage() {
         <button type="submit">Tracer</button>
       </form>
 
+      {!lot && (
+        <div className="empty-state">
+          <strong>Aucun lot tracé pour l'instant</strong>
+          <span>
+            Le numéro d'un lot se trouve dans le menu Lots, sur une réception ou sur un ordre de fabrication.
+          </span>
+        </div>
+      )}
       {trace.loading && <p>Recherche…</p>}
       {trace.error && <p className="error">{trace.error}</p>}
       {trace.data && (
@@ -46,7 +58,10 @@ export function TraceabilityPage() {
           </div>
           <div className="trace-columns">
             <div className="panel">
-              <h2>⬆ Amont : de quoi est fait ce lot ?</h2>
+              <h2>
+                <span className="direction up" aria-hidden="true" />
+                Amont : de quoi est fait ce lot ?
+              </h2>
               {trace.data.upstream.children.length === 0 ? (
                 <p className="hint">Lot reçu d'un fournisseur : rien en amont dans l'ERP.</p>
               ) : (
@@ -54,7 +69,10 @@ export function TraceabilityPage() {
               )}
             </div>
             <div className="panel">
-              <h2>⬇ Aval : où est allé ce lot ?</h2>
+              <h2>
+                <span className="direction down" aria-hidden="true" />
+                Aval : où est allé ce lot ?
+              </h2>
               {trace.data.downstream.children.length === 0 &&
               trace.data.downstream.shipments.length === 0 ? (
                 <p className="hint">Ce lot n'a encore été ni consommé ni expédié.</p>

@@ -13,7 +13,7 @@ const plan = read(planFile)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const WIDTH = 1440
 const HEIGHT = 900
-const SCALE = 2
+const SCALE = Number(process.env.CAPTURE_SCALE ?? 2)
 
 const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
 const ws = new WebSocket(targets.find((t) => t.type === 'page').webSocketDebuggerUrl)
