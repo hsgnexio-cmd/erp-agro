@@ -4,36 +4,74 @@ import { canOpen } from '../auth/roles'
 import { ROLE_LABELS } from '../format'
 import { AlertBadge } from './AlertBadge'
 
-const LINKS = [
-  { to: '/', label: 'Accueil', end: true },
-  { to: '/tableau-de-bord', label: 'Tableau de bord' },
-  { to: '/articles', label: 'Articles' },
-  { to: '/fournisseurs', label: 'Fournisseurs' },
-  { to: '/clients', label: 'Clients' },
-  { to: '/sites', label: 'Sites' },
-  { to: '/calendrier', label: 'Calendrier' },
-  { to: '/commandes', label: 'Achats' },
-  { to: '/besoins-achat', label: "Besoins d'achat" },
-  { to: '/production', label: 'Production' },
-  { to: '/plan-production', label: 'Plan de production' },
-  { to: '/planning', label: 'Planning' },
-  { to: '/trs', label: 'TRS' },
-  { to: '/lots', label: 'Lots' },
-  { to: '/previsions', label: 'Prévisions' },
-  { to: '/ventes', label: 'Ventes' },
-  { to: '/edi', label: 'EDI' },
-  { to: '/expeditions', label: 'Expéditions' },
-  { to: '/taux-de-service', label: 'Taux de service' },
-  { to: '/stocks', label: 'Stocks' },
-  { to: '/fefo', label: 'FEFO' },
-  { to: '/temperatures', label: 'Températures' },
-  { to: '/inventaires', label: 'Inventaires' },
-  { to: '/alertes', label: 'Alertes' },
-  { to: '/tracabilite', label: 'Traçabilité' },
-  { to: '/rappels', label: 'Rappels' },
+type MenuLink = { to: string; label: string; end?: boolean }
+
+// Menu latéral rangé par métier ; chaque rôle ne voit que les liens qu'il peut ouvrir
+const GROUPS: { title: string | null; links: MenuLink[] }[] = [
+  {
+    title: null,
+    links: [
+      { to: '/', label: 'Accueil', end: true },
+      { to: '/tableau-de-bord', label: 'Tableau de bord' },
+    ],
+  },
+  {
+    title: 'Référentiel',
+    links: [
+      { to: '/articles', label: 'Articles' },
+      { to: '/fournisseurs', label: 'Fournisseurs' },
+      { to: '/clients', label: 'Clients' },
+      { to: '/sites', label: 'Sites' },
+      { to: '/calendrier', label: 'Calendrier' },
+    ],
+  },
+  {
+    title: 'Approvisionnements',
+    links: [
+      { to: '/commandes', label: 'Achats' },
+      { to: '/besoins-achat', label: "Besoins d'achat" },
+    ],
+  },
+  {
+    title: 'Stocks et lots',
+    links: [
+      { to: '/lots', label: 'Lots' },
+      { to: '/stocks', label: 'Stocks' },
+      { to: '/fefo', label: 'FEFO' },
+      { to: '/temperatures', label: 'Températures' },
+      { to: '/inventaires', label: 'Inventaires' },
+      { to: '/alertes', label: 'Alertes' },
+    ],
+  },
+  {
+    title: 'Fabrication',
+    links: [
+      { to: '/plan-production', label: 'Plan de production' },
+      { to: '/planning', label: 'Planning' },
+      { to: '/production', label: 'Production' },
+      { to: '/trs', label: 'TRS' },
+    ],
+  },
+  {
+    title: 'Commercial',
+    links: [
+      { to: '/previsions', label: 'Prévisions' },
+      { to: '/ventes', label: 'Ventes' },
+      { to: '/edi', label: 'EDI' },
+      { to: '/expeditions', label: 'Expéditions' },
+      { to: '/taux-de-service', label: 'Taux de service' },
+    ],
+  },
+  {
+    title: 'Qualité',
+    links: [
+      { to: '/tracabilite', label: 'Traçabilité' },
+      { to: '/rappels', label: 'Rappels' },
+    ],
+  },
 ]
 
-/** Cadre commun des pages : en-tête, menu, utilisateur connecté. */
+/** Cadre commun des pages : menu latéral par métier, utilisateur connecté, contenu. */
 export function Layout() {
   const { status, user, logout } = useAuth()
   const location = useLocation()
@@ -45,15 +83,29 @@ export function Layout() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <span className="brand">ERP Brévanne Traiteur</span>
+      <aside className="app-sidebar">
+        <span className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            ERP
+          </span>
+          ERP Brévanne Traiteur
+        </span>
         <nav aria-label="Menu principal">
-          {LINKS.filter((link) => canOpen(user, link.to)).map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end}>
-              {link.label}
-              {link.to === '/alertes' && <AlertBadge />}
-            </NavLink>
-          ))}
+          {GROUPS.map((group) => {
+            const links = group.links.filter((link) => canOpen(user, link.to))
+            if (links.length === 0) return null
+            return (
+              <div className="menu-group" key={group.title ?? 'general'}>
+                {group.title && <p className="menu-title">{group.title}</p>}
+                {links.map((link) => (
+                  <NavLink key={link.to} to={link.to} end={link.end}>
+                    {link.label}
+                    {link.to === '/alertes' && <AlertBadge />}
+                  </NavLink>
+                ))}
+              </div>
+            )
+          })}
         </nav>
         <div className="user">
           <span>
@@ -64,7 +116,7 @@ export function Layout() {
             Se déconnecter
           </button>
         </div>
-      </header>
+      </aside>
       <main className="app-main">
         {canOpen(user, location.pathname) ? (
           <Outlet />
