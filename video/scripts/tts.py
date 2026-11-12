@@ -6,15 +6,17 @@ Lancement : voir video/README.md.
 
 import asyncio
 import json
+import os
 import pathlib
 
 import edge_tts
 from mutagen.mp3 import MP3
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "public" / "voix"
-VOICE = "fr-FR-HenriNeural"
-RATE = "+10%"
+OUT = ROOT / "public" / os.environ.get("TTS_OUT", "voix")
+# Voix « multilingues » de Microsoft : nettement plus naturelles que les voix classiques
+VOICE = os.environ.get("TTS_VOICE", "fr-FR-VivienneMultilingualNeural")
+RATE = os.environ.get("TTS_RATE", "+6%")
 
 
 async def speak(item: dict) -> dict:

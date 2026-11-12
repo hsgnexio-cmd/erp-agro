@@ -7,7 +7,7 @@ Elle est fabriquée **avec du code** grâce à [Remotion](https://www.remotion.d
 | Élément | Où | Comment |
 | --- | --- | --- |
 | Texte de la voix off | `script.json` | 8 séquences, une par scène |
-| Voix | `public/voix/` | Voix de synthèse Microsoft « Henri » (`scripts/tts.py`, bibliothèque edge-tts), avec le repère de chaque mot pour caler les animations |
+| Voix | `public/voix/` | Voix de synthèse Microsoft « Vivienne » (voix multilingue, plus naturelle) (`scripts/tts.py`, bibliothèque edge-tts), avec le repère de chaque mot pour caler les animations |
 | Écrans de l'ERP | `public/captures/` | Captures prises sur une démo neuve (`scripts/capture.mjs` et `scripts/plan-captures.json`) |
 | Musique | `public/musique.mp3` | **Non fournie** (licence de son auteur) : déposer un MP3 libre de droits à cet endroit |
 | Montage | `src/` | `timing.ts` (calage sur la musique), `scenes/` (les 8 scènes), `components/` |

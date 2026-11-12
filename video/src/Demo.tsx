@@ -22,10 +22,10 @@ const ORDER: [SceneId, React.FC][] = [
   ['fin', Fin],
 ]
 
-// Volumes mesurés : la voix est montée (×1,4) et la musique baissée dessous, puis relevée
+// Volumes mesurés : la voix est montée (×1,8) et la musique baissée dessous, puis relevée
 // dans les silences entre deux phrases
-const VOICE_GAIN = 1.4
-const MUSIC = { introUnder: 0.3, introFree: 0.55, under: 0.15, free: 0.42, hit: 0.75 }
+const VOICE_GAIN = 1.8
+const MUSIC = { introUnder: 0.12, introFree: 0.3, under: 0.055, free: 0.2, hit: 0.5 }
 
 const speaking = (frame: number) =>
   ORDER.some(([id]) => {
