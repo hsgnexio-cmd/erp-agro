@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert, InventoryDetail } from '../api/monitoring'
@@ -177,7 +177,9 @@ describe('Alertes', () => {
     renderApp('/alertes')
     const user = userEvent.setup()
 
-    expect(await screen.findByLabelText('3 alerte(s) à traiter')).toHaveTextContent('3')
+    // Le compteur est affiché dans le menu et dans la barre du haut
+    const menu = await screen.findByRole('navigation', { name: 'Menu principal' })
+    expect(await within(menu).findByLabelText('3 alerte(s) à traiter')).toHaveTextContent('3')
     await user.type(await screen.findByLabelText('Commentaire alerte 5'), 'Lot utilisé en priorité')
     await user.click(screen.getByRole('button', { name: 'Marquer comme traitée' }))
 

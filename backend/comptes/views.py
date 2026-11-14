@@ -9,11 +9,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .access import readable_areas
+from .access import readable_areas, role_areas
+from .permissions import has_any_role
+from .roles import Role
 
 
 def serialize_user(user) -> dict:
-    return {
+    data = {
         "id": user.id,
         "username": user.username,
         "first_name": user.first_name,
@@ -24,6 +26,10 @@ def serialize_user(user) -> dict:
         # Domaines consultables (matrice d'accès) : le menu de l'application en dépend
         "areas": readable_areas(user),
     }
+    if has_any_role(user, [Role.ADMIN]):
+        # Aperçu « vue métier » : le menu de chaque rôle, sans changer les droits du compte
+        data["role_areas"] = role_areas()
+    return data
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")

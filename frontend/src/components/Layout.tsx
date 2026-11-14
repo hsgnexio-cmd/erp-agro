@@ -1,132 +1,137 @@
+import { LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/context'
+import { PreviewContext, previewUser } from '../auth/preview'
 import { canOpen } from '../auth/roles'
 import { ROLE_LABELS } from '../format'
+import { GROUPS } from '../navigation'
 import { AlertBadge } from './AlertBadge'
+import { Topbar } from './Topbar'
 
-type MenuLink = { to: string; label: string; end?: boolean }
+const COLLAPSED_KEY = 'erp-menu-replie'
+const PREVIEW_KEY = 'erp-apercu-role'
 
-// Menu latéral rangé par métier ; chaque rôle ne voit que les liens qu'il peut ouvrir
-const GROUPS: { title: string | null; links: MenuLink[] }[] = [
-  {
-    title: null,
-    links: [
-      { to: '/', label: 'Accueil', end: true },
-      { to: '/tableau-de-bord', label: 'Tableau de bord' },
-    ],
-  },
-  {
-    title: 'Référentiel',
-    links: [
-      { to: '/articles', label: 'Articles' },
-      { to: '/fournisseurs', label: 'Fournisseurs' },
-      { to: '/clients', label: 'Clients' },
-      { to: '/sites', label: 'Sites' },
-      { to: '/calendrier', label: 'Calendrier' },
-    ],
-  },
-  {
-    title: 'Approvisionnements',
-    links: [
-      { to: '/commandes', label: 'Achats' },
-      { to: '/besoins-achat', label: "Besoins d'achat" },
-    ],
-  },
-  {
-    title: 'Stocks et lots',
-    links: [
-      { to: '/lots', label: 'Lots' },
-      { to: '/stocks', label: 'Stocks' },
-      { to: '/fefo', label: 'FEFO' },
-      { to: '/temperatures', label: 'Températures' },
-      { to: '/inventaires', label: 'Inventaires' },
-      { to: '/alertes', label: 'Alertes' },
-    ],
-  },
-  {
-    title: 'Fabrication',
-    links: [
-      { to: '/plan-production', label: 'Plan de production' },
-      { to: '/planning', label: 'Planning' },
-      { to: '/production', label: 'Production' },
-      { to: '/trs', label: 'TRS' },
-    ],
-  },
-  {
-    title: 'Commercial',
-    links: [
-      { to: '/previsions', label: 'Prévisions' },
-      { to: '/ventes', label: 'Ventes' },
-      { to: '/edi', label: 'EDI' },
-      { to: '/expeditions', label: 'Expéditions' },
-      { to: '/taux-de-service', label: 'Taux de service' },
-    ],
-  },
-  {
-    title: 'Qualité',
-    links: [
-      { to: '/tracabilite', label: 'Traçabilité' },
-      { to: '/rappels', label: 'Rappels' },
-    ],
-  },
-]
+function stored(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key)
+  } catch {
+    return null
+  }
+}
 
-/** Cadre commun des pages : menu latéral par métier, utilisateur connecté, contenu. */
+function store(storage: Storage, key: string, value: string | null): void {
+  try {
+    if (value === null) storage.removeItem(key)
+    else storage.setItem(key, value)
+  } catch {
+    // Stockage indisponible (navigation privée) : le réglage ne sera pas mémorisé
+  }
+}
+
+/** Cadre commun des pages : menu latéral par métier, barre du haut, contenu. */
 export function Layout() {
   const { status, user, logout } = useAuth()
   const location = useLocation()
+  const [collapsed, setCollapsed] = useState(() => stored(localStorage, COLLAPSED_KEY) === '1')
+  const [previewRole, setPreviewRoleState] = useState(() => stored(sessionStorage, PREVIEW_KEY))
+
+  const preview = useMemo(() => {
+    const role = user?.role_areas?.[previewRole ?? ''] ? previewRole : null
+    return {
+      viewUser: previewUser(user, role),
+      previewRole: role,
+      setPreviewRole: (next: string | null) => {
+        store(sessionStorage, PREVIEW_KEY, next)
+        setPreviewRoleState(next)
+      },
+    }
+  }, [user, previewRole])
 
   if (status === 'chargement') return <p className="page-message">Chargement…</p>
   if (status === 'deconnecte' || !user) return <Navigate to="/connexion" replace />
 
+  const viewUser = preview.viewUser
   const roles = user.roles.map((role) => ROLE_LABELS[role] ?? role).join(', ')
 
+  function toggleMenu() {
+    store(localStorage, COLLAPSED_KEY, collapsed ? null : '1')
+    setCollapsed(!collapsed)
+  }
+
   return (
-    <div className="app">
-      <aside className="app-sidebar">
-        <span className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            ERP
-          </span>
-          ERP Brévanne Traiteur
-        </span>
-        <nav aria-label="Menu principal">
-          {GROUPS.map((group) => {
-            const links = group.links.filter((link) => canOpen(user, link.to))
-            if (links.length === 0) return null
-            return (
-              <div className="menu-group" key={group.title ?? 'general'}>
-                {group.title && <p className="menu-title">{group.title}</p>}
-                {links.map((link) => (
-                  <NavLink key={link.to} to={link.to} end={link.end}>
-                    {link.label}
-                    {link.to === '/alertes' && <AlertBadge />}
-                  </NavLink>
-                ))}
-              </div>
-            )
-          })}
-        </nav>
-        <div className="user">
-          <span>
-            {user.first_name || user.username}
-            {user.job_title ? <small> · {user.job_title}</small> : roles && <small> · {roles}</small>}
-          </span>
-          <button type="button" className="link-button" onClick={() => void logout()}>
-            Se déconnecter
-          </button>
+    <PreviewContext.Provider value={preview}>
+      <div className={collapsed ? 'app menu-collapsed' : 'app'}>
+        <aside className="app-sidebar">
+          <div className="sidebar-head">
+            <span className="brand">
+              <span className="brand-mark" aria-hidden="true">
+                ERP
+              </span>
+              <span className="brand-name">Brévanne Traiteur</span>
+            </span>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={toggleMenu}
+              aria-label={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+              title={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+            >
+              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+          </div>
+          <nav aria-label="Menu principal">
+            {GROUPS.map((group) => {
+              const links = group.links.filter((link) => canOpen(viewUser, link.to))
+              if (links.length === 0) return null
+              return (
+                <div className="menu-group" key={group.title ?? 'general'}>
+                  {group.title && <p className="menu-title">{group.title}</p>}
+                  {links.map((link) => (
+                    <NavLink key={link.to} to={link.to} end={link.end} title={link.label}>
+                      <link.icon className="menu-icon" size={17} aria-hidden="true" />
+                      <span className="menu-label">{link.label}</span>
+                      {link.to === '/alertes' && <AlertBadge />}
+                    </NavLink>
+                  ))}
+                </div>
+              )
+            })}
+          </nav>
+          <div className="user">
+            <span className="user-name">
+              {user.first_name || user.username}
+              {user.job_title ? <small> · {user.job_title}</small> : roles && <small> · {roles}</small>}
+            </span>
+            <button type="button" className="link-button" onClick={() => void logout()}>
+              <LogOut size={15} aria-hidden="true" />
+              <span className="menu-label">Se déconnecter</span>
+            </button>
+          </div>
+        </aside>
+        <div className="app-body">
+          <Topbar />
+          {preview.previewRole && (
+            <p className="preview-banner" role="status">
+              Aperçu de la vue {ROLE_LABELS[preview.previewRole] ?? preview.previewRole} : le menu et
+              l'accueil sont filtrés comme pour ce métier. Tes droits réels ne changent pas.
+            </p>
+          )}
+          <main className="app-main">
+            {canOpen(user, location.pathname) ? (
+              <Outlet />
+            ) : (
+              <section className="page-message" role="alert">
+                <h1>Accès réservé</h1>
+                <p>
+                  Ton rôle ne donne pas accès à cet écran. Les droits de chaque rôle sont décrits dans le
+                  README.
+                </p>
+              </section>
+            )}
+          </main>
         </div>
-      </aside>
-      <main className="app-main">
-        {canOpen(user, location.pathname) ? (
-          <Outlet />
-        ) : (
-          <section className="page-message" role="alert">
-            <h1>Accès réservé</h1>
-            <p>Ton rôle ne donne pas accès à cet écran. Les droits de chaque rôle sont décrits dans le README.</p>
-          </section>
-        )}
-      </main>
-    </div>
+      </div>
+    </PreviewContext.Provider>
   )
 }
