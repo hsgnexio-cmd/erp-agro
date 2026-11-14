@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { apiPost, errorMessages } from '../api/client'
@@ -14,8 +15,23 @@ const MONITORING_ROLES = ['admin', 'qualite', 'magasinier']
 export function AlertsPage() {
   const { user } = useAuth()
   const [state, setState] = useState('open')
+  const [level, setLevel] = useState('')
   const [version, setVersion] = useState(0)
-  const alerts = useApi<Paginated<Alert>>(`/api/stocks/alerts/?state=${state}&v=${version}`)
+  const alerts = useApi<Paginated<Alert>>(
+    `/api/stocks/alerts/?state=${state}${level ? `&level=${level}` : ''}&v=${version}`,
+  )
+  // Compteurs des onglets (même état, par niveau)
+  const critical = useApi<Paginated<Alert>>(
+    `/api/stocks/alerts/?state=${state}&level=critique&v=${version}`,
+  )
+  const warning = useApi<Paginated<Alert>>(
+    `/api/stocks/alerts/?state=${state}&level=attention&v=${version}`,
+  )
+  const tabs = [
+    { value: '', label: 'Toutes', count: (critical.data?.count ?? 0) + (warning.data?.count ?? 0) },
+    { value: 'critique', label: 'Critique', count: critical.data?.count },
+    { value: 'attention', label: 'Avertissement', count: warning.data?.count },
+  ]
   const [comments, setComments] = useState<Record<number, string>>({})
   const [errors, setErrors] = useState<string[]>([])
 
@@ -45,8 +61,28 @@ export function AlertsPage() {
           <option value="">Toutes</option>
         </select>
       </div>
+      <div className="tabs" role="tablist" aria-label="Criticité">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            role="tab"
+            aria-selected={level === tab.value}
+            className={level === tab.value ? `tab active tab-${tab.value || 'all'}` : 'tab'}
+            onClick={() => setLevel(tab.value)}
+          >
+            {tab.label}
+            {tab.count !== undefined && <span className="tab-count">{tab.count}</span>}
+          </button>
+        ))}
+      </div>
       <ErrorList messages={errors} />
-      {alerts.data && alerts.data.results.length === 0 && <p>Aucune alerte.</p>}
+      {alerts.data && alerts.data.results.length === 0 && (
+        <div className="empty-state">
+          <strong>Aucune alerte</strong>
+          <span>Rien à traiter dans cette catégorie.</span>
+        </div>
+      )}
       {alerts.data?.results.map((alert) => (
         <article key={alert.id} className={`alert-card level-${alert.level}`}>
           <header>
@@ -75,13 +111,13 @@ export function AlertsPage() {
                   onChange={(e) => setComments({ ...comments, [alert.id]: e.target.value })}
                 />
                 <button type="button" onClick={() => void resolve(alert)}>
-                  Marquer comme traitée
+                  <Check size={16} aria-hidden="true" /> Marquer comme traitée
                 </button>
               </div>
             )
           ) : (
             <p className="hint">
-              ✔ Traitée le {formatDateTime(alert.resolved_at)}
+              Traitée le {formatDateTime(alert.resolved_at)}
               {alert.resolved_by_name && ` par ${alert.resolved_by_name}`} :{' '}
               {alert.resolution_comment}
             </p>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Paginated, Site, StockSummaryRow } from '../api/types'
+import { type DataColumn, DataTable } from '../components/DataTable'
 import { formatDecimal } from '../format'
 import { useApi } from '../hooks/useApi'
 
@@ -10,6 +11,38 @@ const TYPES = [
   { value: 'SF', label: 'Semi-finis' },
   { value: 'PF', label: 'Produits finis' },
   { value: 'EM', label: 'Emballages' },
+]
+
+const amount = (
+  key: 'released' | 'quarantine' | 'blocked' | 'total',
+  header: string,
+): DataColumn<StockSummaryRow> => ({
+  id: key,
+  header,
+  numeric: true,
+  sortValue: (row) => Number(row[key]),
+  cell: (row) =>
+    key === 'total' ? <strong>{quantity(row.total, row.unit)}</strong> : quantity(row[key], row.unit),
+})
+
+const COLUMNS: DataColumn<StockSummaryRow>[] = [
+  {
+    id: 'article',
+    header: 'Article',
+    sortValue: (row) => row.article_code,
+    cell: (row) => <Link to={`/lots?search=${row.article_code}`}>{row.article_code}</Link>,
+  },
+  {
+    id: 'name',
+    header: 'Désignation',
+    sortValue: (row) => row.article_name,
+    cell: (row) => row.article_name,
+  },
+  { id: 'site', header: 'Site', sortValue: (row) => row.site_code, cell: (row) => row.site_code },
+  amount('released', 'Libéré'),
+  amount('quarantine', 'Quarantaine'),
+  amount('blocked', 'Bloqué'),
+  amount('total', 'Total'),
 ]
 
 export function StockPage() {
@@ -27,7 +60,7 @@ export function StockPage() {
   return (
     <section>
       <h1>État des stocks</h1>
-      <p className="hint">
+      <p className="page-intro">
         Seul le stock <strong>libéré</strong> est utilisable en production et en expédition.
       </p>
       <div className="filters">
@@ -60,43 +93,13 @@ export function StockPage() {
       </div>
       {error && <p className="error">{error}</p>}
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Article</th>
-                <th>Désignation</th>
-                <th>Site</th>
-                <th className="num">Libéré</th>
-                <th className="num">Quarantaine</th>
-                <th className="num">Bloqué</th>
-                <th className="num">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length === 0 && (
-                <tr>
-                  <td colSpan={7}>Aucun stock.</td>
-                </tr>
-              )}
-              {data.map((row) => (
-                <tr key={`${row.article}-${row.site_code}`}>
-                  <td>
-                    <Link to={`/lots?search=${row.article_code}`}>{row.article_code}</Link>
-                  </td>
-                  <td>{row.article_name}</td>
-                  <td>{row.site_code}</td>
-                  <td className="num">{quantity(row.released, row.unit)}</td>
-                  <td className="num">{quantity(row.quarantine, row.unit)}</td>
-                  <td className="num">{quantity(row.blocked, row.unit)}</td>
-                  <td className="num">
-                    <strong>{quantity(row.total, row.unit)}</strong>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="État des stocks par article et par site"
+          rows={data}
+          columns={COLUMNS}
+          rowKey={(row) => `${row.article}-${row.site_code}`}
+          empty="Aucun stock."
+        />
       )}
     </section>
   )

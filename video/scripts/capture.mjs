@@ -3,7 +3,7 @@
 //
 // Usage : node capture.mjs <port-devtools> <base-url> <sessions.json> <dossier-sortie> <plan.json>
 //   sessions.json : { "direction": "<sessionid>", "qualite": "...", ... }
-//   plan.json     : liste d'étapes { session, path, file, wait, fullPage, typing }
+//   plan.json     : liste d'étapes { session, path, file, wait, fullPage, typing, run }
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const [port, base, sessionsFile, outDir, planFile] = process.argv.slice(2)
@@ -81,6 +81,11 @@ for (const step of plan) {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', ...enter })
     await send('Input.dispatchKeyEvent', { type: 'keyUp', ...enter })
     await sleep(step.typing.wait ?? 5000)
+  }
+  if (step.run) {
+    // Action avant la capture (ex. cliquer sur un bouton) : expression JavaScript de la page
+    await send('Runtime.evaluate', { expression: step.run })
+    await sleep(step.runWait ?? 2000)
   }
   if (step.file) await shot(step.file, step.fullPage)
 }
