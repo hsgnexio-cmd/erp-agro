@@ -54,6 +54,15 @@ describe('TRS des lignes', () => {
     expect(within(tile).getByText('64,4 %')).toHaveClass('badge-danger')
     const line = within(screen.getByRole('table', { name: 'TRS par ligne' })).getByText('L1').closest('tr')!
     expect(line).toHaveTextContent('66,7 %')
+    // Disponibilité × Performance × Qualité = TRS
+    const equation = screen.getByLabelText('Décomposition du TRS')
+    expect(within(equation).getAllByRole('article').map((item) => item.getAttribute('aria-label'))).toEqual([
+      'Disponibilité',
+      'Performance',
+      'Qualité',
+      'TRS',
+    ])
+    expect(within(line).getByRole('img', { name: /^Marche .* arrêts non planifiés/ })).toBeInTheDocument()
     const pareto = screen.getByRole('table', { name: 'Pareto des arrêts' })
     expect(within(pareto).getByText('planifié')).toBeInTheDocument()
     // La direction consulte sans saisir
@@ -65,7 +74,9 @@ describe('TRS des lignes', () => {
     const fetchMock = mockOee()
     renderApp('/trs')
     const form = await screen.findByRole('form', { name: 'Saisir un arrêt' })
-    await userEvent.selectOptions(await within(form).findByLabelText('Ligne'), '1')
+    // La liste des lignes se charge après l'affichage du formulaire
+    await within(form).findByRole('option', { name: 'L1 – Pâtes 300 g' })
+    await userEvent.selectOptions(within(form).getByLabelText('Ligne'), '1')
     await userEvent.type(within(form).getByLabelText('Début'), '2026-11-09T06:00')
     await userEvent.type(within(form).getByLabelText('Fin'), '2026-11-09T06:20')
     await userEvent.selectOptions(within(form).getByLabelText('Cause'), 'changement_serie')

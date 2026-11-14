@@ -27,5 +27,9 @@ describe('Calendrier', () => {
     const closures = screen.getByRole('table', { name: 'Fermetures exceptionnelles' })
     expect(within(closures).getByText('Pont')).toBeInTheDocument()
     expect(screen.getByText(/du lundi au vendredi, hors jours fériés/)).toBeInTheDocument()
+    // Vue de l'année : le 11 novembre est férié, le 13 est une fermeture de site
+    const year = screen.getByLabelText('Calendrier 2026')
+    expect(within(year).getByTitle('Armistice 1918')).toHaveClass('day-holiday')
+    expect(within(year).getByTitle('Fermeture NAN : Pont')).toHaveClass('day-closed')
   })
 })

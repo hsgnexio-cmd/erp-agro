@@ -3,8 +3,9 @@ import { Link } from 'react-router'
 import type { Paginated, PurchaseOrder } from '../api/types'
 import { useAuth } from '../auth/context'
 import { PURCHASING_ROLES, hasRole } from '../auth/roles'
+import { type DataColumn, DataTable } from '../components/DataTable'
 import { StatusBadge } from '../components/StatusBadge'
-import { formatDate, formatMoney } from '../format'
+import { formatDate, formatMoney, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
 
 const STATUSES = [
@@ -14,6 +15,77 @@ const STATUSES = [
   { value: 'partiellement_recue', label: 'Partiellement reçue' },
   { value: 'soldee', label: 'Soldée' },
   { value: 'annulee', label: 'Annulée' },
+]
+
+// Avancement d'une commande, de la création à la réception complète
+const STEPS: Record<string, number> = { brouillon: 1, envoyee: 2, partiellement_recue: 3, soldee: 4 }
+
+function Progress({ order }: { order: PurchaseOrder }) {
+  const step = STEPS[order.status]
+  if (!step) return <span className="hint">—</span>
+  return (
+    <span className="steps" role="img" aria-label={`Étape ${step} sur 4 : ${order.status_label}`}>
+      {[1, 2, 3, 4].map((index) => (
+        <span key={index} className={index <= step ? 'step done' : 'step'} />
+      ))}
+    </span>
+  )
+}
+
+/** Respect du délai : une commande envoyée dont la date de livraison est passée est en retard. */
+function Delay({ order }: { order: PurchaseOrder }) {
+  if (order.status === 'soldee') return <span className="badge badge-ok">Reçue</span>
+  if (order.status !== 'envoyee' && order.status !== 'partiellement_recue') {
+    return <span className="hint">—</span>
+  }
+  const days = Math.round(
+    (Date.parse(todayIso()) - Date.parse(order.expected_delivery_date)) / 86400000,
+  )
+  if (days > 0) return <span className="badge badge-danger">En retard de {days} j</span>
+  if (days === 0) return <span className="badge badge-warn">Attendue aujourd'hui</span>
+  return <span className="badge badge-neutral">Dans {-days} j</span>
+}
+
+const COLUMNS: DataColumn<PurchaseOrder>[] = [
+  {
+    id: 'number',
+    header: 'Numéro',
+    sortValue: (order) => order.number,
+    cell: (order) => <Link to={`/commandes/${order.id}`}>{order.number}</Link>,
+  },
+  {
+    id: 'supplier',
+    header: 'Fournisseur',
+    sortValue: (order) => order.supplier_name,
+    cell: (order) => order.supplier_name,
+  },
+  {
+    id: 'ordered',
+    header: 'Commandée le',
+    sortValue: (order) => order.order_date,
+    cell: (order) => formatDate(order.order_date),
+  },
+  {
+    id: 'expected',
+    header: 'Livraison prévue',
+    sortValue: (order) => order.expected_delivery_date,
+    cell: (order) => formatDate(order.expected_delivery_date),
+  },
+  {
+    id: 'status',
+    header: 'Statut',
+    sortValue: (order) => order.status_label,
+    cell: (order) => <StatusBadge status={order.status} label={order.status_label} />,
+  },
+  { id: 'progress', header: 'Avancement', cell: (order) => <Progress order={order} /> },
+  { id: 'delay', header: 'Délai', cell: (order) => <Delay order={order} /> },
+  {
+    id: 'amount',
+    header: 'Montant HT',
+    numeric: true,
+    sortValue: (order) => (order.total_amount === null ? null : Number(order.total_amount)),
+    cell: (order) => formatMoney(order.total_amount),
+  },
 ]
 
 export function PurchaseOrdersPage() {
@@ -54,36 +126,13 @@ export function PurchaseOrdersPage() {
       </div>
       {error && <p className="error">{error}</p>}
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Numéro</th>
-                <th>Fournisseur</th>
-                <th>Commandée le</th>
-                <th>Livraison prévue</th>
-                <th>Statut</th>
-                <th className="num">Montant HT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.map((order) => (
-                <tr key={order.id}>
-                  <td>
-                    <Link to={`/commandes/${order.id}`}>{order.number}</Link>
-                  </td>
-                  <td>{order.supplier_name}</td>
-                  <td>{formatDate(order.order_date)}</td>
-                  <td>{formatDate(order.expected_delivery_date)}</td>
-                  <td>
-                    <StatusBadge status={order.status} label={order.status_label} />
-                  </td>
-                  <td className="num">{formatMoney(order.total_amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="Commandes fournisseurs"
+          rows={data.results}
+          columns={COLUMNS}
+          rowKey={(order) => order.id}
+          empty="Aucune commande ne correspond."
+        />
       )}
     </section>
   )

@@ -5,6 +5,55 @@ import { useApi } from '../hooks/useApi'
 
 const WEEKEND = ['samedi', 'dimanche']
 
+const MONTHS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
+
+const iso = (year: number, month: number, day: number) =>
+  `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+/** Vue de l'année : week-ends en gris, jours fériés en ambre, fermetures de site en rouge. */
+function YearView({ calendar }: { calendar: CompanyCalendar }) {
+  const holidays = new Map(calendar.holidays.map((day) => [day.date, day.label]))
+  const closure = (date: string) =>
+    calendar.closures.find((item) => item.start_date <= date && date <= item.end_date)
+  return (
+    <div className="year-view" aria-label={`Calendrier ${calendar.year}`}>
+      {MONTHS.map((name, month) => {
+        const days = new Date(calendar.year, month + 1, 0).getDate()
+        // Lundi en première colonne
+        const offset = (new Date(calendar.year, month, 1).getDay() + 6) % 7
+        return (
+          <div key={name} className="month">
+            <strong>{name}</strong>
+            <div className="month-grid">
+              {Array.from({ length: offset }, (_, index) => (
+                <span key={`vide-${index}`} />
+              ))}
+              {Array.from({ length: days }, (_, index) => {
+                const date = iso(calendar.year, month, index + 1)
+                const weekday = (offset + index) % 7
+                const closed = closure(date)
+                const holiday = holidays.get(date)
+                const kind = closed ? 'closed' : holiday ? 'holiday' : weekday >= 5 ? 'weekend' : 'open'
+                const title = closed
+                  ? `Fermeture ${closed.site_code} : ${closed.reason}`
+                  : (holiday ?? undefined)
+                return (
+                  <span key={date} className={`day day-${kind}`} title={title}>
+                    {index + 1}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Calendrier de l'entreprise : qui travaille quand, jours fériés, fermetures exceptionnelles. */
 export function CalendarPage() {
   const [year, setYear] = useState(new Date().getFullYear())
@@ -13,7 +62,7 @@ export function CalendarPage() {
   return (
     <section>
       <h1>Calendrier</h1>
-      <p className="hint">
+      <p className="page-intro">
         Jours travaillés de chaque activité, jours fériés (calculés automatiquement) et fermetures
         exceptionnelles des sites. Les fermetures se saisissent dans l'administration (rôle admin).
         Ce calendrier sert à l'heure limite de commande, au taux de service, au plan de production,
@@ -31,6 +80,15 @@ export function CalendarPage() {
       {error && <p className="error">{error}</p>}
       {data && (
         <>
+          <h2>Vue de l'année</h2>
+          <p className="legend calendar-legend">
+            <span className="day day-open">12</span> jour ouvré
+            <span className="day day-weekend">13</span> week-end
+            <span className="day day-holiday">14</span> jour férié
+            <span className="day day-closed">15</span> fermeture d'un site
+          </p>
+          <YearView calendar={data} />
+
           <h2>Qui travaille quand</h2>
           <div className="table-wrapper">
             <table aria-label="Jours travaillés">
