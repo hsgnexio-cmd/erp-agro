@@ -37,7 +37,7 @@ Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt e
 Cahier des charges « SaaS B2B » de Nicolas, par étapes (voir `docs/decisions.md`, section « Design system »).
 
 - ✅ Étape 1a (branche `design-systeme`) : barre du haut (fil d'Ariane, recherche Ctrl+K, aperçu par métier, alertes), menu à icônes compact et repliable, badges normalisés, couleurs de la charte.
-- ⏳ Étape 1b : composants `Drawer` (fiche en tiroir latéral) et `DataTable` (en-têtes collants, tri, sélection et actions groupées), en-tête de page standard.
+- ✅ Étape 1b (branche `design-systeme`, recréée) : composants génériques `components/Drawer.tsx` (tiroir latéral 540 / 680 px, onglets, pied d'actions, Échap) et `components/DataTable.tsx` (en-têtes collants, tri par colonne et multi-colonnes avec Maj + clic, cases à cocher et barre d'actions groupées, chiffres à droite en chasse fixe), avec leurs tests. **Aucune page ne les utilise encore** ; reste l'en-tête de page standard.
 - ⏳ Étape 2 : écrans par famille — pilotage (accueil « cockpit » avec urgences et compteurs, cartes KPI avec mini-courbe et infobulle), stocks et qualité (FEFO en jauges, courbes de température, alertes par criticité), approvisionnements et fabrication (MRP, planning en charge / capacité, TRS décomposé), référentiel (filtres rapides, calendrier annuel).
 - Après fusion : `docker compose up -d --build` (nouvelle dépendance `lucide-react`). Vidéo et captures du README à régénérer à la fin.
 
