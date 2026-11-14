@@ -1,5 +1,6 @@
+import { Download, Info } from 'lucide-react'
 import { useState } from 'react'
-import type { Indicator, IndicatorStatus, Indicators } from '../api/pilotage'
+import type { Indicator, IndicatorStatus, IndicatorWeek, Indicators } from '../api/pilotage'
 import type { Customer, Paginated, Site } from '../api/types'
 import { formatDate, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
@@ -42,24 +43,99 @@ const STATUS_BADGES: Record<IndicatorStatus, string> = {
   indisponible: 'badge-neutral',
 }
 
-function Tile({ indicator }: { indicator: Indicator }) {
+const STATUS_COLORS: Record<IndicatorStatus, string> = {
+  ok: '#166534',
+  alerte: '#b91c1c',
+  sans_donnee: '#6b7280',
+  indisponible: '#6b7280',
+}
+
+/** Jauge horizontale : où se situe la valeur par rapport à l'objectif (mini et / ou maxi). */
+function Gauge({ indicator }: { indicator: Indicator }) {
+  if (indicator.value === null || indicator.status === 'indisponible') return null
+  const value = Number(indicator.value)
+  const min = indicator.target_min === null ? null : Number(indicator.target_min)
+  const max = indicator.target_max === null ? null : Number(indicator.target_max)
+  // Échelle : 0 à 100 pour un pourcentage à atteindre, sinon un peu au-delà du plus grand repère
+  const top =
+    indicator.unit === '%' && max === null ? 100 : Math.max(value, min ?? 0, max ?? 0) * 1.25 || 1
+  const position = (n: number) => `${Math.min(100, Math.max(0, (n / top) * 100))}%`
+  return (
+    <div className="kpi-gauge" aria-hidden="true">
+      {min !== null && max !== null && (
+        <span className="kpi-gauge-zone" style={{ left: position(min), right: `calc(100% - ${position(max)})` }} />
+      )}
+      <span
+        className="kpi-gauge-fill"
+        style={{ width: position(value), background: STATUS_COLORS[indicator.status] }}
+      />
+      {min !== null && <span className="kpi-gauge-mark" style={{ left: position(min) }} />}
+      {max !== null && <span className="kpi-gauge-mark" style={{ left: position(max) }} />}
+    </div>
+  )
+}
+
+/** Mini-courbe de l'évolution par semaine (les 6 dernières semaines de la période). */
+function Sparkline({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null
+  const width = 96
+  const height = 30
+  const low = Math.min(...values)
+  const span = Math.max(...values) - low || 1
+  const points = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * (width - 6) + 3
+    const y = height - 4 - ((value - low) / span) * (height - 8)
+    return [x, y] as const
+  })
+  const [lastX, lastY] = points[points.length - 1]
+  return (
+    <svg className="kpi-spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <polyline
+        points={points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={lastX} cy={lastY} r="3" fill={color} />
+    </svg>
+  )
+}
+
+function Tile({ indicator, weeks }: { indicator: Indicator; weeks: IndicatorWeek[] }) {
+  const tooltipId = `formule-${indicator.code}`
+  const trend = weeks
+    .map((week) => week.values[indicator.code])
+    .filter((value): value is string => value !== null && value !== undefined)
+    .map(Number)
+    .slice(-6)
   return (
     <article className={`kpi kpi-${indicator.status}`} aria-label={indicator.label}>
       <header>
         <h2>{indicator.label}</h2>
+        <span className="kpi-info">
+          <button type="button" className="kpi-info-button" aria-label="Formule de calcul" aria-describedby={tooltipId}>
+            <Info size={15} aria-hidden="true" />
+          </button>
+          <span className="kpi-tooltip" role="tooltip" id={tooltipId}>
+            {indicator.definition}
+            {indicator.filters.length > 0 && <> · Filtres : {indicator.filters.join(', ')}</>}
+          </span>
+        </span>
         <span className={`badge ${STATUS_BADGES[indicator.status]}`}>
           {STATUS_LABELS[indicator.status]}
         </span>
       </header>
-      <p className="kpi-value">
-        {indicator.status === 'indisponible' ? '—' : formatIndicator(indicator.value, indicator.unit)}
-      </p>
+      <div className="kpi-main">
+        <p className="kpi-value">
+          {indicator.status === 'indisponible' ? '—' : formatIndicator(indicator.value, indicator.unit)}
+        </p>
+        <Sparkline values={trend} color={STATUS_COLORS[indicator.status]} />
+      </div>
+      <Gauge indicator={indicator} />
       <p className="kpi-target">Objectif : {indicator.target}</p>
       <p className="kpi-detail">{indicator.detail}</p>
-      <p className="kpi-definition" title={indicator.definition}>
-        {indicator.definition}
-        {indicator.filters.length > 0 && <> · Filtres : {indicator.filters.join(', ')}</>}
-      </p>
     </article>
   )
 }
@@ -104,14 +180,13 @@ export function DashboardPage() {
         <h1>Tableau de bord</h1>
         <div className="actions">
           <a className="button" href={`/api/pilotage/indicators/export/?${params}`}>
-            ⬇ Exporter pour Excel (CSV)
+            <Download size={16} aria-hidden="true" /> Exporter pour Excel (CSV)
           </a>
         </div>
       </div>
-      <p className="hint">
-        Les indicateurs de la fiche entreprise utiles à ton métier (la direction les voit tous,
-        avec les montants en euros), calculés à partir des vues du schéma « bi », les mêmes que
-        celles de Power BI. Vert : objectif atteint ; rouge : hors objectif.
+      <p className="page-intro">
+        Les indicateurs de ton métier, avec leur objectif et leur évolution par semaine. La formule
+        de chacun est dans l'infobulle <Info size={14} aria-hidden="true" />.
       </p>
       <div className="filters">
         <label className="stacked">
@@ -158,7 +233,7 @@ export function DashboardPage() {
           </p>
           <div className="kpi-grid">
             {data.indicators.map((indicator) => (
-              <Tile key={indicator.code} indicator={indicator} />
+              <Tile key={indicator.code} indicator={indicator} weeks={data.weeks} />
             ))}
           </div>
 
