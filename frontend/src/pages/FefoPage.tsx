@@ -1,8 +1,34 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import type { FefoPlan, Paginated, Site } from '../api/types'
-import { formatDate, formatDecimal } from '../format'
+import { formatDate, formatDecimal, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
+
+/** Jours restants avant la date de péremption (négatif si elle est dépassée). */
+function daysLeft(expiry: string): number {
+  return Math.round((Date.parse(expiry) - Date.parse(todayIso())) / 86400000)
+}
+
+/**
+ * Jauge de fraîcheur : rouge à 2 jours ou moins, orange jusqu'à 5 jours, verte au-delà. Sa
+ * longueur compare les lots proposés entre eux (le plus long remplit la jauge).
+ */
+function Freshness({ expiry, longest }: { expiry: string | null; longest: number }) {
+  if (!expiry) return <span className="hint">Sans date</span>
+  const days = daysLeft(expiry)
+  const tone = days <= 2 ? 'danger' : days <= 5 ? 'warn' : 'ok'
+  const label =
+    days < 0 ? 'Dépassée' : days === 0 ? "Aujourd'hui" : `${days} j restant${days > 1 ? 's' : ''}`
+  const width = Math.max(6, Math.min(100, (Math.max(days, 0) / Math.max(longest, 1)) * 100))
+  return (
+    <span className="freshness">
+      <span className="freshness-track" aria-hidden="true">
+        <span className={`freshness-fill freshness-${tone}`} style={{ width: `${width}%` }} />
+      </span>
+      <span className={`freshness-label freshness-text-${tone}`}>{label}</span>
+    </span>
+  )
+}
 
 /** Outil FEFO : quels lots utiliser en premier pour un besoin donné ? (règle 4) */
 export function FefoPage() {
@@ -13,6 +39,12 @@ export function FefoPage() {
   const [query, setQuery] = useState<string | null>(null)
   const plan = useApi<FefoPlan>(query)
 
+  // Le lot qui a le plus de jours devant lui sert d'échelle à toutes les jauges
+  const longest = Math.max(
+    1,
+    ...(plan.data?.lines ?? []).map((line) => (line.expiry_date ? daysLeft(line.expiry_date) : 0)),
+  )
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const params = new URLSearchParams({ article, site, quantity })
@@ -22,8 +54,9 @@ export function FefoPage() {
   return (
     <section>
       <h1>Proposition FEFO</h1>
-      <p className="hint">
+      <p className="page-intro">
         First Expired, First Out : l'ERP propose toujours les lots libérés qui périment le premier.
+        La jauge montre la durée de vie restante de chaque lot.
       </p>
       <form className="form" onSubmit={handleSubmit}>
         <div className="form-grid">
@@ -87,6 +120,7 @@ export function FefoPage() {
                     <th>Ordre</th>
                     <th>Lot</th>
                     <th>Péremption</th>
+                    <th>Durée de vie restante</th>
                     <th>Emplacement</th>
                     <th className="num">Disponible</th>
                     <th className="num">À prendre</th>
@@ -103,6 +137,9 @@ export function FefoPage() {
                         {line.expiry_date
                           ? `${formatDate(line.expiry_date)} (${line.date_type})`
                           : '—'}
+                      </td>
+                      <td>
+                        <Freshness expiry={line.expiry_date} longest={longest} />
                       </td>
                       <td>{line.location_code}</td>
                       <td className="num">

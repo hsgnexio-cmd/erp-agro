@@ -5,11 +5,54 @@ import type { Inventory, InventoryDetail } from '../api/monitoring'
 import type { Location, Paginated, Site } from '../api/types'
 import { useAuth } from '../auth/context'
 import { WAREHOUSE_ROLES, hasRole } from '../auth/roles'
+import { type DataColumn, DataTable } from '../components/DataTable'
 import { ErrorList } from '../components/ErrorList'
 import { formatDateTime } from '../format'
 import { useApi } from '../hooks/useApi'
 
 const STATUS_TONES: Record<string, string> = { en_cours: 'warn', valide: 'ok', annule: 'off' }
+
+const COLUMNS: DataColumn<Inventory>[] = [
+  {
+    id: 'number',
+    header: 'Numéro',
+    sortValue: (inv) => inv.number,
+    cell: (inv) => <Link to={`/inventaires/${inv.id}`}>{inv.number}</Link>,
+  },
+  {
+    id: 'scope',
+    header: 'Périmètre',
+    sortValue: (inv) => inv.location_code ?? `Site ${inv.site_code}`,
+    cell: (inv) => inv.location_code ?? `Site ${inv.site_code}`,
+  },
+  {
+    id: 'status',
+    header: 'Statut',
+    sortValue: (inv) => inv.status_label,
+    cell: (inv) => (
+      <span className={`badge badge-${STATUS_TONES[inv.status]}`}>{inv.status_label}</span>
+    ),
+  },
+  {
+    id: 'lines',
+    header: 'Lignes',
+    numeric: true,
+    sortValue: (inv) => inv.line_count,
+    cell: (inv) => inv.line_count,
+  },
+  {
+    id: 'opened',
+    header: 'Ouvert le',
+    sortValue: (inv) => inv.opened_at,
+    cell: (inv) => formatDateTime(inv.opened_at),
+  },
+  {
+    id: 'closed',
+    header: 'Clos le',
+    sortValue: (inv) => inv.closed_at,
+    cell: (inv) => formatDateTime(inv.closed_at),
+  },
+]
 
 export function InventoriesPage() {
   const { user } = useAuth()
@@ -92,43 +135,13 @@ export function InventoriesPage() {
       )}
 
       {inventories.data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Numéro</th>
-                <th>Périmètre</th>
-                <th>Statut</th>
-                <th className="num">Lignes</th>
-                <th>Ouvert le</th>
-                <th>Clos le</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventories.data.results.length === 0 && (
-                <tr>
-                  <td colSpan={6}>Aucun inventaire.</td>
-                </tr>
-              )}
-              {inventories.data.results.map((inv) => (
-                <tr key={inv.id}>
-                  <td>
-                    <Link to={`/inventaires/${inv.id}`}>{inv.number}</Link>
-                  </td>
-                  <td>{inv.location_code ?? `Site ${inv.site_code}`}</td>
-                  <td>
-                    <span className={`badge badge-${STATUS_TONES[inv.status]}`}>
-                      {inv.status_label}
-                    </span>
-                  </td>
-                  <td className="num">{inv.line_count}</td>
-                  <td>{formatDateTime(inv.opened_at)}</td>
-                  <td>{formatDateTime(inv.closed_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="Inventaires"
+          rows={inventories.data.results}
+          columns={COLUMNS}
+          rowKey={(inv) => inv.id}
+          empty="Aucun inventaire."
+        />
       )}
     </section>
   )

@@ -20,6 +20,66 @@ function limits(min: string | null, max: string | null): string {
   return '—'
 }
 
+/** Mini-courbe des derniers relevés d'une chambre froide, avec ses seuils en pointillés rouges. */
+function TemperatureCurve({
+  readings,
+  min,
+  max,
+}: {
+  readings: TemperatureReading[]
+  min: string | null
+  max: string | null
+}) {
+  if (readings.length < 2) return <span className="hint room-nocurve">Pas assez de relevés</span>
+  const width = 168
+  const height = 52
+  const values = readings.map((reading) => Number(reading.temperature))
+  const limits = [min, max].filter((limit) => limit !== null).map(Number)
+  const low = Math.min(...values, ...limits) - 0.5
+  const span = Math.max(...values, ...limits) + 0.5 - low
+  const x = (index: number) => (index / (values.length - 1)) * (width - 8) + 4
+  const y = (value: number) => height - 4 - ((value - low) / span) * (height - 8)
+  const compliant = readings.every((reading) => reading.is_compliant)
+  const color = compliant ? '#166534' : '#b91c1c'
+  return (
+    <svg
+      className="room-curve"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={`${readings.length} derniers relevés${compliant ? '' : ', dont au moins un hors seuil'}`}
+    >
+      {limits.map((limit) => (
+        <line
+          key={limit}
+          x1="0"
+          x2={width}
+          y1={y(limit)}
+          y2={y(limit)}
+          stroke="#dc2626"
+          strokeWidth="1"
+          strokeDasharray="4 3"
+        />
+      ))}
+      <polyline
+        points={values.map((value, index) => `${x(index).toFixed(1)},${y(value).toFixed(1)}`).join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {readings.map((reading, index) =>
+        reading.is_compliant ? null : (
+          <circle key={reading.id} cx={x(index)} cy={y(values[index])} r="3.2" fill="#dc2626" />
+        ),
+      )}
+      <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r="3" fill={color} />
+    </svg>
+  )
+}
+
 /** Relevés de température des chambres froides (règle 7 : chaîne du froid). */
 export function TemperaturesPage() {
   const { user } = useAuth()
@@ -108,43 +168,43 @@ export function TemperaturesPage() {
         ))}
 
       <h2>Dernier relevé par chambre froide</h2>
+      <p className="hint">
+        La courbe trace les derniers relevés de chaque chambre ; les pointillés rouges sont ses seuils.
+      </p>
       {rooms.data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Chambre froide</th>
-                <th>Site</th>
-                <th>Limites</th>
-                <th className="num">Dernier relevé</th>
-                <th>Le</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.data.map((room) => {
-                const last = room.last_reading
-                return (
-                  <tr key={room.location}>
-                    <td>
-                      {room.location_code} – {room.location_name}
-                    </td>
-                    <td>{room.site_code}</td>
-                    <td>{limits(room.min_allowed, room.max_allowed)}</td>
-                    <td className="num">
-                      {last ? (
-                        <span className={`badge badge-${last.is_compliant ? 'ok' : 'danger'}`}>
-                          {formatDecimal(last.temperature)} °C
-                        </span>
-                      ) : (
-                        <span className="badge badge-warn">Aucun relevé</span>
-                      )}
-                    </td>
-                    <td>{last ? formatDateTime(last.measured_at) : '—'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="room-grid">
+          {rooms.data.map((room) => {
+            const last = room.last_reading
+            // Les relevés arrivent du plus récent au plus ancien : on trace dans l'ordre du temps
+            const readings = (history.data?.results ?? [])
+              .filter((reading) => reading.location === room.location)
+              .slice(0, 12)
+              .reverse()
+            return (
+              <article key={room.location} className="room-card" aria-label={room.location_code}>
+                <header>
+                  <div>
+                    <strong>{room.location_code}</strong>
+                    <span>
+                      {room.location_name} · {room.site_code}
+                    </span>
+                  </div>
+                  {last ? (
+                    <span className={`badge badge-${last.is_compliant ? 'ok' : 'danger'}`}>
+                      {formatDecimal(last.temperature)} °C
+                    </span>
+                  ) : (
+                    <span className="badge badge-warn">Aucun relevé</span>
+                  )}
+                </header>
+                <TemperatureCurve readings={readings} min={room.min_allowed} max={room.max_allowed} />
+                <p className="room-meta">
+                  Seuils : {limits(room.min_allowed, room.max_allowed)}
+                  {last && <> · relevé le {formatDateTime(last.measured_at)}</>}
+                </p>
+              </article>
+            )
+          })}
         </div>
       )}
 
