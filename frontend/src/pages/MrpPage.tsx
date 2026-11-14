@@ -56,12 +56,17 @@ export function MrpPage() {
     })
   }
 
-  async function createOrders() {
+  /** Transforme des propositions en commandes brouillon (la sélection, ou une seule ligne). */
+  async function createOrders(list: MrpProposal[] = chosen) {
     setSaving(true)
     setErrors([])
     try {
       const result = await apiPost<CreatedPurchaseOrder[]>('/api/achats/mrp/create-orders/', {
-        selections: chosen.map((p) => ({ article: p.article, week: p.week, quantity: selected[keyOf(p)] })),
+        selections: list.map((p) => ({
+          article: p.article,
+          week: p.week,
+          quantity: selected[keyOf(p)] ?? String(Number(p.quantity)),
+        })),
       })
       setCreated(result)
       setSelected({})
@@ -82,7 +87,7 @@ export function MrpPage() {
           <Link to="/plan-production">Plan de production</Link>
         </div>
       </div>
-      <p className="hint">
+      <p className="page-intro">
         Calcul des besoins (MRP) sur la semaine en cours et les 8 suivantes : production prévue (OF,
         plan, prévision de vente) éclatée en matières et emballages, pertes comprises, moins le stock
         disponible et les commandes fournisseurs en cours (brouillons compris). Une proposition est
@@ -147,6 +152,21 @@ export function MrpPage() {
             </div>
           )}
 
+          <div className="stat-strip" aria-label="Synthèse des besoins">
+            <div className="stat">
+              <strong>{proposals.length}</strong>
+              <span>proposition{proposals.length > 1 ? 's' : ''} affichée{proposals.length > 1 ? 's' : ''}</span>
+            </div>
+            <div className={lateCount > 0 ? 'stat stat-danger' : 'stat'}>
+              <strong>{lateCount}</strong>
+              <span>en retard : rupture probable</span>
+            </div>
+            <div className="stat">
+              <strong>{formatMoney(String(proposals.reduce((sum, p) => sum + Number(p.amount ?? 0), 0)))}</strong>
+              <span>à commander sur cet horizon</span>
+            </div>
+          </div>
+
           {canBuy && (
             <div className="actions">
               <button type="button" disabled={chosen.length === 0 || saving} onClick={() => void createOrders()}>
@@ -169,12 +189,13 @@ export function MrpPage() {
                   <th className="num">Quantité proposée</th>
                   <th className="num">Prix</th>
                   <th className="num">Montant</th>
+                  {canBuy && <th>Action</th>}
                 </tr>
               </thead>
               <tbody>
                 {proposals.length === 0 && (
                   <tr>
-                    <td colSpan={canBuy ? 9 : 8}>Aucune proposition sur cet horizon.</td>
+                    <td colSpan={canBuy ? 10 : 8}>Aucune proposition sur cet horizon.</td>
                   </tr>
                 )}
                 {proposals.map((p) => (
@@ -214,7 +235,14 @@ export function MrpPage() {
                       </td>
                       <td>
                         {formatDate(p.order_date)}{' '}
-                        {p.late && <span className="badge badge-danger">en retard</span>}
+                        {p.late && (
+                          <span
+                            className="badge badge-danger"
+                            title={`Il fallait commander avant aujourd'hui : rupture probable le ${formatDate(p.need_date)}`}
+                          >
+                            en retard
+                          </span>
+                        )}
                       </td>
                       <td className="num">
                         {formatDecimal(p.net)} {p.unit}
@@ -240,10 +268,25 @@ export function MrpPage() {
                       </td>
                       <td className="num">{p.unit_price ? formatMoney(p.unit_price) : '—'}</td>
                       <td className="num">{formatMoney(p.amount)}</td>
+                      {canBuy && (
+                        <td>
+                          {p.supplier && (
+                            <button
+                              type="button"
+                              className="secondary row-action"
+                              disabled={saving}
+                              aria-label={`Générer la commande ${p.article_code} ${p.week_label}`}
+                              onClick={() => void createOrders([p])}
+                            >
+                              Générer la commande
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                     {opened === p.article && (
                       <tr>
-                        <td colSpan={canBuy ? 9 : 8}>
+                        <td colSpan={canBuy ? 10 : 8}>
                           <ArticleDetail
                             article={data.articles.find((a) => a.article === p.article)}
                             weeks={data.weeks.map((w) => w.label)}

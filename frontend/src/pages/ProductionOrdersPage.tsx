@@ -4,6 +4,7 @@ import type { ProductionOrder } from '../api/production'
 import type { Paginated } from '../api/types'
 import { useAuth } from '../auth/context'
 import { PRODUCTION_ROLES, hasRole } from '../auth/roles'
+import { type DataColumn, DataTable } from '../components/DataTable'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatDate, formatDecimal } from '../format'
 import { useApi } from '../hooks/useApi'
@@ -14,6 +15,89 @@ const STATUSES = [
   { value: 'lance', label: 'Lancé' },
   { value: 'termine', label: 'Terminé' },
   { value: 'annule', label: 'Annulé' },
+]
+
+/** Quantité produite par rapport à la quantité prévue. */
+function Produced({ order }: { order: ProductionOrder }) {
+  const planned = Number(order.planned_quantity)
+  const rate = planned > 0 ? (Number(order.produced_quantity) / planned) * 100 : 0
+  return (
+    <span className="produced">
+      <span>
+        {formatDecimal(order.produced_quantity)} {order.unit}
+      </span>
+      <span className="load-track" aria-hidden="true">
+        <span className="load-fill load-ok" style={{ width: `${Math.min(100, rate)}%` }} />
+      </span>
+    </span>
+  )
+}
+
+const COLUMNS: DataColumn<ProductionOrder>[] = [
+  {
+    id: 'number',
+    header: 'Numéro',
+    sortValue: (order) => order.number,
+    cell: (order) => <Link to={`/production/${order.id}`}>{order.number}</Link>,
+  },
+  {
+    id: 'article',
+    header: 'Article',
+    sortValue: (order) => order.article_code,
+    cell: (order) => (
+      <>
+        {order.article_code}
+        <br />
+        <small>{order.article_name}</small>
+      </>
+    ),
+  },
+  {
+    id: 'date',
+    header: 'Date',
+    sortValue: (order) => order.planned_date,
+    cell: (order) => formatDate(order.planned_date),
+  },
+  {
+    id: 'line',
+    header: 'Ligne',
+    sortValue: (order) => order.line_code ?? `Cuisine ${order.site_code}`,
+    cell: (order) => order.line_code ?? `Cuisine ${order.site_code}`,
+  },
+  {
+    id: 'planned',
+    header: 'Prévu',
+    numeric: true,
+    sortValue: (order) => Number(order.planned_quantity),
+    cell: (order) => `${formatDecimal(order.planned_quantity)} ${order.unit}`,
+  },
+  {
+    id: 'produced',
+    header: 'Produit',
+    numeric: true,
+    sortValue: (order) => Number(order.produced_quantity),
+    cell: (order) => <Produced order={order} />,
+  },
+  {
+    id: 'status',
+    header: 'Statut',
+    sortValue: (order) => order.status_label,
+    cell: (order) => <StatusBadge status={order.status} label={order.status_label} />,
+  },
+  {
+    id: 'yield',
+    header: 'Rendement',
+    numeric: true,
+    sortValue: (order) => (order.mass_yield === null ? null : Number(order.mass_yield)),
+    cell: (order) =>
+      order.mass_yield === null ? (
+        '—'
+      ) : (
+        <span className={`badge badge-${Number(order.mass_yield) < 96 ? 'danger' : 'ok'}`}>
+          {formatDecimal(order.mass_yield)} %
+        </span>
+      ),
+  },
 ]
 
 export function ProductionOrdersPage() {
@@ -53,58 +137,13 @@ export function ProductionOrdersPage() {
       </div>
       {error && <p className="error">{error}</p>}
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Numéro</th>
-                <th>Article</th>
-                <th>Date</th>
-                <th>Ligne</th>
-                <th className="num">Prévu</th>
-                <th className="num">Produit</th>
-                <th>Statut</th>
-                <th className="num">Rendement</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.map((order) => (
-                <tr key={order.id}>
-                  <td>
-                    <Link to={`/production/${order.id}`}>{order.number}</Link>
-                  </td>
-                  <td>
-                    {order.article_code}
-                    <br />
-                    <small>{order.article_name}</small>
-                  </td>
-                  <td>{formatDate(order.planned_date)}</td>
-                  <td>{order.line_code ?? `Cuisine ${order.site_code}`}</td>
-                  <td className="num">
-                    {formatDecimal(order.planned_quantity)} {order.unit}
-                  </td>
-                  <td className="num">
-                    {formatDecimal(order.produced_quantity)} {order.unit}
-                  </td>
-                  <td>
-                    <StatusBadge status={order.status} label={order.status_label} />
-                  </td>
-                  <td className="num">
-                    {order.mass_yield === null ? (
-                      '—'
-                    ) : (
-                      <span
-                        className={`badge badge-${Number(order.mass_yield) < 96 ? 'danger' : 'ok'}`}
-                      >
-                        {formatDecimal(order.mass_yield)} %
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="Ordres de fabrication"
+          rows={data.results}
+          columns={COLUMNS}
+          rowKey={(order) => order.id}
+          empty="Aucun ordre de fabrication ne correspond."
+        />
       )}
     </section>
   )

@@ -237,6 +237,8 @@ describe('Planning', () => {
 
     expect(await screen.findByRole('link', { name: 'OF-2026-00004' })).toBeInTheDocument()
     expect(screen.getByText('Charge : 16 h')).toBeInTheDocument()
+    // 16 h pour 15 h de capacité : barre rouge, au-delà de 100 %
+    expect(screen.getByText('107 %')).toHaveClass('load-text-danger')
     expect(screen.getByRole('note')).toHaveTextContent('Surcharge')
   })
 })

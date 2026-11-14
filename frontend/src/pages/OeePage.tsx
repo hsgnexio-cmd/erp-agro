@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { Fragment, useState, type FormEvent } from 'react'
 import { apiPost, errorMessages } from '../api/client'
-import type { LineStop, Oee, ProductionLine } from '../api/production'
+import type { LineStop, Oee, OeeLine, ProductionLine } from '../api/production'
 import type { Paginated } from '../api/types'
 import { useAuth } from '../auth/context'
 import { PRODUCTION_ROLES, hasRole } from '../auth/roles'
@@ -77,21 +77,31 @@ export function OeePage() {
       {report.error && <p className="error">{report.error}</p>}
       {report.data && (
         <>
-          <div className="kpi-grid">
+          <div className="oee-equation" aria-label="Décomposition du TRS">
             {(
               [
-                ['TRS', report.data.total.oee, target],
-                ['Disponibilité', report.data.total.availability, undefined],
-                ['Performance', report.data.total.performance, undefined],
-                ['Qualité', report.data.total.quality, undefined],
+                ['Disponibilité', report.data.total.availability, undefined, '×'],
+                ['Performance', report.data.total.performance, undefined, '×'],
+                ['Qualité', report.data.total.quality, undefined, '='],
+                ['TRS', report.data.total.oee, target, null],
               ] as const
-            ).map(([label, value, goal]) => (
-              <article key={label} className="kpi" aria-label={label}>
-                <h2>{label}</h2>
-                <p className="kpi-value">
-                  <Rate value={value} target={goal} />
-                </p>
-              </article>
+            ).map(([label, value, goal, operator]) => (
+              <Fragment key={label}>
+                <article className={label === 'TRS' ? 'kpi oee-result' : 'kpi'} aria-label={label}>
+                  <h2>{label}</h2>
+                  <p className="kpi-value">
+                    <Rate value={value} target={goal} />
+                  </p>
+                  <div className="oee-bar" aria-hidden="true">
+                    <span style={{ width: `${Math.min(100, Number(value ?? 0))}%` }} />
+                  </div>
+                </article>
+                {operator && (
+                  <span className="oee-operator" aria-hidden="true">
+                    {operator}
+                  </span>
+                )}
+              </Fragment>
             ))}
           </div>
 
@@ -109,12 +119,13 @@ export function OeePage() {
                   <th className="num">Performance</th>
                   <th className="num">Qualité</th>
                   <th className="num">TRS</th>
+                  <th>Répartition du temps d'ouverture</th>
                 </tr>
               </thead>
               <tbody>
                 {report.data.lines.length === 0 && (
                   <tr>
-                    <td colSpan={9}>Aucune plage de marche déclarée sur la période.</td>
+                    <td colSpan={10}>Aucune plage de marche déclarée sur la période.</td>
                   </tr>
                 )}
                 {report.data.lines.map((row) => (
@@ -139,6 +150,9 @@ export function OeePage() {
                     </td>
                     <td className="num">
                       <Rate value={row.oee} target={target} />
+                    </td>
+                    <td>
+                      <TimeSplit row={row} />
                     </td>
                   </tr>
                 ))}
@@ -190,6 +204,27 @@ export function OeePage() {
       {canEdit && <StopForm onDone={reload} />}
       {stops.data && <StopList stops={stops.data.results} canEdit={canEdit} onChange={reload} />}
     </section>
+  )
+}
+
+/** Barre empilée du temps d'ouverture d'une ligne : marche, arrêts non planifiés, arrêts planifiés. */
+function TimeSplit({ row }: { row: OeeLine }) {
+  const opening = Number(row.opening_hours)
+  if (opening <= 0) return null
+  const planned = Number(row.planned_stop_hours)
+  const unplanned = Number(row.unplanned_stop_hours)
+  const running = Math.max(0, opening - planned - unplanned)
+  const part = (hours: number) => `${(hours / opening) * 100}%`
+  return (
+    <span
+      className="time-split"
+      role="img"
+      aria-label={`Marche ${formatDecimal(String(running.toFixed(2)))} h, arrêts non planifiés ${formatDecimal(row.unplanned_stop_hours)} h, arrêts planifiés ${formatDecimal(row.planned_stop_hours)} h`}
+    >
+      <span className="split-run" style={{ width: part(running) }} />
+      <span className="split-unplanned" style={{ width: part(unplanned) }} />
+      <span className="split-planned" style={{ width: part(planned) }} />
+    </span>
   )
 }
 

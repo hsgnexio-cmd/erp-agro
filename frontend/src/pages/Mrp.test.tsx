@@ -106,6 +106,20 @@ describe("Besoins d'achat", () => {
     expect(await screen.findByRole('link', { name: 'CA-2026-00031' })).toHaveAttribute('href', '/commandes/31')
   })
 
+  it('génère la commande d’une seule proposition, sans passer par les cases à cocher', async () => {
+    const fetchMock = mockMrp()
+    renderApp('/besoins-achat')
+    const summary = await screen.findByLabelText('Synthèse des besoins')
+    expect(within(summary).getByText('en retard : rupture probable')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Générer la commande EM-BARQ-300N S47' }))
+
+    const call = fetchMock.mock.calls.find(([url]) => String(url) === '/api/achats/mrp/create-orders/')
+    const body = JSON.parse(String(call?.[1]?.body))
+    expect(body.selections).toHaveLength(1)
+    expect(body.selections[0]).toMatchObject({ article: 10, week: '2026-11-16' })
+    expect(await screen.findByRole('link', { name: 'CA-2026-00031' })).toBeInTheDocument()
+  })
+
   it('affiche le calcul semaine par semaine d’un article', async () => {
     mockMrp()
     renderApp('/besoins-achat')

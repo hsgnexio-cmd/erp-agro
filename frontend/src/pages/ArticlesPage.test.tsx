@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TEST_USER, mockApi, paginated, renderApp } from '../test/utils'
 
@@ -64,6 +65,26 @@ describe('Articles', () => {
     expect(screen.getByText('21 j (DLC)')).toBeInTheDocument()
     expect(screen.getByText('Lait')).toBeInTheDocument()
     expect(screen.getByText('2 article(s)')).toBeInTheDocument()
+  })
+
+  it('filtre par type et ouvre la fiche d’un article dans un tiroir', async () => {
+    const fetchMock = mockApi({
+      '/api/auth/me/': { body: TEST_USER },
+      '/api/referentiel/articles/': { body: paginated([LASAGNES, CREME]) },
+    })
+    renderApp('/articles')
+    const user = userEvent.setup()
+    // Le code est un lien vers la fiche complète ; le reste de la ligne ouvre le tiroir
+    const row = (await screen.findByText('MP-LAI-CREME35')).closest('tr')!
+    await user.click(within(row).getAllByRole('cell')[1])
+    const drawer = screen.getByRole('dialog', { name: 'MP-LAI-CREME35' })
+    expect(within(drawer).getByText('Durée de vie')).toBeInTheDocument()
+    expect(within(drawer).getByRole('link', { name: /Fiche complète/ })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    await user.click(screen.getByRole('button', { name: 'Produits finis' }))
+    expect(screen.getByRole('button', { name: 'Produits finis' })).toHaveAttribute('aria-pressed', 'true')
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('article_type=PF'))).toBe(true)
   })
 
   it("affiche la nomenclature d'un produit fini avec les quantités brutes", async () => {

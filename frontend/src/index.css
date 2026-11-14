@@ -2879,3 +2879,334 @@ a.button.secondary:hover {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* --- Approvisionnements, fabrication et référentiel --- */
+
+/* Synthèse en tête d'écran (MRP) */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.8rem 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.stat strong {
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.stat-danger {
+  border-color: #f3c2c2;
+  background: #fff7f5;
+}
+
+.stat-danger strong {
+  color: #991b1b;
+}
+
+button.row-action {
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+tr.late td {
+  background: #fff7f5;
+}
+
+/* Barres de charge (planning) et d'avancement (ordres de fabrication) */
+.planning-load {
+  margin-top: 0.4rem;
+}
+
+.load-text {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.load-track {
+  display: block;
+  height: 6px;
+  margin-top: 0.2rem;
+  border-radius: 3px;
+  background: #eceeea;
+  overflow: hidden;
+}
+
+.load-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.load-ok {
+  background: #16a34a;
+}
+
+.load-warn {
+  background: #f59e0b;
+}
+
+.load-danger {
+  background: #dc2626;
+}
+
+.load-text-ok {
+  color: #166534;
+}
+
+.load-text-warn {
+  color: #92400e;
+}
+
+.load-text-danger {
+  color: #991b1b;
+}
+
+.planning-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.planning-warning svg {
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+.produced {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 6.5rem;
+}
+
+/* Étapes d'une commande fournisseur */
+.steps {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.step {
+  width: 1.4rem;
+  height: 6px;
+  border-radius: 3px;
+  background: #e3e6e0;
+}
+
+.step.done {
+  background: var(--brand);
+}
+
+/* TRS : Disponibilité × Performance × Qualité = TRS */
+.oee-equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.6rem;
+  margin: 1rem 0 2rem;
+}
+
+.oee-equation .kpi {
+  flex: 1 1 11rem;
+}
+
+.oee-equation .oee-result {
+  border-color: var(--brand);
+  background: #f3f8f2;
+}
+
+.oee-operator {
+  align-self: center;
+  color: var(--muted);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.oee-bar {
+  height: 6px;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+  background: #eceeea;
+  overflow: hidden;
+}
+
+.oee-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--brand);
+}
+
+.time-split {
+  display: flex;
+  width: 9rem;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #eceeea;
+}
+
+.split-run {
+  background: #16a34a;
+}
+
+.split-unplanned {
+  background: #dc2626;
+}
+
+.split-planned {
+  background: #9ca3af;
+}
+
+/* Filtres rapides (articles) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip,
+.chip:hover:not(:disabled) {
+  min-height: 2.2rem;
+  padding: 0 0.8rem;
+  background: #fff;
+  color: #3b4652;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.chip.active,
+.chip.active:hover:not(:disabled) {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+/* Sites */
+.site-card {
+  margin-bottom: 1.75rem;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.site-header h2 {
+  flex: 1;
+  margin: 0;
+}
+
+.site-header .card-count {
+  margin-left: 0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #f1f3ee;
+  color: #3b4652;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Calendrier annuel */
+.year-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.month {
+  padding: 0.7rem 0.8rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.month strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day {
+  display: grid;
+  place-items: center;
+  height: 1.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-weekend {
+  background: #eceeea;
+  color: #6b7280;
+}
+
+.day-holiday {
+  background: #fde68a;
+  color: #78350f;
+  font-weight: 700;
+}
+
+.day-closed {
+  background: #fecaca;
+  color: #7f1d1d;
+  font-weight: 700;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.calendar-legend .day {
+  display: inline-grid;
+  width: 1.6rem;
+  margin-left: 0.6rem;
+  border: 1px solid var(--border);
+}
+
+.oee-equation .kpi-value .badge {
+  font-size: 1.7rem;
+  padding: 0.1em 0.5em;
+}
