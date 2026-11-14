@@ -2267,3 +2267,376 @@ th.num .datatable-sort {
   text-decoration: underline;
   font-weight: 400;
 }
+
+/* --- Accueil « cockpit » : date, semaine, statut, urgences, cartes à compteur --- */
+
+.cockpit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.home .cockpit h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  color: #18212b;
+}
+
+.cockpit-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+}
+
+.cockpit-day::first-letter {
+  text-transform: uppercase;
+}
+
+.cockpit-week {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: #e8f0e6;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.system-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.system-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+
+.system-ok .system-dot {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px #dcfce7;
+}
+
+.system-erreur {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.system-erreur .system-dot {
+  background: #dc2626;
+  box-shadow: 0 0 0 3px #fee2e2;
+}
+
+.urgencies {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #f3c2c2;
+  border-radius: var(--radius-card);
+}
+
+.urgencies header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  color: #991b1b;
+}
+
+.urgencies h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #18212b;
+}
+
+.urgencies-total {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.urgencies ul {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.urgencies li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid #f4f1f1;
+}
+
+.urgencies li div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.urgencies li span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.urgencies .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  min-height: 2.2rem;
+  padding: 0 0.9rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.urgencies.calm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  border-color: #cfe8d3;
+  color: #166534;
+}
+
+.urgencies.calm p {
+  flex: 1;
+  margin: 0;
+  color: #18212b;
+}
+
+.home-group .cards {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.module-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.module-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  background: #e8f0e6;
+  color: var(--brand);
+}
+
+.module-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.home .module-text strong {
+  color: #18212b;
+}
+
+.module-text span {
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.card .card-count {
+  flex: none;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #f1f3ee;
+  color: #3b4652;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.card .card-count.urgent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* --- Tableau de bord : cartes d'indicateur --- */
+
+.kpi-grid {
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kpi header {
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.kpi header .badge {
+  margin-left: auto;
+  flex: none;
+}
+
+.kpi h2 {
+  margin: 0;
+}
+
+.kpi-info {
+  position: relative;
+  display: inline-flex;
+}
+
+.kpi-info-button,
+.kpi-info-button:hover:not(:disabled) {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  background: none;
+  color: #8a94a0;
+  border-radius: 50%;
+}
+
+.kpi-info-button:hover:not(:disabled),
+.kpi-info-button:focus-visible {
+  color: var(--brand);
+  background: #e8f0e6;
+}
+
+.kpi-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -0.5rem;
+  z-index: 10;
+  width: 17rem;
+  padding: 0.6rem 0.75rem;
+  background: #18212b;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s;
+}
+
+.kpi-info:hover .kpi-tooltip,
+.kpi-info:focus-within .kpi-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.kpi-main {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.kpi .kpi-value {
+  margin: 0.2rem 0 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-spark {
+  flex: none;
+  margin-bottom: 0.35rem;
+}
+
+.kpi-gauge {
+  position: relative;
+  height: 6px;
+  margin: 0.35rem 0 0.1rem;
+  border-radius: 3px;
+  background: #eceeea;
+}
+
+.kpi-gauge-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #cfe8d3;
+}
+
+.kpi-gauge-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+.kpi-gauge-mark {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: #18212b;
+  border-radius: 1px;
+}
+
+.kpi .kpi-target {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.kpi .kpi-detail {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.page-title .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.page-intro svg {
+  vertical-align: -2px;
+}
+
+/* Le compteur passe sous la description, aligné avec le texte */
+.module-card {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+.module-text {
+  flex: 1 1 calc(100% - 3rem);
+}
+
+.card .card-count {
+  margin-left: 2.95rem;
+}

@@ -83,6 +83,22 @@ function mockDashboard() {
 describe('Tableau de bord', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('range la formule de calcul dans une infobulle et trace l’évolution par semaine', async () => {
+    mockDashboard()
+    renderApp('/tableau-de-bord')
+    const service = await screen.findByRole('article', { name: 'Taux de service' })
+    // La formule est décrite par le bouton « i » (infobulle), plus dans le corps de la carte
+    const info = within(service).getByRole('button', { name: 'Formule de calcul' })
+    expect(info).toHaveAccessibleDescription(/Quantité livrée complète .* Filtres : période/)
+    expect(within(service).getByRole('tooltip')).toHaveTextContent('enseigne')
+    // Deux semaines de valeurs : une mini-courbe ; aucune pour un indicateur sans donnée
+    expect(service.querySelector('svg.kpi-spark polyline')).not.toBeNull()
+    expect(service.querySelector('.kpi-gauge-fill')).toHaveStyle({ width: '99.2%' })
+    const oee = screen.getByRole('article', { name: 'TRS' })
+    expect(oee.querySelector('svg.kpi-spark')).toBeNull()
+    expect(oee.querySelector('.kpi-gauge')).toBeNull()
+  })
+
   it('affiche une tuile par indicateur, verte ou rouge selon l’objectif', async () => {
     mockDashboard()
     renderApp('/tableau-de-bord')

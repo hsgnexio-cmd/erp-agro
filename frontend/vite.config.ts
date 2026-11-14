@@ -19,5 +19,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Les tests qui saisissent du texte sont lents sur une machine chargée (GitHub Actions)
+    testTimeout: 15000,
   },
 })
