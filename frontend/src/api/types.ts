@@ -18,6 +18,8 @@ export interface User {
   roles: string[]
   /** Domaines que l'utilisateur peut consulter (matrice d'accès du serveur) */
   areas?: string[]
+  /** Administrateur seulement : domaines consultables de chaque rôle (aperçu « vue métier ») */
+  role_areas?: Record<string, string[]>
 }
 
 export type ArticleType = 'MP' | 'SF' | 'PF' | 'EM'

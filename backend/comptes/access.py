@@ -60,6 +60,16 @@ def can_read(user, area: str) -> bool:
     return user.is_authenticated and (roles is None or has_any_role(user, roles))
 
 
+def role_areas() -> dict[str, list[str]]:
+    """Domaines consultables de chaque rôle : sert à l'aperçu « vue métier » de l'administrateur
+    (le menu tel que le voit un rôle). Les droits réels restent ceux du compte connecté."""
+    return {
+        str(role): [area for area, roles in READ_AREAS.items() if roles is None or role in roles]
+        for role in Role
+        if role != ADMIN
+    }
+
+
 def readable_areas(user) -> list[str]:
     """Domaines que l'utilisateur peut consulter (renvoyés au front-end pour son menu)."""
     return [area for area in READ_AREAS if can_read(user, area)]

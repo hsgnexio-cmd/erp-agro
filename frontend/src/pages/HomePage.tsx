@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useAuth } from '../auth/context'
+import { usePreview } from '../auth/preview'
 import { canOpen } from '../auth/roles'
 import { useApi } from '../hooks/useApi'
 
@@ -66,7 +67,9 @@ const GROUPS = [
 ]
 
 export function HomePage() {
-  const { user } = useAuth()
+  const { user: account } = useAuth()
+  // L'accueil suit l'aperçu « vue métier » de l'administrateur
+  const user = usePreview().viewUser ?? account
   const health = useApi<{ status: string }>('/api/health/')
 
   const apiStatus = health.loading ? 'verification' : health.data ? 'ok' : 'erreur'

@@ -1,13 +1,13 @@
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: #18212b;
-  background: #f5f6f2;
-  --brand: #2f6b3a;
-  --brand-dark: #1e5128;
+  background: #f6f7f4;
+  --brand: #164a2c;
+  --brand-dark: #0f3620;
   --brand-light: #dcefdc;
-  --sidebar: #173d21;
+  --sidebar: #103a22;
   --accent: #b6f36a;
-  --border: #e1e5dc;
+  --border: #e2e5df;
   --border-strong: #c9d2c4;
   --muted: #56616e;
   --radius: 10px;
@@ -1556,4 +1556,476 @@ label.stacked,
   gap: 0.5rem;
   font-weight: 500;
   min-height: 2.5rem;
+}
+
+/* --- Design system : barre du haut, menu compact et repliable, recherche, badges --- */
+
+.app-body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.app-main {
+  margin: 0 auto;
+  padding-top: 1.25rem;
+}
+
+/* Menu latéral : tout tient sans défiler sur un écran 1080p */
+.app-sidebar {
+  flex-basis: 232px;
+  gap: 0.6rem;
+  padding: 0.75rem 0.6rem;
+  transition: flex-basis 0.15s;
+}
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+}
+
+.app-sidebar .brand {
+  padding: 0 0.3rem;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-button,
+.icon-button:hover:not(:disabled) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.app-sidebar nav {
+  gap: 0.5rem;
+}
+
+.menu-group {
+  gap: 1px;
+}
+
+.menu-title {
+  padding: 0 0.6rem 0.1rem;
+  font-size: 0.66rem;
+}
+
+.app-sidebar nav a {
+  justify-content: flex-start;
+  gap: 0.6rem;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 7px;
+  transition: background 0.15s;
+}
+
+.menu-icon {
+  flex: none;
+  opacity: 0.85;
+}
+
+.menu-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-sidebar .user {
+  gap: 0.4rem;
+  padding: 0.6rem 0.4rem 0;
+  font-size: 0.88rem;
+}
+
+.app-sidebar .link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+/* Menu replié : icônes seules */
+.menu-collapsed .app-sidebar {
+  flex-basis: 60px;
+  align-items: center;
+}
+
+.menu-collapsed .brand,
+.menu-collapsed .menu-title,
+.menu-collapsed .menu-label,
+.menu-collapsed .user-name {
+  display: none;
+}
+
+.menu-collapsed .sidebar-head {
+  justify-content: center;
+}
+
+.menu-collapsed .app-sidebar nav a {
+  position: relative;
+  justify-content: center;
+  padding: 0.45rem;
+}
+
+.menu-collapsed .app-sidebar nav a .count-badge {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  margin: 0;
+  font-size: 0.62rem;
+}
+
+.menu-collapsed .menu-group + .menu-group {
+  padding-top: 0.4rem;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+}
+
+.menu-collapsed .app-sidebar .user {
+  align-items: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.menu-collapsed .app-sidebar .link-button {
+  border: 0;
+  padding: 0.4rem;
+}
+
+/* Barre du haut (56 px) */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 2.25rem;
+  background: rgb(246 247 244 / 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.breadcrumb {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.crumb::after {
+  content: attr(data-label);
+}
+
+.crumb:last-child {
+  color: #18212b;
+  font-weight: 600;
+}
+
+.topbar-search,
+.topbar-search:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(300px, 30vw);
+  min-height: 2.2rem;
+  padding: 0 0.6rem;
+  background: #fff;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-weight: 400;
+  font-size: 0.88rem;
+}
+
+.topbar-search:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.topbar-search span {
+  flex: 1;
+  text-align: left;
+}
+
+kbd {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #f6f7f4;
+  color: var(--muted);
+  font: 600 0.72rem system-ui, sans-serif;
+}
+
+.topbar-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+}
+
+.topbar-preview select {
+  min-height: 2.2rem;
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
+  border-color: var(--border);
+}
+
+.topbar-alerts {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #18212b;
+}
+
+.topbar-alerts .count-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  margin: 0;
+  font-size: 0.68rem;
+}
+
+.preview-banner {
+  margin: 0;
+  padding: 0.5rem 2.25rem;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* Recherche globale (Ctrl+K) */
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 14vh;
+  background: rgb(16 30 22 / 0.45);
+}
+
+.palette {
+  width: min(620px, calc(100vw - 32px));
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.3);
+  overflow: hidden;
+}
+
+.palette-input {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.palette-input input,
+.palette-input input:focus-visible {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  padding: 0.6rem 0;
+  font-size: 1.05rem;
+}
+
+.palette-results {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.palette-result,
+.palette-result:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0 0.6rem;
+  background: none;
+  color: #18212b;
+  font-weight: 400;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.palette-result.active,
+.palette-result.active:hover:not(:disabled) {
+  background: #eef3ea;
+}
+
+.palette-type {
+  flex: none;
+  width: 5.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.palette-result strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.palette-detail {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.palette-empty {
+  margin: 0;
+  padding: 1.1rem 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* Badges de statut normalisés : pastille avec un point de couleur */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.18em 0.7em;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #eceeea;
+  color: #4b5563;
+}
+
+.badge::before {
+  content: '';
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-ok,
+.status-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger,
+.status-erreur {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background: #e0ecfb;
+  color: #1e4d8c;
+}
+
+.badge-off,
+.badge-neutral {
+  background: #eceeea;
+  color: #4b5563;
+}
+
+/* Cartes : bordure fine, ombre légère au survol */
+.card,
+.kpi,
+.panel,
+.table-wrapper,
+.details,
+.alert-card,
+.form,
+.filters {
+  border-color: var(--border);
+  box-shadow: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.card:hover,
+.kpi:hover,
+.alert-card:hover {
+  box-shadow: 0 4px 16px rgb(16 58 34 / 0.08);
+}
+
+/* Tableaux : chiffres alignés à droite, à chasse fixe */
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    position: static;
+    padding: 0 16px;
+  }
+
+  .topbar-search span,
+  .topbar-search kbd {
+    display: none;
+  }
+
+  .topbar-search,
+  .topbar-search:hover:not(:disabled) {
+    width: auto;
+  }
+
+  .preview-banner {
+    padding: 0.5rem 16px;
+  }
+}
+
+.app-sidebar nav a.active {
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: inset 2px 0 0 var(--accent);
 }

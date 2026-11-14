@@ -15,6 +15,7 @@ from comptes.permissions import WriteRolesPermission
 from referentiel.models import Customer, Site
 
 from . import indicators
+from .search import search
 
 # Période par défaut : les 4 dernières semaines, aujourd'hui compris
 DEFAULT_DAYS = 28
@@ -130,3 +131,12 @@ class IndicatorsExportView(APIView):
         filename = f"indicateurs-{params['start']:%Y%m%d}-{params['end']:%Y%m%d}.csv"
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class SearchView(APIView):
+    """Recherche globale : chaque famille de résultats est filtrée selon les droits de lecture."""
+
+    permission_classes = [WriteRolesPermission]
+
+    def get(self, request: Request) -> Response:
+        return Response({"results": search(request.user, request.query_params.get("q", ""))})

@@ -95,3 +95,12 @@ def test_prix_de_vente_masques_pour_le_quai(
     assert quay["total_amount"] is None and quay["lines"][0]["unit_price"] is None
     listing = api_client_for("qualite").get("/api/ventes/orders/").json()
     assert listing["results"][0]["total_amount"] is None
+
+
+def test_l_admin_recoit_les_domaines_de_chaque_role_pour_l_apercu(api_client_for):
+    # Aperçu « vue métier » : réservé à l'administrateur, et sans effet sur les droits réels
+    me = api_client_for("admin").get("/api/auth/me/").json()
+    assert "prix_vente" in me["role_areas"]["commercial"]
+    assert "production" not in me["role_areas"]["commercial"]
+    assert "admin" not in me["role_areas"]
+    assert "role_areas" not in api_client_for("qualite").get("/api/auth/me/").json()

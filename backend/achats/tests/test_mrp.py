@@ -205,7 +205,8 @@ def test_une_commande_brouillon_par_fournisseur_et_par_semaine(world, make_user)
     created = mrp.create_orders(selections, user=make_user("acheteur"))
     # Crème : le minimum de 500 kg couvre S+1 et S+2, une seule commande
     assert {(o.supplier.code, o.expected_delivery_date) for o in created} == {
-        ("FOU-005", week(1)),
+        # 3 jours de délai : le week-end, la crème ne peut pas arriver dès le lundi
+        ("FOU-005", max(TODAY() + timedelta(days=3), week(1))),
         ("FOU-013", TODAY() + timedelta(days=35)),  # pas avant le délai du fournisseur
         ("FOU-013", max(TODAY() + timedelta(days=35), week(2))),
     }  # fmt: skip

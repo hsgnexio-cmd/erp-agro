@@ -32,6 +32,15 @@ Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt e
 
 ✅ Menu latéral par métier, nouveau style commun et revue de tous les écrans (une quarantaine, photographiés un par un ; voir `docs/decisions.md`, section « Design de l'interface »). Captures du README refaites (`docs/captures/*.jpg`). Vidéo, GIF et captures du README refaits avec le nouveau design (branche `video-nouveau-design`) ; dans la vidéo, le menu latéral reste fixe pendant le défilement (`sticky` du composant `Browser`).
 
+## 2 quater. Design system (en cours, depuis le 14/11/2026)
+
+Cahier des charges « SaaS B2B » de Nicolas, par étapes (voir `docs/decisions.md`, section « Design system »).
+
+- ✅ Étape 1a (branche `design-systeme`) : barre du haut (fil d'Ariane, recherche Ctrl+K, aperçu par métier, alertes), menu à icônes compact et repliable, badges normalisés, couleurs de la charte.
+- ⏳ Étape 1b : composants `Drawer` (fiche en tiroir latéral) et `DataTable` (en-têtes collants, tri, sélection et actions groupées), en-tête de page standard.
+- ⏳ Étape 2 : écrans par famille — pilotage (accueil « cockpit » avec urgences et compteurs, cartes KPI avec mini-courbe et infobulle), stocks et qualité (FEFO en jauges, courbes de température, alertes par criticité), approvisionnements et fabrication (MRP, planning en charge / capacité, TRS décomposé), référentiel (filtres rapides, calendrier annuel).
+- Après fusion : `docker compose up -d --build` (nouvelle dépendance `lucide-react`). Vidéo et captures du README à régénérer à la fin.
+
 ## 3. Pistes
 
 Tirées des « Points en suspens » de `docs/decisions.md` :

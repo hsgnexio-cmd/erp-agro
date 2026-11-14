@@ -492,6 +492,20 @@ Tous les rôles consultent tout. Les droits sont définis dans `backend/referent
 | Revue écran par écran | Tous les écrans photographiés (script `video/scripts/capture.mjs`, largeur et échelle réglables par `CAPTURE_WIDTH` / `CAPTURE_SCALE`) puis corrigés : formulaires en carte, boutons « texte » (`.link-button`, `.cell-button`) lisibles dans le contenu, étiquettes de palettes dont le tableau débordait, filtres alignés | La revue a montré des défauts que les tests ne voient pas (nom d'article blanc sur blanc dans les besoins d'achat). |
 | Indicateurs | L'état d'un indicateur se lit sur sa pastille (« Objectif atteint » / « Hors objectif »), plus sur une barre colorée à gauche | Plus lisible, et la couleur n'est pas le seul signal. |
 
+## Design system (étape 1 : cadre global, 14/11/2026)
+
+Cahier des charges de Nicolas : niveau « SaaS B2B » (charte : vert `#164A2C`, fond `#F6F7F4`, cartes blanches, bordures `#E2E5DF`), en plusieurs étapes : 1. cadre global et composants ; 2. écrans par famille (pilotage, stocks et qualité, approvisionnements et fabrication, référentiel).
+
+| Sujet | Décision | Pourquoi |
+| --- | --- | --- |
+| Barre du haut | `components/Topbar.tsx` : fil d'Ariane (`navigation.ts`, `breadcrumb`), recherche globale, aperçu par métier, accès aux alertes | Se repérer et chercher depuis n'importe quel écran. Les libellés du fil d'Ariane sont affichés par le style (`data-label`) pour ne pas doubler les textes de la page (tests). |
+| Recherche globale (Ctrl+K) | `GET /api/pilotage/search/?q=` (`pilotage/search.py`) : lots, articles, enseignes, fournisseurs, OF, 5 par famille, à partir de 2 caractères | Chaque famille est filtrée par la matrice d'accès en lecture : un commercial ne reçoit aucun OF. |
+| Aperçu « vue métier » | Réservé à l'administrateur (`/api/auth/me/` lui renvoie `role_areas`) : le menu et l'accueil s'affichent comme pour un rôle (`auth/preview.ts`), avec un bandeau | **Ce n'est qu'un affichage** : les droits réels restent ceux du compte et c'est toujours le serveur qui les applique. Un vrai changement de rôle en un clic affaiblirait la règle des rôles. Le tableau de bord, filtré par le serveur, ne suit pas l'aperçu. |
+| Menu latéral | Icônes `lucide-react` (seule dépendance ajoutée, demandée par Nicolas), espacements resserrés (tout tient sur 1080p), repliable en icônes seules (choix mémorisé dans le navigateur) | — |
+| Badges | Pastille avec point coloré : vert (libéré, conforme, atteint), ambre (quarantaine, à surveiller), rouge (bloqué, hors objectif), gris (brouillon, clôturé) | Mêmes couleurs sur tous les écrans. |
+| Écarts au cahier des charges | Traiter une alerte garde son commentaire obligatoire (audit) ; pas de taux d'occupation des sites ni d'alerte de stock minimum (données absentes de l'ERP) | Ne pas affaiblir une règle ni inventer des données. |
+| Test MRP dépendant du jour | `test_une_commande_brouillon_par_fournisseur_et_par_semaine` supposait qu'on est en semaine : avec 3 jours de délai, une commande passée le week-end n'arrive pas le lundi | Le code était juste, le test échouait chaque samedi et dimanche. |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
