@@ -1,34 +1,46 @@
 [
   {
-    "id": "accroche",
-    "text": "Un lot de crème est contaminé. Combien de produits sont touchés ? Quels clients ont été livrés ?"
+    "id": "a1a",
+    "text": "Dans le traiteur frais, la supply chain vit sous tension permanente. Des matières périssables. Des DLC contractuelles, imposées par la grande distribution. Et zéro droit à l'erreur sanitaire."
   },
   {
-    "id": "reponse",
-    "text": "Voici un projet personnel : un ERP agroalimentaire complet."
+    "id": "a1b",
+    "text": "Tout se joue sur quelques arbitrages : taux de service, démarque, couverture des stocks, fiabilité des prévisions."
   },
   {
-    "id": "tracabilite",
-    "text": "Un numéro de lot, un clic. La traçabilité remonte chaque matière, et suit chaque produit jusqu'aux entrepôts des enseignes."
+    "id": "a2a",
+    "text": "En amont, le calcul des besoins nets. Stock disponible, plus réceptions attendues, moins besoins du plan. Délais fournisseurs et calendrier industriel compris, l'ERP propose quoi commander, et avant quelle date."
   },
   {
-    "id": "rappel",
-    "text": "Vingt-trois lots identifiés. Les stocks restants, bloqués automatiquement. Six enseignes à prévenir, avec les quantités exactes."
+    "id": "a2b",
+    "text": "En stock, le FEFO décide : le lot qui périme le premier sort le premier. Les jauges de durée de vie dictent l'ordre de consommation, et chaque chambre froide est suivie, relevé par relevé."
   },
   {
-    "id": "modules",
-    "text": "Et ce n'est qu'un écran parmi quarante. Achats, stocks, production, ventes, prévisions : tout le cycle d'une usine agroalimentaire, développé de bout en bout."
+    "id": "a3a",
+    "text": "Côté demande, une prévision à huit semaines, promotions comprises, confrontée au réalisé."
   },
   {
-    "id": "pilotage",
-    "text": "Neuf indicateurs clés, suivis semaine après semaine. Et chaque métier ne voit que ce qui le concerne."
+    "id": "a3b",
+    "text": "Elle alimente le plan de production, figé deux jours avant, puis le planning : la charge de chaque ligne, face à sa capacité."
   },
   {
-    "id": "preuves",
-    "text": "Douze règles métier garanties par le serveur. Plus de quatre cent soixante-dix tests automatiques. Zéro stock sans mouvement tracé."
+    "id": "a3c",
+    "text": "Et l'atelier se mesure au TRS : disponibilité, fois performance, fois qualité."
   },
   {
-    "id": "fin",
-    "text": "Un projet personnel, pour comprendre la supply chain agroalimentaire. Le code est sur GitHub."
+    "id": "a4a",
+    "text": "Le crash-test : un lot de crème contaminé. Une recherche, et toute sa traçabilité se déroule : fabrications, produits finis, expéditions."
+  },
+  {
+    "id": "a4b",
+    "text": "Le rappel est lancé. Quatorze lots identifiés. Le stock restant, bloqué. Et six enseignes à prévenir, avec les quantités exactes."
+  },
+  {
+    "id": "a5a",
+    "text": "Pour comprendre une supply chain en profondeur, rien ne vaut de la modéliser de zéro. Chaque métier a sa vue, et près de six cents tests automatisés garantissent les calculs."
+  },
+  {
+    "id": "a5b",
+    "text": "Un projet personnel, de bout en bout. Le code est sur GitHub."
   }
 ]

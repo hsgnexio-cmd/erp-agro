@@ -2,22 +2,22 @@ import { loadFont as loadOutfit } from '@remotion/google-fonts/Outfit'
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono'
 
 export const FONT = loadOutfit('normal', {
-  weights: ['400', '600', '800', '900'],
+  weights: ['400', '500', '600', '700', '800'],
   subsets: ['latin'],
 }).fontFamily
 export const MONO = loadMono('normal', { weights: ['500', '700'], subsets: ['latin'] }).fontFamily
 
-// Couleurs de l'ERP (frontend/src/index.css) et accents de la vidéo
+// Couleurs de la charte de l'ERP (frontend/src/index.css) et accents de la vidéo
 export const C = {
-  brand: '#2f6b3a',
-  brandDark: '#1e5128',
-  brandLight: '#dcefdc',
-  night: '#06120a',
-  deep: '#0d2414',
-  lime: '#b6f36a',
-  cream: '#fdf0d5',
-  red: '#ff4d4f',
-  redDark: '#8a1c1c',
-  white: '#ffffff',
-  muted: 'rgba(255,255,255,0.62)',
+  paper: '#F6F7F4',
+  forest: '#164A2C',
+  forestDark: '#0F3620',
+  cream: '#F7F0DC',
+  accent: '#B6F36A',
+  ink: '#18212B',
+  muted: '#56616E',
+  border: '#E2E5DF',
+  red: '#C0392B',
+  amber: '#D98A1F',
+  white: '#FFFFFF',
 }
