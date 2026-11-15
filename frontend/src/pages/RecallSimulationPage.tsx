@@ -1,3 +1,4 @@
+import { ShieldAlert } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { apiPost, errorMessages } from '../api/client'
@@ -7,6 +8,7 @@ import { QUALITY_ROLES, hasRole } from '../auth/roles'
 import { ErrorList } from '../components/ErrorList'
 import { RecallImpactView } from '../components/RecallImpactView'
 import { useApi } from '../hooks/useApi'
+import { RecallSimulationForm } from './RecallsPage'
 
 /** Simulation d'un rappel (sans rien modifier), puis lancement officiel par la qualité. */
 export function RecallSimulationPage() {
@@ -43,12 +45,25 @@ export function RecallSimulationPage() {
   return (
     <section>
       <p>
-        <Link to={`/tracabilite?lot=${encodeURIComponent(lot)}`}>← Retour à la traçabilité</Link>
+        {lot ? (
+          <Link to={`/tracabilite?lot=${encodeURIComponent(lot)}`}>← Retour à la traçabilité</Link>
+        ) : (
+          <Link to="/rappels">← Retour aux rappels</Link>
+        )}
       </p>
       <h1>
-        Simulation de rappel <small>lot {lot}</small>
+        Simulation de rappel {lot && <small>lot {lot}</small>}
       </h1>
-      <p className="hint">Simulation : rien n'est modifié tant que le rappel n'est pas lancé.</p>
+      <p className="page-intro">Simulation : rien n'est modifié tant que le rappel n'est pas lancé.</p>
+      {!lot && (
+        <>
+          <RecallSimulationForm />
+          <div className="empty-state">
+            <strong>Aucun lot à simuler</strong>
+            <span>Saisis le numéro du lot suspect (matière, semi-fini ou produit fini).</span>
+          </div>
+        </>
+      )}
       {impact.loading && <p>Calcul en cours…</p>}
       {impact.error && <p className="error">{impact.error}</p>}
       {impact.data && (
@@ -74,7 +89,7 @@ export function RecallSimulationPage() {
               <ErrorList messages={errors} />
               <div className="form-actions">
                 <button type="submit" className="danger" disabled={launching}>
-                  Lancer le rappel
+                  <ShieldAlert size={15} aria-hidden="true" /> Lancer le rappel
                 </button>
               </div>
             </form>

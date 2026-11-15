@@ -1,7 +1,8 @@
 import { TriangleAlert } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Planning } from '../api/production'
+import { LoadBar } from '../components/LoadBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatDecimal, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
@@ -12,23 +13,6 @@ function shiftWeek(isoDate: string, weeks: number): string {
   const date = new Date(`${isoDate}T12:00:00`)
   date.setDate(date.getDate() + weeks * 7)
   return date.toISOString().slice(0, 10)
-}
-
-/** Charge d'une journée par rapport à la capacité de la ligne : verte, orange à 85 %, rouge au-delà. */
-function LoadBar({ hours, capacity, children }: { hours: number; capacity: number; children: ReactNode }) {
-  const rate = capacity > 0 ? (hours / capacity) * 100 : 0
-  const tone = rate > 100 ? 'danger' : rate >= 85 ? 'warn' : 'ok'
-  return (
-    <div className="planning-load">
-      <div className="load-text">
-        <span>{children}</span>
-        <span className={`load-rate load-text-${tone}`}>{Math.round(rate)} %</span>
-      </div>
-      <div className="load-track" aria-hidden="true">
-        <span className={`load-fill load-${tone}`} style={{ width: `${Math.min(100, rate)}%` }} />
-      </div>
-    </div>
-  )
 }
 
 /** Planning de la semaine par ligne : charge, capacité, ordre des allergènes. */

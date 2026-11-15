@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { apiPost, errorMessages } from '../api/client'
@@ -5,6 +6,8 @@ import type { Shipment, ShipmentDetail } from '../api/sales'
 import type { Paginated } from '../api/types'
 import { useAuth } from '../auth/context'
 import { WAREHOUSE_ROLES, hasRole } from '../auth/roles'
+import { type DataColumn, DataTable } from '../components/DataTable'
+import { Drawer } from '../components/Drawer'
 import { ErrorList } from '../components/ErrorList'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatDate, formatDateTime, formatDecimal, formatSscc } from '../format'
@@ -27,13 +30,196 @@ function OnTime({ value }: { value: boolean | null }) {
   )
 }
 
+type SummaryRow = ShipmentDetail['summary'][number]
+type ShipmentLine = ShipmentDetail['lines'][number]
+
+const SUMMARY_COLUMNS: DataColumn<SummaryRow>[] = [
+  {
+    id: 'article',
+    header: 'Produit',
+    sortValue: (row) => row.article_code,
+    cell: (row) => (
+      <>
+        {row.article_code}
+        <br />
+        <small>{row.article_name}</small>
+      </>
+    ),
+  },
+  {
+    id: 'ordered',
+    header: 'Commandé',
+    numeric: true,
+    sortValue: (row) => Number(row.ordered),
+    cell: (row) => `${formatDecimal(row.ordered)} u`,
+  },
+  {
+    id: 'prepared',
+    header: 'Préparé',
+    numeric: true,
+    sortValue: (row) => Number(row.prepared),
+    cell: (row) => `${formatDecimal(row.prepared)} u`,
+  },
+  {
+    id: 'missing',
+    header: 'Rupture',
+    numeric: true,
+    sortValue: (row) => Number(row.missing),
+    cell: (row) =>
+      Number(row.missing) > 0 ? <span className="badge badge-danger">{formatDecimal(row.missing)} u</span> : '—',
+  },
+]
+
+const LINE_COLUMNS: DataColumn<ShipmentLine>[] = [
+  { id: 'article', header: 'Produit', sortValue: (line) => line.article_code, cell: (line) => line.article_code },
+  {
+    id: 'lot',
+    header: 'Lot',
+    sortValue: (line) => line.lot_number,
+    cell: (line) => <Link to={`/lots/${line.lot}`}>{line.lot_number}</Link>,
+  },
+  { id: 'expiry', header: 'DLC', sortValue: (line) => line.expiry_date, cell: (line) => formatDate(line.expiry_date) },
+  {
+    id: 'location',
+    header: 'Emplacement',
+    sortValue: (line) => line.location_code,
+    cell: (line) => line.location_code,
+  },
+  {
+    id: 'quantity',
+    header: 'Quantité',
+    numeric: true,
+    sortValue: (line) => Number(line.quantity),
+    cell: (line) => `${formatDecimal(line.quantity)} ${line.unit}`,
+  },
+  {
+    id: 'fefo',
+    header: 'Hors FEFO',
+    sortValue: (line) => line.fefo_justification,
+    cell: (line) => line.fefo_justification || '—',
+  },
+]
+
+/** Contenu du tiroir d'un bon de livraison : chargement, quantités, lots. */
+function ShipmentSummary({ id }: { id: number }) {
+  const shipment = useApi<ShipmentDetail>(`/api/ventes/shipments/${id}/`)
+  if (shipment.loading) return <p className="hint">Chargement…</p>
+  if (shipment.error) return <p className="error">{shipment.error}</p>
+  if (!shipment.data) return null
+  const s = shipment.data
+  return (
+    <>
+      {s.status === 'refusee' && (
+        <p className="error-box">
+          <strong>Expédition refusée :</strong> {s.refusal_reason}
+        </p>
+      )}
+      <dl className="details drawer-details">
+        <dt>Entrepôt livré</dt>
+        <dd>
+          {s.warehouse_code} – {s.warehouse_name}
+        </dd>
+        <dt>Livraison demandée</dt>
+        <dd>{formatDate(s.requested_delivery_date)}</dd>
+        <dt>Préparé</dt>
+        <dd>
+          {formatDateTime(s.prepared_at)}
+          {s.prepared_by_name && ` par ${s.prepared_by_name}`}
+        </dd>
+        {s.status === 'expediee' && (
+          <>
+            <dt>Expédié</dt>
+            <dd>
+              {formatDateTime(s.shipped_at)} · {s.carrier} · {formatDecimal(s.loading_temperature)} °C
+            </dd>
+          </>
+        )}
+        <dt>Palettes</dt>
+        <dd>{s.pallet_count}</dd>
+      </dl>
+      <h3>Commandé et préparé</h3>
+      <DataTable caption="Commandé et préparé" rows={s.summary} rowKey={(row) => row.order_line} columns={SUMMARY_COLUMNS} />
+      <h3>Lots préparés</h3>
+      <DataTable caption="Lots préparés" rows={s.lines} rowKey={(line) => line.id} columns={LINE_COLUMNS} />
+    </>
+  )
+}
+
 export function ShipmentsPage() {
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
+  const [opened, setOpened] = useState<Shipment | null>(null)
   const params = new URLSearchParams()
   if (status) params.set('status', status)
   if (search) params.set('search', search)
   const { data, error } = useApi<Paginated<Shipment>>(`/api/ventes/shipments/?${params}`)
+
+  const columns: DataColumn<Shipment>[] = [
+    {
+      id: 'number',
+      header: 'BL',
+      sortValue: (s) => s.number,
+      cell: (s) => (
+        <Link to={`/expeditions/${s.id}`} onClick={(event) => event.stopPropagation()}>
+          {s.number}
+        </Link>
+      ),
+    },
+    {
+      id: 'order',
+      header: 'Commande',
+      sortValue: (s) => s.order_number,
+      cell: (s) => (
+        <Link to={`/ventes/${s.order}`} onClick={(event) => event.stopPropagation()}>
+          {s.order_number}
+        </Link>
+      ),
+    },
+    {
+      id: 'customer',
+      header: 'Enseigne',
+      sortValue: (s) => s.customer_code,
+      cell: (s) => `${s.customer_code} – ${s.warehouse_name}`,
+    },
+    {
+      id: 'delivery',
+      header: 'Livraison',
+      sortValue: (s) => s.requested_delivery_date,
+      cell: (s) => formatDate(s.requested_delivery_date),
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      sortValue: (s) => s.status_label,
+      cell: (s) => <StatusBadge status={s.status} label={s.status_label} />,
+    },
+    {
+      id: 'shipped',
+      header: 'Expédié le',
+      sortValue: (s) => (s.status === 'expediee' ? s.shipped_at : null),
+      cell: (s) => (s.status === 'expediee' ? formatDateTime(s.shipped_at) : '—'),
+    },
+    {
+      id: 'on_time',
+      header: 'Délai',
+      sortValue: (s) => (s.on_time === null ? null : s.on_time ? 1 : 0),
+      cell: (s) => <OnTime value={s.on_time} />,
+    },
+    {
+      id: 'quantity',
+      header: 'Quantité',
+      numeric: true,
+      sortValue: (s) => Number(s.total_quantity),
+      cell: (s) => `${formatDecimal(s.total_quantity)} u`,
+    },
+    {
+      id: 'pallets',
+      header: 'Palettes',
+      numeric: true,
+      sortValue: (s) => s.pallet_count,
+      cell: (s) => s.pallet_count,
+    },
+  ]
 
   return (
     <section>
@@ -43,9 +229,9 @@ export function ShipmentsPage() {
           <Link to="/taux-de-service">Taux de service</Link>
         </div>
       </div>
-      <p className="hint">
+      <p className="page-intro">
         Un bon de livraison naît de la préparation d'une commande client (fiche de la commande,
-        bouton « Préparer »).
+        bouton « Préparer »). Clique sur une ligne pour voir les quantités et les lots préparés.
       </p>
       <div className="filters">
         <input
@@ -65,48 +251,39 @@ export function ShipmentsPage() {
       </div>
       {error && <p className="error">{error}</p>}
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>BL</th>
-                <th>Commande</th>
-                <th>Enseigne</th>
-                <th>Livraison</th>
-                <th>Statut</th>
-                <th>Expédié le</th>
-                <th>Délai</th>
-                <th className="num">Quantité</th>
-                <th className="num">Palettes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.map((s) => (
-                <tr key={s.id}>
-                  <td>
-                    <Link to={`/expeditions/${s.id}`}>{s.number}</Link>
-                  </td>
-                  <td>
-                    <Link to={`/ventes/${s.order}`}>{s.order_number}</Link>
-                  </td>
-                  <td>
-                    {s.customer_code} – {s.warehouse_name}
-                  </td>
-                  <td>{formatDate(s.requested_delivery_date)}</td>
-                  <td>
-                    <StatusBadge status={s.status} label={s.status_label} />
-                  </td>
-                  <td>{s.status === 'expediee' ? formatDateTime(s.shipped_at) : '—'}</td>
-                  <td>
-                    <OnTime value={s.on_time} />
-                  </td>
-                  <td className="num">{formatDecimal(s.total_quantity)} u</td>
-                  <td className="num">{s.pallet_count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <p className="count">{data.count} bon(s) de livraison</p>
+          <DataTable
+            caption="Bons de livraison"
+            rows={data.results}
+            columns={columns}
+            rowKey={(s) => s.id}
+            onRowClick={setOpened}
+            empty="Aucun bon de livraison ne correspond."
+          />
+        </>
+      )}
+      {opened && (
+        <Drawer
+          open
+          onClose={() => setOpened(null)}
+          width={680}
+          title={`Bon de livraison ${opened.number}`}
+          subtitle={
+            <>
+              {opened.customer_code} – {opened.customer_name} · commande {opened.order_number}{' '}
+              <StatusBadge status={opened.status} label={opened.status_label} />
+            </>
+          }
+          footer={
+            <Link className="button secondary" to={`/expeditions/${opened.id}`}>
+              <ExternalLink size={15} aria-hidden="true" /> Fiche complète
+              {opened.status === 'preparee' ? ' (expédier)' : opened.pallet_count > 0 ? ' (étiquettes)' : ''}
+            </Link>
+          }
+        >
+          <ShipmentSummary id={opened.id} />
+        </Drawer>
       )}
     </section>
   )
@@ -239,68 +416,11 @@ export function ShipmentDetailPage() {
         </form>
       )}
 
-      <h2 className="no-print">Commandé et préparé</h2>
-      <div className="table-wrapper no-print">
-        <table>
-          <thead>
-            <tr>
-              <th>Produit</th>
-              <th className="num">Commandé</th>
-              <th className="num">Préparé</th>
-              <th className="num">Rupture</th>
-            </tr>
-          </thead>
-          <tbody>
-            {s.summary.map((row) => (
-              <tr key={row.order_line}>
-                <td>
-                  {row.article_code} – {row.article_name}
-                </td>
-                <td className="num">{formatDecimal(row.ordered)} u</td>
-                <td className="num">{formatDecimal(row.prepared)} u</td>
-                <td className="num">
-                  {Number(row.missing) > 0 ? (
-                    <span className="badge badge-danger">{formatDecimal(row.missing)} u</span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="no-print">Lots préparés</h2>
-      <div className="table-wrapper no-print">
-        <table>
-          <thead>
-            <tr>
-              <th>Produit</th>
-              <th>Lot</th>
-              <th>DLC</th>
-              <th>Emplacement</th>
-              <th className="num">Quantité</th>
-              <th>Hors FEFO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {s.lines.map((line) => (
-              <tr key={line.id}>
-                <td>{line.article_code}</td>
-                <td>
-                  <Link to={`/lots/${line.lot}`}>{line.lot_number}</Link>
-                </td>
-                <td>{formatDate(line.expiry_date)}</td>
-                <td>{line.location_code}</td>
-                <td className="num">
-                  {formatDecimal(line.quantity)} {line.unit}
-                </td>
-                <td>{line.fefo_justification || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="no-print">
+        <h2>Commandé et préparé</h2>
+        <DataTable caption="Commandé et préparé" rows={s.summary} rowKey={(row) => row.order_line} columns={SUMMARY_COLUMNS} />
+        <h2>Lots préparés</h2>
+        <DataTable caption="Lots préparés" rows={s.lines} rowKey={(line) => line.id} columns={LINE_COLUMNS} />
       </div>
 
       {s.pallets.length > 0 && (

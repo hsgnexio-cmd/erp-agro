@@ -25,7 +25,7 @@ Reste à faire par Nicolas : fusionner la pull request, puis passer le dépôt e
 
 ✅ Vidéo de présentation du projet de 63 s en 1080p (ton revu le 12/11/2026 à la demande de Nicolas : montrer ce qu'il a fait, pas vendre un produit ; texte sans « je » car voix féminine), faite avec **Remotion** (dossier `video/`, indépendant de l'ERP, mode d'emploi dans `video/README.md`) : 8 scènes calées sur la musique (128 BPM, le drop tombe à 7 s), voix de synthèse Microsoft « Vivienne » (Nicolas préférait une voix d'homme : « Henri » jugée trop robotique, « Rémy » refusée par le service), sous-titres mot à mot, musique baissée sous la voix. Le MP4 (`video/out/demo.mp4`, 28 Mo) et la musique ne sont pas versionnés ; l'extrait `docs/captures/demo.gif` est dans le README.
 
-- 💡 À proposer : sur la fiche d'un rappel, la colonne Statut montre l'état **avant** blocage (« Libéré ») alors que le bandeau annonce les lots bloqués ; ajouter un badge « Bloqué par ce rappel ».
+- ✅ Fait (branche `design-finition`) : badge « Bloqué par ce rappel » sur la fiche d'un rappel, à côté du statut d'avant blocage.
 - 💡 Possible : voix off enregistrée par Nicolas lui-même (remplacer `video/public/voix/*.mp3` et les repères de `durations.json`), mise en ligne de la vidéo (LinkedIn, YouTube) et lien dans le README.
 
 ## 2 ter. Nouveau design (branches `design` puis `design-ecrans`, 12/11/2026)
@@ -43,7 +43,8 @@ Cahier des charges « SaaS B2B » de Nicolas, par étapes (voir `docs/decisions.
 - ✅ Étape 2c, approvisionnements et fabrication (branche `design-systeme`, recréée) : MRP (synthèse, « en retard : rupture probable », bouton « Générer la commande » par ligne), planning (barre de charge par rapport à la capacité, rouge au-delà de 100 %), TRS (Disponibilité × Performance × Qualité = TRS, barre empilée du temps d'ouverture par ligne), achats (tableau triable, étapes d'avancement, respect du délai), ordres de fabrication (tableau triable, avancement produit / prévu).
 - ✅ Étape 2d, référentiel : articles (filtres rapides par type, fiche en tiroir), fournisseurs et clients (tableau triable, fiche en tiroir), sites (cartes par site, sans taux d'occupation : donnée absente), calendrier (vue de l'année : week-ends, fériés, fermetures).
 - Suite complète relancée le 14/11/2026 : 478 tests serveur, 96 tests écran, lint et build verts.
-- ⏳ Restent hors de ce cahier des charges : écrans Commercial (prévisions, ventes, EDI, expéditions, taux de service) et Qualité (traçabilité, rappels), qui gardent le style commun ; plan de production (grille inchangée) ; vidéo et captures du README à régénérer.
+- ✅ Étape 3, finition (branche `design-finition`, 15/11/2026) : écrans Commercial (ventes, EDI, expéditions et tarifs en tableaux triables avec fiche en tiroir ; taux de service en barres avec repère d'objectif ; tableaux des prévisions harmonisés, grille inchangée), Qualité (rappels avec chiffres clés et bouton rouge de simulation, badge « Bloqué par ce rappel », synthèse de traçabilité) et plan de production (synthèse, totaux par jour, barres de charge). Vérifié : 107 tests écran, lint, build, et chaque écran dans le navigateur (compte `test-verif`, désactivé ensuite). Tests serveur non relancés (aucun fichier serveur modifié).
+- ⏳ Reste : vidéo et captures du README à régénérer avec le nouveau design. La base locale de Nicolas n'a aucun rappel (fiche d'un rappel vérifiée seulement par les tests) : repartir d'une démo neuve pour la voir.
 - Après fusion : `docker compose up -d --build` (nouvelle dépendance `lucide-react`). Vidéo et captures du README à régénérer à la fin.
 
 ## 3. Pistes

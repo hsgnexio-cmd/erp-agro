@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -420,5 +420,66 @@ describe('Invendables', () => {
     renderApp('/lots/31')
     expect(await screen.findByText('Décision qualité')).toBeInTheDocument()
     expect(screen.queryByText('Sortir en invendable')).not.toBeInTheDocument()
+  })
+})
+
+describe('Bons de livraison et taux de service : finition', () => {
+  it('ouvre un bon de livraison dans un tiroir avec la rupture et les lots', async () => {
+    mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/ventes/shipments/4/': { body: SHIPMENT },
+      '/api/ventes/shipments/': { body: paginated([SHIPMENT]) },
+    })
+    renderApp('/expeditions')
+    const user = userEvent.setup()
+    await user.click(await screen.findByText('ENS2 – Entrepôt Marché Plus Nantes'))
+    const drawer = screen.getByRole('dialog', { name: 'Bon de livraison BL-2026-00004' })
+    expect(await within(drawer).findByText('40 u')).toHaveClass('badge-danger')
+    expect(within(drawer).getByRole('link', { name: 'LF-261103-0001' })).toHaveAttribute('href', '/lots/31')
+    expect(within(drawer).getByRole('link', { name: /Fiche complète \(expédier\)/ })).toHaveAttribute(
+      'href',
+      '/expeditions/4',
+    )
+  })
+
+  it('dessine une barre par enseigne, rouge sous l’objectif, avec le repère à 98,5 %', async () => {
+    const row = (rate: string, below: boolean) => ({
+      ordered: '100.000',
+      on_time: rate,
+      late: '0.000',
+      missing: '0.000',
+      orders: 2,
+      perfect_orders: below ? 1 : 2,
+      pending_orders: 1,
+      rate,
+      below_target: below,
+    })
+    const report: ServiceRate = {
+      start: '2026-10-06',
+      end: '2026-11-04',
+      target: '98.5',
+      customers: [
+        { customer: 1, customer_code: 'ENS1', customer_name: 'Hyper Atlantique', ...row('100.0', false) },
+        { customer: 2, customer_code: 'ENS2', customer_name: 'Marché Plus', ...row('90.0', true) },
+      ],
+      total: row('95.0', true),
+      issues: [],
+    }
+    mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/ventes/service-rate/': { body: report },
+    })
+    renderApp('/taux-de-service')
+
+    const chart = await screen.findByRole('list', { name: 'Taux de service par enseigne' })
+    const bars = within(chart).getAllByRole('listitem')
+    expect(bars).toHaveLength(3)
+    expect(bars[0].querySelector('.rate-fill')).toHaveClass('rate-ok')
+    expect(bars[1].querySelector('.rate-fill')).toHaveClass('rate-below')
+    expect(bars[2]).toHaveTextContent('Toutes enseignes')
+    // Axe de 90 à 100 % : 98,5 % tombe à 85 % de la largeur
+    expect(bars[0].querySelector('.rate-target')).toHaveStyle({ left: '85%' })
+    expect(screen.getByText(/objectif 98,5 %/)).toBeInTheDocument()
+    expect(screen.getByText('Rien à expliquer')).toBeInTheDocument()
   })
 })

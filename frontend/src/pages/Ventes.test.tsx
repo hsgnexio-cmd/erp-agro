@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CustomerOrderDetail, EdiMessage } from '../api/sales'
@@ -168,5 +168,85 @@ describe('EDI', () => {
     expect(
       screen.queryByRole('button', { name: 'Simuler les commandes du jour' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('Ventes : listes en tableau triable et fiches en tiroir', () => {
+  it('ouvre la fiche d’une commande dans un tiroir, avec « Préparer » pour le magasinier', async () => {
+    mockApi({
+      '/api/auth/me/': { body: STOREKEEPER },
+      '/api/referentiel/customers/': { body: paginated([]) },
+      '/api/ventes/orders/7/': { body: ORDER },
+      '/api/ventes/orders/': { body: paginated([ORDER]) },
+    })
+    renderApp('/ventes')
+    const user = userEvent.setup()
+
+    expect(await screen.findByRole('columnheader', { name: /Montant HT/ })).toHaveClass('num')
+    await user.click(screen.getByRole('button', { name: 'CC-2026-00007' }))
+    const drawer = screen.getByRole('dialog', { name: 'Commande CC-2026-00007' })
+    expect(await within(drawer).findByText('Lasagnes bolognaise 300 g')).toBeInTheDocument()
+    expect(within(drawer).getByRole('link', { name: 'Préparer' })).toHaveAttribute('href', '/ventes/7/preparation')
+    expect(within(drawer).getByRole('link', { name: 'Fiche complète' })).toHaveAttribute('href', '/ventes/7')
+  })
+
+  it('le commercial ne voit pas « Préparer » dans le tiroir', async () => {
+    mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/referentiel/customers/': { body: paginated([]) },
+      '/api/ventes/orders/7/': { body: ORDER },
+      '/api/ventes/orders/': { body: paginated([ORDER]) },
+    })
+    renderApp('/ventes')
+    await userEvent.click(await screen.findByRole('button', { name: 'CC-2026-00007' }))
+    const drawer = screen.getByRole('dialog', { name: 'Commande CC-2026-00007' })
+    await within(drawer).findByText('Lasagnes bolognaise 300 g')
+    expect(within(drawer).queryByRole('link', { name: 'Préparer' })).not.toBeInTheDocument()
+  })
+
+  it('trie les tarifs de vente par prix', async () => {
+    const price = (id: number, code: string, unit_price: string) => ({
+      id,
+      customer: 2,
+      customer_code: 'ENS2',
+      article: id,
+      article_code: code,
+      article_name: `Produit ${code}`,
+      unit_price,
+      valid_from: '2026-01-01',
+      valid_to: null,
+    })
+    mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/referentiel/customers/': { body: paginated([]) },
+      '/api/ventes/prices/': {
+        body: paginated([price(1, 'PF-A', '3.2000'), price(2, 'PF-B', '1.9500')]),
+      },
+    })
+    renderApp('/tarifs-vente')
+    await screen.findByText('Produit PF-A')
+    await userEvent.click(screen.getByRole('button', { name: /Prix HT/ }))
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(rows[0]).toHaveTextContent('PF-B')
+    expect(rows[1]).toHaveTextContent('PF-A')
+  })
+
+  it('EDI : onglets par statut et contenu du message dans un tiroir', async () => {
+    const fetchMock = mockApi({
+      '/api/auth/me/': { body: SALES },
+      '/api/ventes/edi-messages/': { body: paginated([REJECTED]) },
+    })
+    renderApp('/edi')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByText('ENS4-20261104-ERR'))
+    const drawer = screen.getByRole('dialog', { name: 'Message ENS4-20261104-ERR' })
+    expect(within(drawer).getByText('Motifs du rejet')).toBeInTheDocument()
+    expect(within(drawer).getByText(/"message_id": "ENS4-20261104-ERR"/)).toBeInTheDocument()
+    await user.click(within(drawer).getByRole('button', { name: 'Fermer' }))
+
+    await user.click(screen.getByRole('tab', { name: 'Rejetés' }))
+    expect(screen.getByRole('tab', { name: /Rejetés/ })).toHaveAttribute('aria-selected', 'true')
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=rejete'))).toBe(true)
   })
 })

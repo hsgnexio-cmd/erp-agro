@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RecallImpact, TraceNode } from '../api/quality'
-import { TEST_USER, mockApi, renderApp } from '../test/utils'
+import { TEST_USER, mockApi, paginated, renderApp } from '../test/utils'
 
 const QUALITY = { ...TEST_USER, roles: ['qualite'] }
 const STOREKEEPER = { ...TEST_USER, roles: ['magasinier'] }
@@ -171,5 +171,69 @@ describe('Rappel', () => {
 
     expect(await screen.findByText('ENS1 – Hyper Atlantique')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Lancer le rappel' })).not.toBeInTheDocument()
+  })
+})
+
+describe('Qualité : finition', () => {
+  const RECALL = {
+    id: 4,
+    number: 'RAP-2026-00001',
+    origin_lot: 1,
+    origin_lot_number: CREAM,
+    origin_article_code: 'MP-LAI-CREME35',
+    reason: 'Listeria',
+    created_at: '2026-11-04T11:05:00Z',
+    created_by_name: 'claire',
+    blocked_lot_count: 3,
+  }
+
+  it('liste les rappels avec les chiffres clés et un bouton rouge de simulation', async () => {
+    mockApi({
+      '/api/auth/me/': { body: QUALITY },
+      '/api/qualite/recalls/': { body: paginated([RECALL]) },
+      '/api/qualite/recall-simulation/': { body: IMPACT },
+    })
+    renderApp('/rappels')
+    const user = userEvent.setup()
+
+    expect(await screen.findByRole('link', { name: 'RAP-2026-00001' })).toHaveAttribute('href', '/rappels/4')
+    expect(screen.getByText('lot(s) bloqué(s) par ces rappels').previousSibling).toHaveTextContent('3')
+    const button = screen.getByRole('button', { name: 'Simuler un rappel' })
+    expect(button).toHaveClass('danger')
+    await user.type(screen.getByLabelText('Lot à rappeler'), 'lr-261025-0001')
+    await user.click(button)
+    expect(await screen.findByRole('heading', { name: /Simulation de rappel/ })).toHaveTextContent(CREAM)
+  })
+
+  it('la fiche d’un rappel signale les lots bloqués par ce rappel', async () => {
+    mockApi({
+      '/api/auth/me/': { body: QUALITY },
+      '/api/qualite/recalls/4/': {
+        body: { ...RECALL, snapshot: { ...IMPACT, blocked_lots: ['LF-261103-0001'] } },
+      },
+    })
+    renderApp('/rappels/4')
+    expect(await screen.findByText('Bloqué par ce rappel')).toHaveClass('badge-danger')
+    expect(screen.getByText('lot(s) avec du stock bloqué(s)')).toBeInTheDocument()
+  })
+
+  it('sans lot, la simulation demande le numéro', async () => {
+    mockApi({ '/api/auth/me/': { body: STOREKEEPER } })
+    renderApp('/rappels/simulation')
+    expect(await screen.findByText('Aucun lot à simuler')).toBeInTheDocument()
+    expect(screen.getByLabelText('Lot à rappeler')).toBeInTheDocument()
+  })
+
+  it('résume la traçabilité : lots en aval et enseignes livrées', async () => {
+    mockApi({
+      '/api/auth/me/': { body: STOREKEEPER },
+      '/api/qualite/traceability/': { body: TRACE },
+    })
+    renderApp(`/tracabilite?lot=${CREAM}`)
+    const summary = await screen.findByLabelText('Synthèse de la traçabilité')
+    expect(within(summary).getByText('lot(s) fabriqué(s) avec ce lot').previousSibling).toHaveTextContent('2')
+    expect(within(summary).getByText('enseigne(s) livrée(s)').previousSibling).toHaveTextContent('1')
+    expect(screen.getByRole('link', { name: 'Simuler un rappel de ce lot' })).toHaveClass('danger')
+    expect(screen.getAllByTitle('Produit fini').length).toBeGreaterThan(0)
   })
 })

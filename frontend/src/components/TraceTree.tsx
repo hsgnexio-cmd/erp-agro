@@ -5,6 +5,13 @@ import { StatusBadge } from './StatusBadge'
 
 type Direction = 'amont' | 'aval'
 
+const TYPE_LABELS: Record<string, string> = {
+  MP: 'Matière première',
+  SF: 'Semi-fini',
+  PF: 'Produit fini',
+  EM: 'Emballage',
+}
+
 /** Arbre de traçabilité : chaque lot, puis en retrait les lots qui lui sont liés. */
 export function TraceTree({ node, direction }: { node: TraceNode; direction: Direction }) {
   return (
@@ -43,6 +50,9 @@ function TraceItem({
           <StatusBadge status={node.status} label={node.status_label} />
         </div>
         <span className="trace-node-article">
+          <span className={`type-tag type-${node.article_type.toLowerCase()}`} title={TYPE_LABELS[node.article_type]}>
+            {node.article_type}
+          </span>
           {node.article_code} <small>{node.article_name}</small>
         </span>
         <div className="trace-node-meta">
