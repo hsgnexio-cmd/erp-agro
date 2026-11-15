@@ -6,6 +6,7 @@ import type { Article, Paginated } from '../api/types'
 import { useAuth } from '../auth/context'
 import { PRODUCTION_ROLES, hasRole } from '../auth/roles'
 import { ErrorList } from '../components/ErrorList'
+import { LoadBar } from '../components/LoadBar'
 import { formatDate, formatDateTime, formatDecimal, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
 
@@ -114,6 +115,7 @@ export function MasterPlanPage() {
       {plan.data && (
         <>
           <PlanHeader plan={plan.data} />
+          <PlanStats plan={plan.data} />
           {editable && (
             <div className="actions">
               {confirming === null && (
@@ -169,9 +171,34 @@ export function MasterPlanPage() {
   )
 }
 
+/** Chiffres clés du plan, tirés du plan lui-même (aucun autre appel). */
+function PlanStats({ plan }: { plan: MasterPlan }) {
+  const total = plan.items.reduce((acc, item) => acc + sum(item.days.map((entry) => entry.quantity)), 0)
+  const brand = plan.items.filter((item) => item.brand === 'Brévanne').length
+  const overloads = plan.load.reduce((acc, row) => acc + row.cells.filter((cell) => cell.overload).length, 0)
+  return (
+    <div className="stat-strip" aria-label="Synthèse du plan">
+      <div className="stat">
+        <strong>{plan.items.length}</strong>
+        <span>
+          produit(s) : {brand} Brévanne, {plan.items.length - brand} MDD
+        </span>
+      </div>
+      <div className="stat">
+        <strong>{total.toLocaleString('fr-FR')}</strong>
+        <span>unités à fabriquer sur la semaine</span>
+      </div>
+      <div className={overloads > 0 ? 'stat stat-danger' : 'stat'}>
+        <strong>{overloads}</strong>
+        <span>journée(s) de ligne en surcharge</span>
+      </div>
+    </div>
+  )
+}
+
 function PlanHeader({ plan }: { plan: MasterPlan }) {
   return (
-    <p>
+    <p className="plan-meta">
       <span className={`badge ${plan.status === 'fige' ? 'badge-ok' : 'badge-warn'}`}>
         {plan.status_label}
       </span>{' '}
@@ -207,7 +234,7 @@ function PlanTable(props: {
   const { plan, editable, onQuantity, onLine } = props
   return (
     <div className="table-wrapper">
-      <table className="master-plan">
+      <table className="master-plan grid-sticky">
         <thead>
           <tr>
             <th>Produit</th>
@@ -217,8 +244,8 @@ function PlanTable(props: {
             <th className="num">Stock projeté</th>
             <th className="num">Calculé</th>
             {plan.days.map((day, index) => (
-              <th key={day} className="num">
-                {DAY_NAMES[index]} {day.slice(8, 10)}/{day.slice(5, 7)}
+              <th key={day} className="num day-head">
+                {DAY_NAMES[index]} <small>{day.slice(8, 10)}/{day.slice(5, 7)}</small>
               </th>
             ))}
             <th className="num">Total</th>
@@ -301,6 +328,23 @@ function PlanTable(props: {
             </tr>
           ))}
         </tbody>
+        {plan.items.length > 0 && (
+          <tfoot>
+            <tr>
+              <th colSpan={6}>Total du jour</th>
+              {plan.days.map((day, index) => (
+                <th key={day} className="num">
+                  {sum(plan.items.map((item) => item.days[index]?.quantity ?? '0')).toLocaleString('fr-FR')}
+                </th>
+              ))}
+              <th className="num">
+                {plan.items
+                  .reduce((acc, item) => acc + sum(item.days.map((entry) => entry.quantity)), 0)
+                  .toLocaleString('fr-FR')}
+              </th>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   )
@@ -372,22 +416,23 @@ function AddArticle({ plan, onAdd }: { plan: MasterPlan; onAdd: (article: number
 }
 
 function LoadTable({ plan }: { plan: MasterPlan }) {
+  const capacity = Number(plan.capacity_hours)
   if (plan.load.length === 0) return null
   return (
     <>
       <h2>Charge des lignes</h2>
       <p className="hint">
         Heures = quantité ÷ cadence de la ligne. Capacité : {formatDecimal(plan.capacity_hours)} h par
-        jour (2 équipes).
+        jour (2 équipes) ; barre orange à partir de 85 %, rouge au-delà de la capacité.
       </p>
       <div className="table-wrapper">
-        <table>
+        <table className="load-grid">
           <thead>
             <tr>
               <th>Ligne</th>
               {plan.days.map((day, index) => (
-                <th key={day} className="num">
-                  {DAY_NAMES[index]} {day.slice(8, 10)}/{day.slice(5, 7)}
+                <th key={day} className="day-head">
+                  {DAY_NAMES[index]} <small>{day.slice(8, 10)}/{day.slice(5, 7)}</small>
                 </th>
               ))}
             </tr>
@@ -395,17 +440,25 @@ function LoadTable({ plan }: { plan: MasterPlan }) {
           <tbody>
             {plan.load.map((row) => (
               <tr key={row.line}>
-                <td>{row.line_code}</td>
+                <th scope="row">{row.line_code}</th>
                 {row.cells.map((cell) => (
-                  <td key={cell.day} className={`num${cell.closed ? ' closed-day' : ''}`}>
+                  <td
+                    key={cell.day}
+                    className={`load-cell${cell.closed ? ' closed-day' : ''}`}
+                    title={cell.closed ? `Usine fermée : ${cell.closed}` : undefined}
+                  >
                     {cell.closed && cell.hours === '0.0' ? (
                       <small className="closed-label">fermé</small>
-                    ) : cell.overload ? (
-                      <span className="badge badge-danger" title="Surcharge">
-                        {formatDecimal(cell.hours)} h
-                      </span>
                     ) : (
-                      `${formatDecimal(cell.hours)} h`
+                      <LoadBar hours={Number(cell.hours)} capacity={capacity}>
+                        {cell.overload ? (
+                          <span className="badge badge-danger" title="Surcharge">
+                            {formatDecimal(cell.hours)} h
+                          </span>
+                        ) : (
+                          `${formatDecimal(cell.hours)} h`
+                        )}
+                      </LoadBar>
                     )}
                   </td>
                 ))}

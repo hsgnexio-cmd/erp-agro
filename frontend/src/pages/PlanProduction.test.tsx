@@ -166,3 +166,22 @@ describe('Plan de production', () => {
     expect(screen.getByRole('button', { name: 'Calculer le plan' })).toBeInTheDocument()
   })
 })
+
+describe('Plan de production : synthèse et charge', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('résume le plan, totalise chaque jour et montre la charge en barres', async () => {
+    mockPlan()
+    renderApp('/plan-production')
+    const stats = await screen.findByLabelText('Synthèse du plan')
+    expect(within(stats).getByText('8 004')).toBeInTheDocument()
+    expect(within(stats).getByText('journée(s) de ligne en surcharge').previousSibling).toHaveTextContent('1')
+    const footer = screen.getByText('Total du jour').closest('tr')!
+    // Lundi et mardi : 1 608 chacun
+    expect(within(footer).getAllByText('1 608')).toHaveLength(2)
+    expect(within(footer).getAllByText('8 004')).toHaveLength(1)
+    // 17 h pour 15 h de capacité : 113 %, en rouge
+    expect(screen.getByText('113 %')).toHaveClass('load-text-danger')
+    expect(screen.getAllByText('5 %')[0]).toHaveClass('load-text-ok')
+  })
+})

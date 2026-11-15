@@ -1,8 +1,46 @@
+import { ShieldAlert } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import type { Traceability } from '../api/quality'
+import type { TraceNode, Traceability } from '../api/quality'
+import { StatusBadge } from '../components/StatusBadge'
 import { TraceTree } from '../components/TraceTree'
 import { useApi } from '../hooks/useApi'
+
+/** Tous les lots d'un arbre de traçabilité, sans le lot de départ. */
+function descendants(node: TraceNode): TraceNode[] {
+  return node.children.flatMap((child) => [child, ...descendants(child)])
+}
+
+/** Synthèse de l'arbre renvoyé par l'API : nombre de lots en amont, en aval, enseignes livrées. */
+function TraceSummary({ trace }: { trace: Traceability }) {
+  const upstream = descendants(trace.upstream)
+  const downstream = descendants(trace.downstream)
+  const shipped = [trace.downstream, ...downstream].flatMap((node) => node.shipments)
+  const customers = new Set(shipped.map((shipment) => shipment.customer_code))
+  const origin = trace.upstream
+  return (
+    <div className="stat-strip" aria-label="Synthèse de la traçabilité">
+      <div className="stat">
+        <strong className="lot-number">{origin.lot_number}</strong>
+        <span>
+          {origin.article_code} <StatusBadge status={origin.status} label={origin.status_label} />
+        </span>
+      </div>
+      <div className="stat">
+        <strong>{upstream.length}</strong>
+        <span>lot(s) en amont</span>
+      </div>
+      <div className="stat">
+        <strong>{downstream.length}</strong>
+        <span>lot(s) fabriqué(s) avec ce lot</span>
+      </div>
+      <div className={customers.size > 0 ? 'stat stat-danger' : 'stat'}>
+        <strong>{customers.size}</strong>
+        <span>enseigne(s) livrée(s)</span>
+      </div>
+    </div>
+  )
+}
 
 /** Traçabilité d'un lot, vers l'amont (ce qui le compose) et l'aval (où il est allé). */
 export function TraceabilityPage() {
@@ -48,12 +86,13 @@ export function TraceabilityPage() {
       {trace.error && <p className="error">{trace.error}</p>}
       {trace.data && (
         <>
+          <TraceSummary trace={trace.data} />
           <div className="actions">
             <Link
-              className="button"
+              className="button danger"
               to={`/rappels/simulation?lot=${encodeURIComponent(trace.data.upstream.lot_number)}`}
             >
-              Simuler un rappel de ce lot
+              <ShieldAlert size={15} aria-hidden="true" /> Simuler un rappel de ce lot
             </Link>
           </div>
           <div className="trace-columns">

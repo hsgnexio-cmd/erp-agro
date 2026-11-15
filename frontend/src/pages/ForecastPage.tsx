@@ -13,6 +13,7 @@ import type {
 import type { Customer, Paginated } from '../api/types'
 import { useAuth } from '../auth/context'
 import { SALES_ROLES, hasRole } from '../auth/roles'
+import { type DataColumn, DataTable } from '../components/DataTable'
 import { ErrorList } from '../components/ErrorList'
 import { formatDate, formatDateTime, formatDecimal, todayIso } from '../format'
 import { useApi } from '../hooks/useApi'
@@ -403,6 +404,108 @@ function PromotionsSection(props: {
     }
   }
 
+  const promotionColumns: DataColumn<Promotion>[] = [
+    {
+      id: 'customer',
+      header: 'Enseigne',
+      sortValue: (promotion) => promotion.customer_code,
+      cell: (promotion) => promotion.customer_code,
+    },
+    {
+      id: 'article',
+      header: 'Produit',
+      sortValue: (promotion) => promotion.article_code,
+      cell: (promotion) => <span title={promotion.article_name}>{promotion.article_code}</span>,
+    },
+    {
+      id: 'weeks',
+      header: 'Semaines',
+      sortValue: (promotion) => promotion.first_week,
+      cell: (promotion) => (
+        <>
+          {promotion.first_week_label}
+          {promotion.last_week !== promotion.first_week && ` à ${promotion.last_week_label}`}
+        </>
+      ),
+    },
+    {
+      id: 'coefficient',
+      header: 'Coefficient',
+      numeric: true,
+      sortValue: (promotion) => Number(promotion.coefficient),
+      cell: (promotion) => `×${formatDecimal(promotion.coefficient)}`,
+    },
+    {
+      id: 'announced',
+      header: 'Annoncée le',
+      sortValue: (promotion) => promotion.announced_on,
+      cell: (promotion) => (
+        <>
+          {formatDate(promotion.announced_on)}{' '}
+          {promotion.late_notice && (
+            <span className="badge badge-warn">annoncée tard ({promotion.notice_days} j avant)</span>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      sortValue: (promotion) => promotionState(promotion, currentWeek).label,
+      cell: (promotion) => {
+        const state = promotionState(promotion, currentWeek)
+        return (
+          <>
+            <span className={`badge ${state.badge}`}>{state.label}</span>
+            {promotion.cancel_reason && <small> {promotion.cancel_reason}</small>}
+          </>
+        )
+      },
+    },
+  ]
+  if (canEdit) {
+    promotionColumns.push({
+      id: 'action',
+      header: '',
+      cell: (promotion) => {
+        const cancellable = !promotion.cancelled_at && promotion.first_week > currentWeek
+        return (
+          <>
+            {cancellable && cancelling !== promotion.id && (
+              <button
+                type="button"
+                className="secondary row-action"
+                onClick={() => {
+                  setCancelling(promotion.id)
+                  setReason('')
+                }}
+              >
+                Annuler
+              </button>
+            )}
+            {cancelling === promotion.id && (
+              <span className="inline-form">
+                <input
+                  type="text"
+                  aria-label="Motif de l'annulation"
+                  placeholder="Motif"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+                <button type="button" className="danger" onClick={() => void cancel(promotion)}>
+                  Confirmer
+                </button>
+                <button type="button" className="secondary" onClick={() => setCancelling(null)}>
+                  Retour
+                </button>
+              </span>
+            )}
+          </>
+        )
+      },
+    })
+  }
+
   return (
     <>
       <h2>Promotions</h2>
@@ -412,89 +515,13 @@ function PromotionsSection(props: {
       </p>
       <ErrorList messages={errors} />
       {promotions.data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Enseigne</th>
-                <th>Produit</th>
-                <th>Semaines</th>
-                <th className="num">Coefficient</th>
-                <th>Annoncée le</th>
-                <th>Statut</th>
-                {canEdit && <th />}
-              </tr>
-            </thead>
-            <tbody>
-              {promotions.data.results.length === 0 && (
-                <tr>
-                  <td colSpan={canEdit ? 7 : 6}>Aucune promotion.</td>
-                </tr>
-              )}
-              {promotions.data.results.map((promotion) => {
-                const state = promotionState(promotion, currentWeek)
-                const cancellable =
-                  canEdit && !promotion.cancelled_at && promotion.first_week > currentWeek
-                return (
-                  <tr key={promotion.id}>
-                    <td>{promotion.customer_code}</td>
-                    <td title={promotion.article_name}>{promotion.article_code}</td>
-                    <td>
-                      {promotion.first_week_label}
-                      {promotion.last_week !== promotion.first_week && ` à ${promotion.last_week_label}`}
-                    </td>
-                    <td className="num">×{formatDecimal(promotion.coefficient)}</td>
-                    <td>
-                      {formatDate(promotion.announced_on)}{' '}
-                      {promotion.late_notice && (
-                        <span className="badge badge-warn">
-                          annoncée tard ({promotion.notice_days} j avant)
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`badge ${state.badge}`}>{state.label}</span>
-                      {promotion.cancel_reason && <small> {promotion.cancel_reason}</small>}
-                    </td>
-                    {canEdit && (
-                      <td>
-                        {cancellable && cancelling !== promotion.id && (
-                          <button
-                            type="button"
-                            className="secondary"
-                            onClick={() => {
-                              setCancelling(promotion.id)
-                              setReason('')
-                            }}
-                          >
-                            Annuler
-                          </button>
-                        )}
-                        {cancelling === promotion.id && (
-                          <span className="inline-form">
-                            <input
-                              type="text"
-                              aria-label="Motif de l'annulation"
-                              placeholder="Motif"
-                              value={reason}
-                              onChange={(e) => setReason(e.target.value)}
-                            />
-                            <button type="button" className="danger" onClick={() => void cancel(promotion)}>
-                              Confirmer
-                            </button>
-                            <button type="button" className="secondary" onClick={() => setCancelling(null)}>
-                              Retour
-                            </button>
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="Promotions"
+          rows={promotions.data.results}
+          columns={promotionColumns}
+          rowKey={(promotion) => promotion.id}
+          empty="Aucune promotion."
+        />
       )}
       {canEdit && (
         <PromotionForm
@@ -666,59 +693,81 @@ function AccuracySection({ customer, version }: { customer: string; version: num
       </p>
       {error && <p className="error">{error}</p>}
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Semaine</th>
-                <th>Version S-1</th>
-                <th className="num">Prévu</th>
-                <th className="num">Commandé</th>
-                <th className="num">Écart absolu</th>
-                <th className="num">Fiabilité</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.weeks.length === 0 && (
-                <tr>
-                  <td colSpan={6}>Aucune semaine avec une prévision figée la semaine précédente.</td>
-                </tr>
-              )}
-              {data.weeks.map((week) => (
-                <tr key={week.week}>
-                  <td>
+        <>
+          {data.accuracy !== null && (
+            <div className="stat-strip" aria-label="Fiabilité globale">
+              <div className={Number(data.accuracy) >= target ? 'stat' : 'stat stat-danger'}>
+                <strong>{formatDecimal(data.accuracy)} %</strong>
+                <span>fiabilité des semaines terminées (objectif ≥ {formatDecimal(data.target)} %)</span>
+              </div>
+            </div>
+          )}
+          <DataTable
+            caption="Fiabilité des prévisions à S-1"
+            rows={data.weeks}
+            rowKey={(week) => week.week}
+            empty="Aucune semaine avec une prévision figée la semaine précédente."
+            columns={[
+              {
+                id: 'week',
+                header: 'Semaine',
+                sortValue: (week) => week.week,
+                cell: (week) => (
+                  <>
                     {week.label} <small>du {formatDate(week.week)}</small>
-                  </td>
-                  <td>
+                  </>
+                ),
+              },
+              {
+                id: 'version',
+                header: 'Version S-1',
+                sortValue: (week) => week.version_number,
+                cell: (week) => (
+                  <>
                     {week.version_number} <small>{formatDateTime(week.version_created_at)}</small>
-                  </td>
-                  <td className="num">{formatDecimal(week.forecast)}</td>
-                  <td className="num">{formatDecimal(week.actual)}</td>
-                  <td className="num">{formatDecimal(week.abs_error)}</td>
-                  <td className="num">
-                    {!week.complete ? (
-                      <span className="badge badge-neutral">en cours</span>
-                    ) : week.accuracy === null ? (
-                      '—'
-                    ) : (
-                      <span className={`badge ${Number(week.accuracy) >= target ? 'badge-ok' : 'badge-danger'}`}>
-                        {formatDecimal(week.accuracy)} %
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {data.accuracy !== null && (
-              <tfoot>
-                <tr>
-                  <th colSpan={5}>Semaines terminées</th>
-                  <th className="num">{formatDecimal(data.accuracy)} %</th>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
+                  </>
+                ),
+              },
+              {
+                id: 'forecast',
+                header: 'Prévu',
+                numeric: true,
+                sortValue: (week) => Number(week.forecast),
+                cell: (week) => formatDecimal(week.forecast),
+              },
+              {
+                id: 'actual',
+                header: 'Commandé',
+                numeric: true,
+                sortValue: (week) => Number(week.actual),
+                cell: (week) => formatDecimal(week.actual),
+              },
+              {
+                id: 'error',
+                header: 'Écart absolu',
+                numeric: true,
+                sortValue: (week) => Number(week.abs_error),
+                cell: (week) => formatDecimal(week.abs_error),
+              },
+              {
+                id: 'accuracy',
+                header: 'Fiabilité',
+                numeric: true,
+                sortValue: (week) => (week.accuracy === null ? null : Number(week.accuracy)),
+                cell: (week) =>
+                  !week.complete ? (
+                    <span className="badge badge-neutral">en cours</span>
+                  ) : week.accuracy === null ? (
+                    '—'
+                  ) : (
+                    <span className={`badge ${Number(week.accuracy) >= target ? 'badge-ok' : 'badge-danger'}`}>
+                      {formatDecimal(week.accuracy)} %
+                    </span>
+                  ),
+              },
+            ]}
+          />
+        </>
       )}
     </>
   )
@@ -732,42 +781,48 @@ function VersionsSection({ version }: { version: number }) {
     <>
       <h2>Versions figées</h2>
       {data && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Numéro</th>
-                <th>Figée le</th>
-                <th>Origine</th>
-                <th>Semaines</th>
-                <th className="num">Lignes</th>
-                <th className="num">Quantité totale</th>
-                <th>Commentaire</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.length === 0 && (
-                <tr>
-                  <td colSpan={7}>Aucune version figée.</td>
-                </tr>
-              )}
-              {data.results.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.number}</td>
-                  <td>
-                    {formatDateTime(item.created_at)}
-                    {item.created_by_name && <small> · {item.created_by_name}</small>}
-                  </td>
-                  <td>{item.source_label}</td>
-                  <td>à partir de {item.first_week_label}</td>
-                  <td className="num">{item.line_count}</td>
-                  <td className="num">{formatDecimal(item.total_quantity)}</td>
-                  <td>{item.comment}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          caption="Versions figées"
+          rows={data.results}
+          rowKey={(item) => item.id}
+          empty="Aucune version figée."
+          columns={[
+            { id: 'number', header: 'Numéro', sortValue: (item) => item.number, cell: (item) => item.number },
+            {
+              id: 'created',
+              header: 'Figée le',
+              sortValue: (item) => item.created_at,
+              cell: (item) => (
+                <>
+                  {formatDateTime(item.created_at)}
+                  {item.created_by_name && <small> · {item.created_by_name}</small>}
+                </>
+              ),
+            },
+            { id: 'source', header: 'Origine', sortValue: (item) => item.source_label, cell: (item) => item.source_label },
+            {
+              id: 'weeks',
+              header: 'Semaines',
+              sortValue: (item) => item.first_week_label,
+              cell: (item) => `à partir de ${item.first_week_label}`,
+            },
+            {
+              id: 'lines',
+              header: 'Lignes',
+              numeric: true,
+              sortValue: (item) => item.line_count,
+              cell: (item) => item.line_count,
+            },
+            {
+              id: 'total',
+              header: 'Quantité totale',
+              numeric: true,
+              sortValue: (item) => Number(item.total_quantity),
+              cell: (item) => formatDecimal(item.total_quantity),
+            },
+            { id: 'comment', header: 'Commentaire', cell: (item) => item.comment },
+          ]}
+        />
       )}
     </>
   )

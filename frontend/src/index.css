@@ -3210,3 +3210,219 @@ tr.late td {
   font-size: 1.7rem;
   padding: 0.1em 0.5em;
 }
+
+/* --- Finition : commercial, qualité, plan de production --- */
+
+/* Titres et tableaux dans un tiroir */
+.drawer-body h3 {
+  margin: 1.4rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.drawer-body pre.payload {
+  max-height: 22rem;
+  overflow: auto;
+}
+
+/* Taux de service : barres par enseigne et repère d'objectif */
+.rate-chart {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.2rem;
+}
+
+.rate-axis,
+.rate-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 16rem) 1fr 6.5rem;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.rate-axis {
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rate-axis-scale {
+  position: relative;
+  display: block;
+  height: 1.1rem;
+}
+
+/* Le libellé se termine sur le repère : il ne déborde jamais à droite de la barre */
+.rate-axis-target {
+  position: absolute;
+  top: 0;
+  transform: translateX(calc(-100% + 0.35rem));
+  color: #18212b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rate-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rate-label {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rate-track {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: #eceeea;
+}
+
+.rate-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 6px;
+}
+
+.rate-ok {
+  background: #16a34a;
+}
+
+.rate-below {
+  background: #dc2626;
+}
+
+.rate-target {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: #18212b;
+}
+
+.rate-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rate-total {
+  margin-top: 0.3rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .rate-axis {
+    display: none;
+  }
+
+  .rate-row {
+    grid-template-columns: 1fr 5.5rem;
+  }
+
+  .rate-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Rappels : chiffres clés à surveiller */
+.cards.summary .card.card-danger {
+  border-color: #f3c2c2;
+  background: #fff7f5;
+}
+
+.cards.summary .card.card-danger strong {
+  color: #991b1b;
+}
+
+/* Traçabilité : type d'article devant le code */
+.type-tag {
+  display: inline-block;
+  min-width: 1.9rem;
+  margin-right: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 4px;
+  background: #eceeea;
+  color: #3b4652;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  vertical-align: 0.1em;
+}
+
+.type-mp {
+  background: #e0ecfb;
+  color: #1e3a8a;
+}
+
+.type-sf {
+  background: #fdf0d5;
+  color: #78350f;
+}
+
+.type-pf {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+
+.stat strong.lot-number {
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+/* Plan de production : bandeau d'état, grille lisible, charge en barres */
+.plan-meta {
+  padding: 0.6rem 0.9rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.plan-meta .badge {
+  margin-right: 0.3rem;
+}
+
+.day-head small {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+table.grid-sticky th:first-child,
+table.grid-sticky td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+table.grid-sticky thead th:first-child {
+  z-index: 2;
+}
+
+table.grid-sticky tbody tr:nth-child(even) td {
+  background: #fafbf8;
+}
+
+table.grid-sticky tfoot th {
+  background: #f3f5f0;
+}
+
+table.load-grid td.load-cell {
+  min-width: 7.5rem;
+}
+
+table.load-grid .load-text .badge {
+  padding: 0 0.4rem;
+}

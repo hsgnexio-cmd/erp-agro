@@ -506,6 +506,21 @@ Cahier des charges de Nicolas : niveau « SaaS B2B » (charte : vert `#164A2C`, 
 | Écarts au cahier des charges | Traiter une alerte garde son commentaire obligatoire (audit) ; pas de taux d'occupation des sites ni d'alerte de stock minimum (données absentes de l'ERP) | Ne pas affaiblir une règle ni inventer des données. |
 | Test MRP dépendant du jour | `test_une_commande_brouillon_par_fournisseur_et_par_semaine` supposait qu'on est en semaine : avec 3 jours de délai, une commande passée le week-end n'arrive pas le lundi | Le code était juste, le test échouait chaque samedi et dimanche. |
 
+## Design system (étape 3 : finition commercial, qualité, plan de production, 15/11/2026)
+
+Branche `design-finition`. Uniquement l'interface : aucune route, aucune API, aucune règle métier modifiée ; seules des données déjà renvoyées par l'API sont affichées.
+
+| Sujet | Décision | Pourquoi |
+| --- | --- | --- |
+| Ventes, expéditions, EDI, tarifs | Listes en `DataTable` (tri, chiffres à droite) ; clic sur une commande, un bon de livraison ou un message EDI → fiche dans un `Drawer` (lignes, lots préparés, contenu reçu), avec lien « Fiche complète » | Consulter sans quitter la liste. Les actions (préparer, expédier, annuler) restent sur la fiche complète ; seul un lien « Préparer » apparaît dans le tiroir, pour le magasinier (même droit qu'avant). |
+| EDI | Onglets Tous / Intégrés / Rejetés à la place de la liste déroulante ; contenu JSON dans le tiroir | Le JSON replié dans chaque ligne alourdissait le tableau. |
+| Taux de service | Barres par enseigne et total, repère vertical à l'objectif (98,5 %), rouge sous l'objectif ; axe qui démarre à la dizaine inférieure au plus petit taux (au plus 90 %) | Sur un axe 0-100 %, 96 % et 99 % seraient indiscernables. Le tableau détaillé reste en dessous. |
+| Prévisions | Grille inchangée (cellules cliquables, promotions, corrections) ; promotions, fiabilité et versions en `DataTable`, fiabilité globale en chiffre clé | Consigne : ne pas toucher à la grille. |
+| Rappels | Liste triable, chiffres clés (`.cards.summary`), saisie du lot suspect + bouton rouge « Simuler un rappel » directement sur la page (aussi sur la simulation ouverte sans lot) ; badge « Bloqué par ce rappel » sur la fiche d'un rappel lancé (liste `blocked_lots` déjà renvoyée) | Le statut affiché est celui d'avant le blocage (instantané) : le badge lève l'ambiguïté signalée dans `prochaine-etape.md`. Le lancement reste réservé à la qualité, sur l'écran de simulation, avec motif. |
+| Traçabilité | Synthèse calculée à partir de l'arbre reçu (lots en amont, lots fabriqués avec ce lot, enseignes livrées) ; étiquette MP / SF / PF / EM devant chaque lot de l'arbre | Lire l'ampleur d'un problème avant d'ouvrir l'arbre. |
+| Plan de production | Synthèse (produits Brévanne / MDD, unités de la semaine, journées en surcharge), totaux par jour, première colonne fixe ; charge des lignes avec `LoadBar` (sorti de `PlanningPage.tsx` dans `components/LoadBar.tsx`, partagé) | Saisie, recalcul et gel inchangés (mêmes confirmations). |
+| Tests | 11 tests Vitest ajoutés (tiroirs, droits du tiroir commande, tri des tarifs, onglets EDI, barres du taux de service, rappels, traçabilité, plan) ; aucun test existant modifié | — |
+
 ## Conventions techniques transverses
 
 Règles de fonctionnement prises en cours de route, valables pour tous les modules.
