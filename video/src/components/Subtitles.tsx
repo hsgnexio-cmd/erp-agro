@@ -8,26 +8,29 @@ import { SCENES, type SceneId, sec, voiceOf } from '../timing'
 type Phrase = { words: string[]; first: number }
 
 const isWord = (token: string) => /[\p{L}\p{N}]/u.test(token)
+const MAX_WORDS = 9
 
 /** Découpe le texte de la voix en courtes phrases et repère le premier mot de chacune. */
-const phrasesOf = (id: SceneId): Phrase[] => {
+export const phrasesOf = (id: SceneId): Phrase[] => {
   const text = (script as { id: string; text: string }[]).find((line) => line.id === id)!.text
   const phrases: Phrase[] = []
   let index = 0
-  for (const sentence of text.split(/(?<=[.?!:])\s+/)) {
-    const long = sentence.split(/\s+/).filter(isWord).length > 8
+  for (const sentence of text.split(/(?<=[.?!])\s+|(?<=\s:)\s+/)) {
+    const long = sentence.split(/\s+/).filter(isWord).length > MAX_WORDS
     for (const part of long ? sentence.split(/(?<=,)\s+/) : [sentence]) {
-      const tokens = part.split(/\s+/)
-      const count = tokens.filter(isWord).length
-      if (count === 0) continue
       // Un signe de ponctuation isolé (« ? », « : ») reste collé au mot précédent
       const words: string[] = []
-      for (const token of tokens) {
+      for (const token of part.split(/\s+/)) {
         if (isWord(token) || words.length === 0) words.push(token)
-        else words[words.length - 1] += ` ${token}`
+        else words[words.length - 1] += ` ${token}`
       }
-      phrases.push({ words, first: index })
-      index += count
+      if (words.filter(isWord).length === 0) continue
+      // Une phrase encore trop longue est coupée en deux moitiés : jamais plus d'une ligne
+      const halves = words.length > MAX_WORDS ? [words.slice(0, Math.ceil(words.length / 2)), words.slice(Math.ceil(words.length / 2))] : [words]
+      for (const half of halves) {
+        phrases.push({ words: half, first: index })
+        index += half.length
+      }
     }
   }
   return phrases
@@ -40,37 +43,27 @@ export const Subtitles: React.FC<{ id: SceneId }> = ({ id }) => {
   const start = SCENES[id].voiceAt
   const at = (index: number) => sec(start + voice.words[Math.min(index, voice.words.length - 1)].t)
   const current = phrasesOf(id).findLast((phrase) => frame >= at(phrase.first) - 2)
-  if (!current || frame > sec(start + voice.duration) + 8) return null
+  if (!current || frame > sec(start + voice.duration) + 6) return null
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 54,
-        display: 'flex',
-        justifyContent: 'center',
-      }}
-    >
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 26, display: 'flex', justifyContent: 'center' }}>
       <div
         style={{
           opacity: glide(frame, at(current.first) - 2, 5),
-          padding: '14px 34px',
-          borderRadius: 18,
-          background: 'rgba(4, 12, 7, 0.8)',
-          border: '1px solid rgba(255,255,255,0.14)',
+          maxWidth: 1500,
+          padding: '11px 30px',
+          borderRadius: 14,
+          background: 'rgba(15, 54, 32, 0.95)',
+          boxShadow: '0 10px 30px rgba(15,54,32,0.25)',
           fontFamily: FONT,
           fontWeight: 600,
-          fontSize: 38,
+          fontSize: 33,
+          whiteSpace: 'nowrap',
           display: 'flex',
           gap: '0 0.28em',
         }}
       >
         {current.words.map((text, i) => (
-          <span
-            key={i}
-            style={{ color: frame >= at(current.first + i) ? C.white : 'rgba(255,255,255,0.38)' }}
-          >
+          <span key={i} style={{ color: frame >= at(current.first + i) ? C.cream : 'rgba(247,240,220,0.42)' }}>
             {text}
           </span>
         ))}

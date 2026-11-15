@@ -1,22 +1,414 @@
 [
-  {"session": "direction", "path": "/tracabilite", "wait": 4000,
-   "typing": {"text": "LR-261109-0004", "prefix": "trace", "wait": 6000},
-   "file": "tracabilite.jpg", "fullPage": true},
-  {"session": "direction", "path": "/rappels/1", "file": "rappel.jpg", "wait": 6000, "fullPage": true},
-  {"session": "direction", "path": "/tableau-de-bord", "file": "tableau-de-bord.jpg", "wait": 10000, "fullPage": true},
-  {"session": "direction", "path": "/commandes", "file": "achats.jpg", "wait": 4000},
-  {"session": "direction", "path": "/lots", "file": "lots.jpg", "wait": 4000},
-  {"session": "direction", "path": "/stocks", "file": "stocks.jpg", "wait": 4000},
-  {"session": "direction", "path": "/production", "file": "production.jpg", "wait": 4000},
-  {"session": "direction", "path": "/plan-production", "file": "plan-production.jpg", "wait": 5000},
-  {"session": "direction", "path": "/planning", "file": "planning.jpg", "wait": 5000},
-  {"session": "direction", "path": "/trs", "file": "trs.jpg", "wait": 5000},
-  {"session": "direction", "path": "/ventes", "file": "ventes.jpg", "wait": 4000},
-  {"session": "direction", "path": "/expeditions", "file": "expeditions.jpg", "wait": 4000},
-  {"session": "direction", "path": "/previsions", "file": "previsions.jpg", "wait": 5000},
-  {"session": "direction", "path": "/taux-de-service", "file": "taux-de-service.jpg", "wait": 5000},
-  {"session": "direction", "path": "/temperatures", "file": "temperatures.jpg", "wait": 4000},
-  {"session": "direction", "path": "/besoins-achat", "file": "besoins-achat.jpg", "wait": 9000},
-  {"session": "qualite", "path": "/tableau-de-bord", "file": "tableau-qualite.jpg", "wait": 9000},
-  {"session": "commercial", "path": "/tableau-de-bord", "file": "tableau-commercial.jpg", "wait": 9000}
+ {
+  "name": "accueil",
+  "session": "admin",
+  "path": "/",
+  "wait": 7000,
+  "steps": [
+   {
+    "shot": "accueil.jpg"
+   },
+   {
+    "measure": {
+     "urgences": "texte:Urgences du jour",
+     "recherche": ".topbar-search",
+     "vue": ".topbar-preview",
+     "semaine": "texte:Semaine S"
+    }
+   }
+  ]
+ },
+ {
+  "name": "dashboard",
+  "session": "admin",
+  "path": "/tableau-de-bord",
+  "wait": 11000,
+  "steps": [
+   {
+    "shot": "dashboard.jpg",
+    "tall": true
+   },
+   {
+    "measure": {
+     "service": "article[aria-label='Taux de service']",
+     "demarque": "article[aria-label='Démarque']",
+     "couverture_pf": "article[aria-label='Couverture produits finis']",
+     "couverture_mp": "article[aria-label='Couverture matières']",
+     "fiabilite": "article[aria-label='Fiabilité des prévisions']",
+     "trs": "article[aria-label='TRS']"
+    }
+   },
+   {
+    "hover": "article[aria-label='Taux de service'] .kpi-info-button",
+    "wait": 700,
+    "shot": "dashboard-formule.jpg"
+   },
+   {
+    "measure": {
+     "bulle": "article[aria-label='Taux de service'] .kpi-tooltip",
+     "info": "article[aria-label='Taux de service'] .kpi-info-button"
+    }
+   }
+  ]
+ },
+ {
+  "name": "mrp",
+  "session": "admin",
+  "path": "/besoins-achat",
+  "wait": 45000,
+  "steps": [
+   {
+    "select": "select[aria-label=\"Fournisseur\"]",
+    "value": "4",
+    "wait": 1500,
+    "shot": "mrp.jpg"
+   },
+   {
+    "measure": {
+     "synthese": ".stat-strip",
+     "semaines": ".table-wrapper",
+     "filtre": "select[aria-label=\"Fournisseur\"]",
+     "ligne1": "tbody tr",
+     "net": "texte:Besoin net",
+     "commander": "texte:Commander le",
+     "article": "tbody tr .link-button",
+     "generer": "tbody tr .row-action"
+    }
+   },
+   {
+    "click": "tbody tr .link-button",
+    "wait": 1500,
+    "shot": "mrp-detail.jpg",
+    "tall": true
+   },
+   {
+    "measure": {
+     "detail": "tbody tr + tr",
+     "brut": "texte:Besoin brut",
+     "recevoir": "texte:À recevoir (commandes en cours)",
+     "propose": "texte:Proposé",
+     "projete": "texte:Stock projeté en fin de semaine",
+     "generer": "tbody tr .row-action"
+    }
+   }
+  ]
+ },
+ {
+  "name": "fefo",
+  "session": "admin",
+  "path": "/fefo",
+  "wait": 5000,
+  "steps": [
+   {
+    "shot": "fefo-vide.jpg"
+   },
+   {
+    "measure": {
+     "article": "input[placeholder='MP-LAI-CREME35']",
+     "quantite": "input[type=number]"
+    }
+   },
+   {
+    "click": "input[placeholder='MP-LAI-CREME35']"
+   },
+   {
+    "type": "MP-LAI-CREME35"
+   },
+   {
+    "click": "input[type=number]"
+   },
+   {
+    "type": "400",
+    "shot": "fefo-saisie.jpg"
+   },
+   {
+    "measure": {
+     "bouton": "texte:Proposer les lots"
+    }
+   },
+   {
+    "click": "texte:Proposer les lots",
+    "wait": 2500,
+    "shot": "fefo.jpg"
+   },
+   {
+    "measure": {
+     "jauge1": ".freshness",
+     "table": "texte:Durée de vie restante",
+     "ordre": "texte:Ordre",
+     "prendre": "texte:À prendre",
+     "ligne1": "main tbody tr",
+     "ligne2": "main tbody tr:nth-child(2)"
+    }
+   }
+  ]
+ },
+ {
+  "name": "temperatures",
+  "session": "admin",
+  "path": "/temperatures",
+  "wait": 6000,
+  "steps": [
+   {
+    "scroll": 218,
+    "wait": 600,
+    "shot": "temperatures.jpg"
+   },
+   {
+    "measure": {
+     "ecart": "texte:NAN-CF-SF",
+     "titre": "texte:Dernier relevé par chambre froide"
+    }
+   }
+  ]
+ },
+ {
+  "name": "previsions",
+  "session": "admin",
+  "path": "/previsions",
+  "wait": 8000,
+  "steps": [
+   {
+    "shot": "previsions.jpg"
+   },
+   {
+    "measure": {
+     "promo": "texte:×1,8",
+     "total": "texte:Total",
+     "entete": "texte:Enseigne"
+    }
+   },
+   {
+    "run": "[...document.querySelectorAll('h2')].find((h) => h.textContent.includes('Fiabilité')).scrollIntoView({ block: 'start' }); window.scrollBy(0, -80)",
+    "wait": 800,
+    "shot": "previsions-fiabilite.jpg"
+   },
+   {
+    "measure": {
+     "fiabilite": "texte:Fiabilité des prévisions à S-1",
+     "taux": "texte:90,6 %",
+     "prevu": "texte:Prévu",
+     "commande": "texte:Commandé"
+    }
+   }
+  ]
+ },
+ {
+  "name": "plan",
+  "session": "admin",
+  "path": "/plan-production",
+  "wait": 8000,
+  "steps": [
+   {
+    "shot": "plan-production.jpg"
+   },
+   {
+    "measure": {
+     "statut": "texte:Brouillon",
+     "figer": "texte:Figer le plan",
+     "demande": "texte:Demande",
+     "calcule": "texte:Calculé"
+    }
+   }
+  ]
+ },
+ {
+  "name": "planning",
+  "session": "admin",
+  "path": "/planning",
+  "wait": 8000,
+  "steps": [
+   {
+    "shot": "planning.jpg"
+   },
+   {
+    "measure": {
+     "charge": ".planning-load",
+     "ferie": "texte:férié (Armistice 1918)",
+     "l1": "texte:L1"
+    }
+   }
+  ]
+ },
+ {
+  "name": "trs",
+  "session": "admin",
+  "path": "/trs",
+  "wait": 8000,
+  "steps": [
+   {
+    "shot": "trs.jpg"
+   },
+   {
+    "measure": {
+     "disponibilite": "texte:Disponibilité",
+     "performance": "texte:Performance",
+     "qualite": "texte:Qualité",
+     "pareto": "texte:Causes d'arrêt (Pareto)",
+     "ligne": "texte:Par ligne"
+    }
+   }
+  ]
+ },
+ {
+  "name": "trace",
+  "session": "admin",
+  "path": "/lots",
+  "wait": 6000,
+  "steps": [
+   {
+    "shot": "lots.jpg"
+   },
+   {
+    "run": "document.head.insertAdjacentHTML('beforeend', '<style>.topbar{backdrop-filter:none !important}</style>')"
+   },
+   {
+    "key": "Control+k",
+    "wait": 700
+   },
+   {
+    "type": "LR-261113-0005",
+    "frames": "palette",
+    "delay": 420,
+    "settle": 900
+   },
+   {
+    "measure": {
+     "resultat": ".palette-result",
+     "champ": ".palette-input"
+    },
+    "as": "palette"
+   },
+   {
+    "key": "Escape",
+    "wait": 500
+   },
+   {
+    "click": "input[type=search], main input",
+    "wait": 300
+   },
+   {
+    "type": "LR-261113-0005",
+    "wait": 2500,
+    "shot": "lots-filtre.jpg"
+   },
+   {
+    "measure": {
+     "ligne": ".lot-number"
+    }
+   },
+   {
+    "click": ".lot-number",
+    "wait": 1500,
+    "shot": "tiroir-detail.jpg"
+   },
+   {
+    "measure": {
+     "tiroir": ".drawer",
+     "onglet": ".drawer-tab:nth-child(2)",
+     "rappel": ".drawer-footer .danger"
+    }
+   },
+   {
+    "click": ".drawer-tab:nth-child(2)",
+    "wait": 3500,
+    "shot": "tiroir-trace.jpg"
+   },
+   {
+    "measure": {
+     "corps": ".drawer-body",
+     "arbre": ".drawer-body .trace-tree"
+    }
+   },
+   {
+    "run": "document.querySelector('.drawer-body').scrollTo(0, 420)",
+    "wait": 700,
+    "shot": "tiroir-trace-2.jpg"
+   },
+   {
+    "run": "document.querySelector('.drawer-body').scrollTo(0, 900)",
+    "wait": 700,
+    "shot": "tiroir-trace-3.jpg"
+   },
+   {
+    "run": "window.__h = document.querySelector('.drawer-body').scrollHeight; document.querySelector('.drawer-body').scrollTo(0, 0)",
+    "wait": 400
+   },
+   {
+    "hover": ".drawer-footer .danger",
+    "wait": 500,
+    "shot": "tiroir-survol.jpg"
+   },
+   {
+    "click": ".drawer-footer .danger",
+    "wait": 5000,
+    "shot": "simulation.jpg",
+    "tall": true
+   }
+  ]
+ },
+ {
+  "name": "rappel",
+  "session": "admin",
+  "path": "/rappels/1",
+  "wait": 7000,
+  "steps": [
+   {
+    "shot": "rappel.jpg",
+    "tall": true
+   },
+   {
+    "measure": {
+     "chiffres": ".cards.summary",
+     "lots": "texte:Lots concernés et stocks restants",
+     "clients": "texte:Clients livrés",
+     "bloque": "texte:Bloqué par ce rappel",
+     "excel": "texte:Télécharger la liste des clients à prévenir (Excel)"
+    }
+   }
+  ]
+ },
+ {
+  "name": "vues",
+  "session": "admin",
+  "path": "/",
+  "wait": 7000,
+  "steps": [
+   {
+    "measure": {
+     "vue": ".topbar-preview"
+    },
+    "as": "vues"
+   },
+   {
+    "select": ".topbar-preview select",
+    "value": "acheteur",
+    "wait": 6000,
+    "shot": "vue-acheteur.jpg"
+   },
+   {
+    "select": ".topbar-preview select",
+    "value": "production",
+    "wait": 6000,
+    "shot": "vue-production.jpg"
+   },
+   {
+    "select": ".topbar-preview select",
+    "value": "qualite",
+    "wait": 6000,
+    "shot": "vue-qualite.jpg"
+   },
+   {
+    "select": ".topbar-preview select",
+    "value": "direction",
+    "wait": 6000,
+    "shot": "vue-direction.jpg"
+   },
+   {
+    "select": ".topbar-preview select",
+    "value": "",
+    "wait": 1000
+   }
+  ]
+ }
 ]

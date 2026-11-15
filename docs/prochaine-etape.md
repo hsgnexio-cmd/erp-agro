@@ -44,8 +44,17 @@ Cahier des charges « SaaS B2B » de Nicolas, par étapes (voir `docs/decisions.
 - ✅ Étape 2d, référentiel : articles (filtres rapides par type, fiche en tiroir), fournisseurs et clients (tableau triable, fiche en tiroir), sites (cartes par site, sans taux d'occupation : donnée absente), calendrier (vue de l'année : week-ends, fériés, fermetures).
 - Suite complète relancée le 14/11/2026 : 478 tests serveur, 96 tests écran, lint et build verts.
 - ✅ Étape 3, finition (branche `design-finition`, 15/11/2026) : écrans Commercial (ventes, EDI, expéditions et tarifs en tableaux triables avec fiche en tiroir ; taux de service en barres avec repère d'objectif ; tableaux des prévisions harmonisés, grille inchangée), Qualité (rappels avec chiffres clés et bouton rouge de simulation, badge « Bloqué par ce rappel », synthèse de traçabilité) et plan de production (synthèse, totaux par jour, barres de charge). Vérifié : 107 tests écran, lint, build, et chaque écran dans le navigateur (compte `test-verif`, désactivé ensuite). Tests serveur non relancés (aucun fichier serveur modifié).
-- ⏳ Reste : vidéo et captures du README à régénérer avec le nouveau design. La base locale de Nicolas n'a aucun rappel (fiche d'un rappel vérifiée seulement par les tests) : repartir d'une démo neuve pour la voir.
+- ✅ Vidéo refaite avec la nouvelle interface (branche `video-refonte`, 15/11/2026) : voir la section 2 quinquies. Captures du README refaites en même temps.
+- ⏳ Reste : La base locale de Nicolas n'a aucun rappel (fiche d'un rappel vérifiée seulement par les tests) : repartir d'une démo neuve pour la voir.
 - Après fusion : `docker compose up -d --build` (nouvelle dépendance `lucide-react`). Vidéo et captures du README à régénérer à la fin.
+
+## 2 quinquies. Vidéo « supply chain » (branche `video-refonte`, 15/11/2026)
+
+✅ Vidéo refaite et allongée à 1 min 47, pour un public supply chain (demande de Nicolas : viser des postes de demand planning, S&OP, ordonnancement, pilotage des flux ; la technique n'arrive qu'à la fin). Cinq actes avec cartons de titre : l'équation du frais (accueil, tableau de bord), approvisionner (MRP de la crème, FEFO, températures), de la prévision à l'atelier (prévisions, plan, planning, TRS), le crash-test (recherche, tiroir, traçabilité, rappel), la preuve (vues par métier, 81 tables, 478 + 107 tests, écran de fin). Thème clair (fenêtre flottante sur fond `#F6F7F4`), caméra qui zoome sur les chiffres au moment où la voix en parle, curseur animé, bruitages fabriqués par `video/scripts/sfx.mjs`, musique à −26 dB sous la voix. Mode d'emploi : `video/README.md`.
+
+- Captures prises sur une **copie isolée** de l'ERP (démo neuve du 15/11/2026, supprimée ensuite) : la base de Nicolas n'a pas été touchée.
+- 🐞 Vu pendant les captures, à corriger dans l'ERP : le fond assombri de la recherche globale (Ctrl K) ne couvre que le haut de la page, parce que la palette est affichée à l'intérieur de la barre du haut, qui a un `backdrop-filter` ; l'afficher en dehors (portail React) règle le problème. Autre constat : dans « Besoins d'achat », le détail d'un article s'ouvre sous chacune de ses lignes.
+- 💡 Possible : faire ouvrir le tiroir du lot par la recherche globale (aujourd'hui elle ouvre la fiche complète ; la vidéo fait une ellipse), voix enregistrée par Nicolas, mise en ligne (LinkedIn, YouTube).
 
 ## 3. Pistes
 
